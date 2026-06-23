@@ -1,0 +1,23 @@
+# 1. 环境变量与机密文件 (最重要！防盗刷防泄密)
+.env
+*.env
+.env.local
+
+# 2. Python 编译缓存 (没用的垃圾文件)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 3. 虚拟环境 (太大了，千万别传，别人 clone 代码后会自己装)
+venv/
+env/
+.venv/
+
+# 4. 开发工具和 IDE 的配置文件 (比如 VS Code 或 PyCharm 自动生成的)
+.vscode/
+.idea/
+*.swp
+
+# 5. 系统垃圾文件
+.DS_Store
+Thumbs.db
