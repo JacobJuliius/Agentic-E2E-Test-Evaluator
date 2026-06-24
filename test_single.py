@@ -1,55 +1,85 @@
+"""
+test_single.py
+Description: A single-case mock execution script to test the V2 Agentic Workflow.
+"""
+
+from graph import app
 import json
-from dotenv import load_dotenv
-
-# 确保加载 .env 文件中的 API Key
-load_dotenv()
-
-from agents import (
-    syntax_linter_agent,
-    requirement_alignment_agent,
-    assertion_quality_agent,
-    hallucination_smell_agent,
-    consensus_agent
-)
 
 def run_single_test():
-    # 1. 伪造一个极简的输入状态 (Mock State)
+    print("🚀 [Init] Preparing mock test data for V2 Workflow...")
     
-    mock_state = {
-        "executable_test_code": "def test_login():\n    username='admin'\n    assert True",
-        "fine_grained_reqs": "User should be able to login with valid credentials."
+    # 1. 模拟业务需求 (Mock Requirements)
+    mock_reqs = """
+    1. Navigate to the login page at 'http://example.com/login'.
+    2. Enter username 'admin'.
+    3. Enter password 'password'.
+    4. Click the login button.
+    5. Verify that the 'Dashboard' heading is visible.
+    """
+    
+    # 2. 模拟包含瑕疵的可执行代码 (Mock Flawed Code)
+    mock_code = """
+from playwright.sync_api import sync_playwright
+import time
+
+def test_login():
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        page.goto("http://example.com/login")
+        page.fill("#user", "admin")
+        page.fill("#pass", "password")
+        page.click("#login-btn")
+        
+        time.sleep(5)  
+        
+        page.click("#upgrade-account")  
+        
+        browser.close()
+"""
+
+    # 3. 构建初始状态 (注意：必须初始化 revision_count 为 0)
+    initial_state = {
+        "fine_grained_reqs": mock_reqs.strip(),
+        "executable_test_code": mock_code.strip(),
+        "revision_count": 0
     }
 
-    print("🚀 开始独立测试各个 Agent 节点...\n")
+    print("\n🧠 [Execution] Invoking LangGraph Multi-Agent Workflow... (This may take 15-30 seconds)\n")
+    
+    try:
+        # 4. 调用状态图
+        final_state = app.invoke(initial_state)
+        
+        # 5. 打印评估结果，重点展示 V2 升级的核心字段
+        print("="*60)
+        print("🎯 AGENTIC JURY EVALUATION RESULTS")
+        print("="*60)
+        
+        print(f"✅ Syntax Gatekeeper : {'PASSED' if final_state.get('syntax_passed') else 'FAILED'}")
+        print(f"🔄 Reflection Loops  : {final_state.get('revision_count')} (How many times Critic fired)")
+        print(f"⚔️ Conflict Detected : {final_state.get('has_conflict')}")
+        
+        if final_state.get('has_conflict') and final_state.get('critic_feedback'):
+            print(f"\n🗣️ [Critic Feedback History]:\n{final_state.get('critic_feedback')}")
+        
+        print(f"\n📊 Consensus Score   : {final_state.get('overall_score')}/100")
+        print(f"📝 Reasoning         : {final_state.get('final_reasoning')}")
+        
+        print("\n" + "="*60)
+        print("🛠️ REFINER AGENT OUTPUT (SELF-HEALING)")
+        print("="*60)
+        
+        print("📑 [Improvement Report]:")
+        print(final_state.get('improvement_report', 'No report generated.'))
+        
+        print("\n💻 [Fixed Code]:")
+        print(final_state.get('fixed_code', 'No code fixed.'))
+        print("="*60)
 
-    # 2. 测试语法守门人
-    print("--- 1. Syntax & Linter Agent ---")
-    syntax_res = syntax_linter_agent(mock_state)
-    mock_state.update(syntax_res) # 模拟 LangGraph 的行为：把当前输出合并回全局状态字典
-    print(json.dumps(syntax_res, indent=2))
-
-    # 3. 测试需求对齐大模型
-    print("\n--- 2. Requirement Alignment Agent ---")
-    req_res = requirement_alignment_agent(mock_state)
-    mock_state.update(req_res)
-    print(json.dumps(req_res, indent=2))
-
-    # 4. 测试断言质量大模型
-    print("\n--- 3. Assertion Quality Agent ---")
-    ast_res = assertion_quality_agent(mock_state)
-    mock_state.update(ast_res)
-    print(json.dumps(ast_res, indent=2))
-
-    # 5. 测试异味与幻觉大模型
-    print("\n--- 4. Hallucination & Smell Agent ---")
-    smell_res = hallucination_smell_agent(mock_state)
-    mock_state.update(smell_res)
-    print(json.dumps(smell_res, indent=2))
-
-    # 6. 测试最终打分机器
-    print("\n--- 5. Consensus Agent (最终汇总计算) ---")
-    final_res = consensus_agent(mock_state)
-    print(json.dumps(final_res, indent=2, ensure_ascii=False))
+    except Exception as e:
+        print(f"\n❌ [Error] Graph execution failed: {str(e)}")
 
 if __name__ == "__main__":
     run_single_test()

@@ -100,7 +100,7 @@ def step_then_product_price_captured(context):
     assert product_price == ""$40"", f""Expected price '$40', but got '{product_price}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,25.0,0,2,0.0,"Base Requirement Coverage: 25.0/100. Total Penalties: -45 (Weak Assertions: -0, Hallucinations: -20, Test Smells: -25)."
+    context.driver.quit()",PASSED,87.5,2,2,27.5,"Base Requirement Coverage: 87.5/100. Total Penalties: -60 (Weak Assertions: -15, Hallucinations: -20, Test Smells: -25)."
 E2ESD_Bench_01,1,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -203,7 +203,7 @@ def step_then_product_price_captured(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    teardown_driver(context)",PASSED,59.09,0,1,44.09,"Base Requirement Coverage: 59.09/100. Total Penalties: -15 (Weak Assertions: -0, Hallucinations: -10, Test Smells: -5)."
+    teardown_driver(context)",PASSED,75.0,2,2,25.0,"Base Requirement Coverage: 75.0/100. Total Penalties: -50 (Weak Assertions: -10, Hallucinations: -20, Test Smells: -20)."
 E2ESD_Bench_01,1,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -297,7 +297,7 @@ def step_then_product_price_captured(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,25.0,0,2,0.0,"Base Requirement Coverage: 25.0/100. Total Penalties: -40 (Weak Assertions: -0, Hallucinations: -20, Test Smells: -20)."
+    context.driver.quit()",PASSED,75.0,2,2,20.0,"Base Requirement Coverage: 75.0/100. Total Penalties: -55 (Weak Assertions: -10, Hallucinations: -20, Test Smells: -25)."
 E2ESD_Bench_01,1,4,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -378,7 +378,7 @@ def step_then_no_product_price_captured(context):
     assert True, ""No product price should be captured.""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,2,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -35 (Weak Assertions: -0, Hallucinations: -20, Test Smells: -15)."
+    context.driver.quit()",PASSED,25.0,2,2,0.0,"Base Requirement Coverage: 25.0/100. Total Penalties: -50 (Weak Assertions: -10, Hallucinations: -20, Test Smells: -20)."
 E2ESD_Bench_01,3,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -494,7 +494,7 @@ def step_then_cart_display_shows_quantity(context, expected_quantity):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,79.17,0,0,64.17,"Base Requirement Coverage: 79.17/100. Total Penalties: -15 (Weak Assertions: -0, Hallucinations: -0, Test Smells: -15)."
+    context.driver.quit()",PASSED,90.0,4,0,55.0,"Base Requirement Coverage: 90.0/100. Total Penalties: -35 (Weak Assertions: -10, Hallucinations: -0, Test Smells: -25)."
 E2ESD_Bench_01,3,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -661,7 +661,7 @@ def step_then_cart_display_quantity_2(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -20 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -15)."
+    context.driver.quit()",PASSED,62.5,3,2,2.5,"Base Requirement Coverage: 62.5/100. Total Penalties: -60 (Weak Assertions: -15, Hallucinations: -20, Test Smells: -25)."
 E2ESD_Bench_01,3,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -777,7 +777,7 @@ def step_then_cart_display_shows_quantity(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,75.0,0,0,70.0,"Base Requirement Coverage: 75.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,90.0,3,1,50.0,"Base Requirement Coverage: 90.0/100. Total Penalties: -40 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_01,3,4,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -926,7 +926,7 @@ def step_then_cart_display_shows_quantity(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,90.0,4,1,40.0,"Base Requirement Coverage: 90.0/100. Total Penalties: -50 (Weak Assertions: -15, Hallucinations: -10, Test Smells: -25)."
 E2ESD_Bench_01,5,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -1044,7 +1044,7 @@ def step_then_verify_total_price(context):
     assert expected_price in actual_price, f""Expected total price '{expected_price}', but got '{actual_price}'""
 
     # Close the browser after the test
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,66.67,3,1,26.67,"Base Requirement Coverage: 66.67/100. Total Penalties: -40 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_01,5,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -1127,7 +1127,7 @@ def step_then_verify_total_price(context, total_id, expected_total):
     assert expected_total in actual_total, f""Expected total '{expected_total}', but got '{actual_total}'""
 
     # Close the browser after the test
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,66.67,3,1,31.67,"Base Requirement Coverage: 66.67/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_01,5,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -1243,7 +1243,7 @@ def step_then_verify_total_price(context, total_price_id, expected_price):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,3,1,10.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -40 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_01,5,4,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -1393,7 +1393,7 @@ def step_then_verify_total_price(context, expected_total):
     assert expected_total in actual_total, f""Expected total '{expected_total}', but got '{actual_total}'""
 
     # Close the browser after the test
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,2,1,15.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_02,1,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -1474,7 +1474,7 @@ def step_then_textarea_is_visible(context):
     assert textarea.is_displayed(), ""The textarea is not visible""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,62.5,4,0,32.5,"Base Requirement Coverage: 62.5/100. Total Penalties: -30 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -25)."
 E2ESD_Bench_02,1,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -1558,7 +1558,7 @@ def step_then_all_textareas_visible(context):
         assert textarea.is_displayed(), ""Expected textarea to be visible""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,87.5,4,0,52.5,"Base Requirement Coverage: 87.5/100. Total Penalties: -35 (Weak Assertions: -10, Hallucinations: -0, Test Smells: -25)."
 E2ESD_Bench_02,2,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -1658,7 +1658,7 @@ def step_then_main_display_area_renders_heading(context):
     assert h1_tag and h1_tag.text == expected_text, f""Expected text '{expected_text}' but got '{rendered_html}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,66.67,3,1,36.67,"Base Requirement Coverage: 66.67/100. Total Penalties: -30 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -15)."
 E2ESD_Bench_02,2,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -1763,7 +1763,7 @@ def step_then_main_display_renders_markdown(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,58.33,4,1,8.33,"Base Requirement Coverage: 58.33/100. Total Penalties: -50 (Weak Assertions: -20, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_02,2,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -1857,7 +1857,7 @@ def step_then_main_display_area_should_render_text(context):
     assert expected_text in rendered_text, f""Expected '{expected_text}' in '{rendered_text}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,3,1,15.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -35 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -15)."
 E2ESD_Bench_02,3,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -1940,7 +1940,7 @@ def step_then_note_main_content_area_should_be_hidden(context):
     assert not main_content.is_displayed(), ""Main content area is not hidden""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,4,1,15.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_02,3,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -2041,7 +2041,7 @@ def step_then_note_main_content_should_be_visible(context):
     assert is_visible(main_content), ""Expected main content area to be visible""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,66.67,4,1,36.67,"Base Requirement Coverage: 66.67/100. Total Penalties: -30 (Weak Assertions: -0, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_02,3,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -2143,7 +2143,7 @@ def step_then_note_main_should_be_hidden(context):
     assert not main_content.is_displayed(), ""Main content area is not hidden""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,66.67,3,0,41.67,"Base Requirement Coverage: 66.67/100. Total Penalties: -25 (Weak Assertions: -0, Hallucinations: -0, Test Smells: -25)."
 E2ESD_Bench_02,3,4,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -2229,7 +2229,7 @@ def step_then_note_main_content_area_should_be_hidden(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,4,1,25.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -25 (Weak Assertions: -0, Hallucinations: -10, Test Smells: -15)."
 E2ESD_Bench_02,4,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -2318,7 +2318,7 @@ def step_then_localstorage_does_not_contain_sample_note(context):
     assert ""Sample Note"" not in notes, ""Expected 'Sample Note' not to be in localStorage""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,100.0,4,1,60.0,"Base Requirement Coverage: 100.0/100. Total Penalties: -40 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_02,4,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -2416,7 +2416,7 @@ def step_then_local_storage_updated(context):
     assert ""Note 2"" not in local_storage_notes, ""Note 2 is still in localStorage""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,100.0,6,1,55.0,"Base Requirement Coverage: 100.0/100. Total Penalties: -45 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -25)."
 E2ESD_Bench_02,5,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -2508,7 +2508,7 @@ def step_then_display_note_2(context):
 
 def after_scenario(context, scenario):
     # Close the browser after each scenario
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,56.25,4,0,21.25,"Base Requirement Coverage: 56.25/100. Total Penalties: -35 (Weak Assertions: -10, Hallucinations: -0, Test Smells: -25)."
 E2ESD_Bench_02,5,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -2582,7 +2582,7 @@ def step_then_no_notes_displayed(context):
     )
     notes = context.driver.find_elements(By.CSS_SELECTOR, ""[data-testid='note-main']"")
     assert len(notes) == 0, f""Expected no notes, but found {len(notes)}""
-    teardown_driver(context)",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    teardown_driver(context)",PASSED,50.0,3,1,20.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -30 (Weak Assertions: -0, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_03,1,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -2693,7 +2693,7 @@ def step_then_total_price_display(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,75.0,4,1,40.0,"Base Requirement Coverage: 75.0/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_03,1,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -2797,7 +2797,7 @@ def step_then_total_price_display(context):
     assert total_price.text.strip() == ""16"", f""Expected total price to be '16', but got '{total_price.text.strip()}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,83.33,4,1,43.33,"Base Requirement Coverage: 83.33/100. Total Penalties: -40 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_03,1,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -2878,7 +2878,7 @@ def step_then_total_price_display(context):
     assert total_price.text == ""0"", f""Expected total price to be '0', but got '{total_price.text}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,41.67,3,1,11.67,"Base Requirement Coverage: 41.67/100. Total Penalties: -30 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -15)."
 E2ESD_Bench_03,1,4,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -2987,7 +2987,7 @@ def step_then_total_price_update_9(context):
     assert total_price.text == ""9"", f""Expected total price to be '9', but got '{total_price.text}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,75.0,6,2,35.0,"Base Requirement Coverage: 75.0/100. Total Penalties: -40 (Weak Assertions: -5, Hallucinations: -20, Test Smells: -15)."
 E2ESD_Bench_03,2,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -3091,7 +3091,7 @@ def step_then_local_storage_contains_seat_index(context):
     assert ""0"" in selected_seats, f""Expected seat index 0 in local storage, but got {selected_seats}""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,72.22,4,2,27.22,"Base Requirement Coverage: 72.22/100. Total Penalties: -45 (Weak Assertions: -5, Hallucinations: -20, Test Smells: -20)."
 E2ESD_Bench_03,2,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -3204,7 +3204,7 @@ def step_then_local_storage(context):
     assert 1 in selected_seats_indices, ""Seat index 1 (seat-1-2) not found in local storage""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,83.33,6,2,33.33,"Base Requirement Coverage: 83.33/100. Total Penalties: -50 (Weak Assertions: -10, Hallucinations: -20, Test Smells: -20)."
 E2ESD_Bench_03,2,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -3310,7 +3310,7 @@ def step_then_verify_local_storage(context):
     assert ""11"" not in selected_seats, ""Occupied seat index should not be in local storage""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,4,2,0.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -50 (Weak Assertions: -10, Hallucinations: -20, Test Smells: -20)."
 E2ESD_Bench_03,2,4,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -3421,7 +3421,7 @@ def step_then_verify_local_storage(context):
     assert seat_index is None or ""0"" not in seat_index, ""Local storage should not contain the index of the deselected seat""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,77.78,4,2,27.78,"Base Requirement Coverage: 77.78/100. Total Penalties: -50 (Weak Assertions: -10, Hallucinations: -20, Test Smells: -20)."
 E2ESD_Bench_03,3,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -3525,7 +3525,7 @@ def step_then_movie_selected(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,66.67,6,2,16.67,"Base Requirement Coverage: 66.67/100. Total Penalties: -50 (Weak Assertions: -10, Hallucinations: -20, Test Smells: -20)."
 E2ESD_Bench_03,3,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -3614,7 +3614,7 @@ def step_then_first_movie_selected(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,4,1,10.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -40 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_03,4,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -3714,7 +3714,7 @@ def step_then_total_price_should_be_20(context):
     assert total_price.text.strip() == ""20"", f""Expected '20', but got '{total_price.text.strip()}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,64.29,4,1,34.29,"Base Requirement Coverage: 64.29/100. Total Penalties: -30 (Weak Assertions: -0, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_03,4,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -3810,7 +3810,7 @@ def step_then_total_price_should_be_zero(context):
     assert total_price.text.strip() == ""0"", f""Expected '$0', but got '{total_price.text.strip()}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,71.43,3,1,46.43,"Base Requirement Coverage: 71.43/100. Total Penalties: -25 (Weak Assertions: -0, Hallucinations: -10, Test Smells: -15)."
 E2ESD_Bench_03,4,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -3910,7 +3910,7 @@ def step_then_total_price_should_be_16(context):
     assert total_price.text.strip() == ""16"", f""Expected total price to be '$16', but got '{total_price.text.strip()}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,42.86,4,1,2.86,"Base Requirement Coverage: 42.86/100. Total Penalties: -40 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_03,4,4,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -4003,7 +4003,7 @@ def step_then_check_total_price(context):
     assert total_price.text.strip() == ""0"", f""Expected '$0', but got '{total_price.text.strip()}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,3,1,15.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_03,4,5,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -4105,7 +4105,7 @@ def step_then_total_price_should_be_12(context):
     assert total_price.text.strip() == ""12"", f""Expected total price '12', but got '{total_price.text.strip()}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,57.14,4,2,2.14,"Base Requirement Coverage: 57.14/100. Total Penalties: -55 (Weak Assertions: -15, Hallucinations: -20, Test Smells: -20)."
 E2ESD_Bench_03,5,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -4192,7 +4192,7 @@ def step_then_seat_selected(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,60.0,3,1,25.0,"Base Requirement Coverage: 60.0/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_03,5,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -4294,7 +4294,7 @@ def step_then_total_price_updated(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,41.67,6,0,11.67,"Base Requirement Coverage: 41.67/100. Total Penalties: -30 (Weak Assertions: -10, Hallucinations: -0, Test Smells: -20)."
 E2ESD_Bench_03,5,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -4379,7 +4379,7 @@ def step_then_total_price_remains_zero(context):
     assert total_price.text == ""0"", f""Expected total price to be '$0', but got '${total_price.text}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,40.0,4,1,5.0,"Base Requirement Coverage: 40.0/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_03,5,4,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -4483,7 +4483,7 @@ def step_then_total_price_updated(context):
     assert total_element.text.strip() == ""0"", f""Expected total price '$0', but got '${total_element.text.strip()}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,4,1,10.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -40 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_03,5,5,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -4593,7 +4593,7 @@ def step_then_total_price_should_reflect_selected_movie_price(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,4,1,10.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -40 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_04,1,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -4690,7 +4690,7 @@ def step_impl(context):
 # Teardown to close the browser after the test
 def after_scenario(context, scenario):
     if hasattr(context, 'driver'):
-        context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+        context.driver.quit()",PASSED,62.5,4,1,17.5,"Base Requirement Coverage: 62.5/100. Total Penalties: -45 (Weak Assertions: -15, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_04,1,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -4816,7 +4816,7 @@ def step_then_text_box_hidden(context):
 
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,62.5,3,1,27.5,"Base Requirement Coverage: 62.5/100. Total Penalties: -35 (Weak Assertions: -0, Hallucinations: -10, Test Smells: -25)."
 E2ESD_Bench_04,1,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -4928,7 +4928,7 @@ def step_then_text_box_visibility(context):
     assert is_visible(text_box) or is_collapsed(text_box), ""Text box should be either visible or hidden""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,75.0,2,2,25.0,"Base Requirement Coverage: 75.0/100. Total Penalties: -50 (Weak Assertions: -10, Hallucinations: -20, Test Smells: -20)."
 E2ESD_Bench_04,2,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -5031,7 +5031,7 @@ def step_then_text_box_not_visible(context):
     assert 'show' not in text_box.get_attribute('class') or not text_box.is_displayed(), ""Text box is not hidden""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,90.0,4,1,50.0,"Base Requirement Coverage: 90.0/100. Total Penalties: -40 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_04,3,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -5130,7 +5130,7 @@ def step_then_dropdown_is_populated(context):
 # Cleanup after the test
 def after_scenario(context, scenario):
     if hasattr(context, 'driver'):
-        context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+        context.driver.quit()",PASSED,50.0,3,1,20.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -30 (Weak Assertions: -0, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_04,4,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -5248,7 +5248,7 @@ def step_then_verify_active_voice(context):
 
 # Teardown
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,80.0,3,1,40.0,"Base Requirement Coverage: 80.0/100. Total Penalties: -40 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_04,4,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -5366,7 +5366,7 @@ def step_impl(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,80.0,3,1,45.0,"Base Requirement Coverage: 80.0/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_04,4,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -5499,7 +5499,7 @@ def step_then_verify_us_voice_set(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,70.0,3,1,35.0,"Base Requirement Coverage: 70.0/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_04,5,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -5613,7 +5613,7 @@ def step_then_verify_text_read(context):
 # Cleanup after tests
 def after_scenario(context, scenario):
     if hasattr(context, 'driver'):
-        context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+        context.driver.quit()",PASSED,87.5,1,1,52.5,"Base Requirement Coverage: 87.5/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_04,5,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -5738,7 +5738,7 @@ def step_then_system_reads_aloud(context):
     # This step assumes that the reading functionality is tested manually or through audio verification tools
     # As Selenium cannot verify audio output directly, this step is a placeholder for manual verification
     print(""Verify that the system reads aloud 'Hello World' using the selected voice."")
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,83.33,2,1,48.33,"Base Requirement Coverage: 83.33/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_04,5,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -5869,7 +5869,7 @@ def step_then_validate_text_read(context):
     assert ""Testing voice change"" in text_area.get_attribute(""value""), ""Text was not set correctly for reading.""
 
     # Cleanup: Close the browser
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,83.33,2,1,48.33,"Base Requirement Coverage: 83.33/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_04,5,4,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -5987,7 +5987,7 @@ def step_then_no_text_read_aloud(context):
 
 # Teardown
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,83.33,3,2,38.33,"Base Requirement Coverage: 83.33/100. Total Penalties: -45 (Weak Assertions: -5, Hallucinations: -20, Test Smells: -20)."
 E2ESD_Bench_04,6,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -6107,7 +6107,7 @@ def step_then_highlight_disappears(context):
             break
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,75.0,2,1,25.0,"Base Requirement Coverage: 75.0/100. Total Penalties: -50 (Weak Assertions: -15, Hallucinations: -10, Test Smells: -25)."
 E2ESD_Bench_04,6,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -6219,7 +6219,7 @@ def step_then_highlight_disappears(context):
 
 # Teardown step to close the browser after the test
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,78.57,3,1,33.57,"Base Requirement Coverage: 78.57/100. Total Penalties: -45 (Weak Assertions: -15, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_04,6,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -6333,7 +6333,7 @@ def step_then_highlight_disappears(context):
     assert ""active"" not in angry_box.get_attribute(""class""), ""The 'active' class should be removed after 800ms""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,66.67,2,1,21.67,"Base Requirement Coverage: 66.67/100. Total Penalties: -45 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -25)."
 E2ESD_Bench_05,2,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -6423,7 +6423,7 @@ def step_then_toast_message_should_be_correct(context):
     assert expected_message in toast_message, f""Expected '{expected_message}' but got '{toast_message}'""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,4,1,15.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -35 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -15)."
 E2ESD_Bench_05,2,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -6505,7 +6505,7 @@ def step_then_error_toast_should_not_be_visible(context):
     assert not error_toast.is_displayed(), ""Error toast is visible when it should not be.""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,4,1,15.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -35 (Weak Assertions: -15, Hallucinations: -10, Test Smells: -10)."
 E2ESD_Bench_05,3,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -6623,7 +6623,7 @@ def step_then_word_example_displays(context):
     assert word_example.text.strip(), ""Word example text is not displayed""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,85.71,4,0,50.71,"Base Requirement Coverage: 85.71/100. Total Penalties: -35 (Weak Assertions: -15, Hallucinations: -0, Test Smells: -20)."
 E2ESD_Bench_05,3,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -6740,7 +6740,7 @@ def step_then_word_example_display(context):
     assert word_example.text.strip() != """", ""Word example text is empty""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,85.71,4,0,55.71,"Base Requirement Coverage: 85.71/100. Total Penalties: -30 (Weak Assertions: -10, Hallucinations: -0, Test Smells: -20)."
 E2ESD_Bench_05,3,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -6849,7 +6849,7 @@ def step_then_error_toast_message(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,16.67,4,3,0.0,"Base Requirement Coverage: 16.67/100. Total Penalties: -60 (Weak Assertions: -10, Hallucinations: -30, Test Smells: -20)."
 E2ESD_Bench_05,4,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -6941,7 +6941,7 @@ def step_impl(context):
     assert not result_card.is_displayed()
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,87.5,6,1,57.5,"Base Requirement Coverage: 87.5/100. Total Penalties: -30 (Weak Assertions: -5, Hallucinations: -10, Test Smells: -15)."
 E2ESD_Bench_05,4,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -7059,7 +7059,7 @@ def step_then_result_card_should_not_be_visible(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,62.5,4,2,17.5,"Base Requirement Coverage: 62.5/100. Total Penalties: -45 (Weak Assertions: -5, Hallucinations: -20, Test Smells: -20)."
 E2ESD_Bench_05,4,3,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -7149,7 +7149,7 @@ def step_then_result_card_remains_not_visible(context):
     assert not result_card.is_displayed(), ""Result card is visible after reset""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,87.5,4,1,47.5,"Base Requirement Coverage: 87.5/100. Total Penalties: -40 (Weak Assertions: -10, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_05,5,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -7266,7 +7266,7 @@ def step_then_verify_bookmarked_words_list(context):
     assert ""example"".lower() in bookmarked_words, ""The word 'example' is not in the bookmarked words list""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,90.0,4,1,60.0,"Base Requirement Coverage: 90.0/100. Total Penalties: -30 (Weak Assertions: -0, Hallucinations: -10, Test Smells: -20)."
 E2ESD_Bench_05,8,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -7355,4 +7355,4 @@ def step_then_recent_searches_display_example(context):
     time.sleep(1)
 
 def after_scenario(context, scenario):
-    context.driver.quit()",PASSED,0.0,0,0,0.0,"Base Requirement Coverage: 0.0/100. Total Penalties: -5 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -0)."
+    context.driver.quit()",PASSED,50.0,3,0,15.0,"Base Requirement Coverage: 50.0/100. Total Penalties: -35 (Weak Assertions: -5, Hallucinations: -0, Test Smells: -30)."
