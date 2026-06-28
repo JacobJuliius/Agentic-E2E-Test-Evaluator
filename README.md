@@ -127,6 +127,22 @@ python scripts/reproduce_one.py --row-index 0 --check-only
 Use `--install-missing` to run the bounded `pip install -r requirements.txt`
 step. Network source retrieval is still controlled separately.
 
+### Input CSV schema
+
+The evaluator accepts:
+
+```text
+id, req_id, test_id, reference_answer, fine_grained_reqs,
+excutable_test_test_case, excutable_test_step_code,
+source_project_dir (optional)
+```
+
+When `source_project_dir` is present, it takes priority over cache/network
+resolution. The directory may have any name—including the dataset's literal
+`source_projcet` spelling. The evaluator recursively locates `index.html`, uses
+its parent as the project root, and copies it into each isolated workspace as
+`source_project/`.
+
 ## Central configuration
 
 `e2e_eval.config.EvaluationConfig` is the canonical configuration object.
@@ -149,6 +165,31 @@ $env:E2E_REFERENCE_TIMEOUT_SECONDS = "90"
 Remote source retrieval is disabled by default. The resolver accepts validated
 local directories, explicit ZIP/TAR endpoints, and Git repositories. It never
 scrapes arbitrary HTML pages.
+
+Source provenance is exported as `LOCAL_SOURCE_OVERRIDE`, `REFERENCE_CACHE`, or
+`NETWORK_REFERENCE`, together with the input path, resolved project path, and
+resolved entrypoint.
+
+Run a selected-case CSV entirely offline:
+
+```powershell
+python scripts/reproduce_selected_cases.py `
+  artifacts/reports/selected_cases_with_sources.csv `
+  --output artifacts/reports/selected_cases_local_baseline_final.csv `
+  --local-dynamic-only
+```
+
+Add a bounded mutation smoke test:
+
+```powershell
+python scripts/reproduce_selected_cases.py `
+  artifacts/reports/selected_cases_with_sources.csv `
+  --output artifacts/reports/selected_cases_local_mutation_final.csv `
+  --local-dynamic-only --mutation --max-mutants 3
+```
+
+`--local-dynamic-only` runs the real syntax, Selenium/Behave, BDD diagnostic,
+and mutation tools but deliberately skips external LLM calls.
 
 ## Coverage
 
@@ -198,6 +239,25 @@ mutation score = killed / (killed + survived) × 100
 
 Invalid mutants are always excluded from the denominator. See
 `MUTATION_OPERATORS.md` for the documented, general operator taxonomy.
+
+The report retains two distinct mutation views:
+
+- raw mutation score over every valid selected mutant;
+- relevant mutation score over valid mutants deterministically linked to the
+  active scenario target or literal.
+
+If no relevant valid mutant exists, the relevant score is null and
+`mutation_scope_status=NO_RELEVANT_MUTANTS`. Out-of-scope mutants remain in the
+raw suite report but are not evidence that one scenario is weak.
+
+## Optional reference acquisition
+
+Offline local overrides and validated caches are preferred. When
+`E2E_REFERENCE_NETWORK_ENABLED=1`, explicit ZIP/TAR URLs may be safely extracted
+and actual Git URLs may be shallow-cloned with a timeout. Directory-style
+`anonymous.4open.science` URLs are not scraped to guess download links; provide a
+local source directory or pre-populated cache when no stable archive endpoint is
+available. Automated refresh/fetch-mode policies remain optional future work.
 
 ## Validation
 

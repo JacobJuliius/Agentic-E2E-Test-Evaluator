@@ -51,6 +51,7 @@ class E2EEvalState(EvaluationStateBase, total=False):
     requirement_summary: str
     prompt: str
     reference_answer: str
+    source_project_dir: str
     reference_workspace_root: str
     reference_network_enabled: bool
     reference_timeout_seconds: int
@@ -163,6 +164,11 @@ class E2EEvalState(EvaluationStateBase, total=False):
     coverage_artifact_dir: str
     coverage_result: dict[str, Any]
     reference_resolution: dict[str, Any]
+    source_origin: str
+    input_source_project_dir: str
+    resolved_source_project_dir: str
+    resolved_entrypoint: str
+    local_override_diagnostic: str
 
     mutation_status: str
     mutation_score: float | None  # raw score: suite aggregation only

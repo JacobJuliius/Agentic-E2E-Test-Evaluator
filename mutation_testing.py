@@ -19,7 +19,7 @@ import subprocess
 import sys
 import time
 import tokenize
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 from html.parser import HTMLParser
 from io import StringIO
 from pathlib import Path, PurePosixPath
@@ -76,6 +76,9 @@ class MutationRecord:
     validation_result: dict[str, Any]
     duration_seconds: float
     artifact_dir: str
+    scope_relation: str = "UNCERTAIN"
+    scope_reason: str = ""
+    source_scope: dict[str, Any] = field(default_factory=dict)
 
 
 class MutationOperator(Protocol):
@@ -693,6 +696,8 @@ def validate_mutated_project(
                     cwd=app_dir,
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
+                    errors="replace",
                     timeout=timeout_seconds,
                 )
                 if completed.returncode != 0:
@@ -714,6 +719,8 @@ def validate_mutated_project(
                 cwd=app_dir,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=timeout_seconds,
             )
             if completed.returncode != 0:
@@ -815,6 +822,210 @@ def calculate_mutation_metrics(
     }
 
 
+SCOPE_TESTID_RE = re.compile(
+    r"(?:data-testid|data-test)\s*(?:=)?\s*[\"']([^\"']+)[\"']",
+    re.IGNORECASE,
+)
+SCOPE_QUOTED_RE = re.compile(r"[\"']([^\"'\n]{2,120})[\"']")
+SCOPE_INDEXED_ID_RE = re.compile(
+    r"\b([A-Za-z][A-Za-z0-9_.-]*?-\d+)\b"
+)
+SCOPE_NUMBER_RE = re.compile(r"(?<![\w])(?:[$€£]\s*)?\d+(?:\.\d+)?")
+
+
+def _normalized_scope_values(values: Iterable[str]) -> list[str]:
+    return sorted({
+        re.sub(r"\s+", " ", str(value)).strip().lower()
+        for value in values
+        if str(value).strip()
+    })
+
+
+def extract_test_scope(
+    scenario_text: str, test_code: str
+) -> dict[str, Any]:
+    """Extract concrete scenario/test literals without benchmark assumptions."""
+    scenario = str(scenario_text or "")
+    code = str(test_code or "")
+    combined = scenario + "\n" + code
+    test_ids = _normalized_scope_values(
+        SCOPE_TESTID_RE.findall(combined)
+    )
+    quoted = _normalized_scope_values(SCOPE_QUOTED_RE.findall(scenario))
+    indexed = _normalized_scope_values(
+        SCOPE_INDEXED_ID_RE.findall(combined)
+    )
+    numbers = _normalized_scope_values(SCOPE_NUMBER_RE.findall(scenario))
+    return {
+        "data_testids": test_ids,
+        "scenario_literals": quoted,
+        "indexed_identifiers": indexed,
+        "numeric_literals": numbers,
+        "has_concrete_scope": bool(test_ids or quoted or indexed or numbers),
+    }
+
+
+def _identifier_family(value: str) -> str:
+    return re.sub(r"\d+$", "#", value.lower())
+
+
+def classify_mutant_relevance(
+    mutant: MutationCandidate | MutationRecord | dict[str, Any],
+    source: str,
+    test_scope: dict[str, Any],
+) -> dict[str, Any]:
+    """Classify one mutant using concrete scenario and nearby source evidence."""
+    if isinstance(mutant, dict):
+        location = mutant.get("location", {})
+        original = str(mutant.get("original_code", ""))
+        source_file = str(mutant.get("source_file", ""))
+    else:
+        location = mutant.location
+        original = mutant.original_code
+        source_file = mutant.source_file
+    start = int(location.get("start_offset", 0))
+    end = int(location.get("end_offset", start))
+    context = source[max(0, start - 240): min(len(source), end + 240)]
+    if Path(source_file).suffix.lower() in {".html", ".htm"}:
+        tag_start = source.rfind("<", 0, start + 1)
+        tag_end = source.find(">", max(tag_start, 0))
+        if tag_start >= 0 and tag_end >= 0:
+            if start <= tag_end:
+                context = source[tag_start:tag_end + 1]
+            else:
+                next_tag = source.find("<", start)
+                context = source[
+                    tag_start: next_tag if next_tag >= 0 else min(len(source), end + 160)
+                ]
+    source_testids = _normalized_scope_values(
+        SCOPE_TESTID_RE.findall(context)
+    )
+    source_indexed = _normalized_scope_values(
+        SCOPE_INDEXED_ID_RE.findall(context)
+    )
+    source_literals = _normalized_scope_values(
+        SCOPE_QUOTED_RE.findall(context)
+    )
+    source_scope = {
+        "data_testids": source_testids,
+        "indexed_identifiers": source_indexed,
+        "nearby_literals": source_literals[:20],
+        "excerpt": re.sub(r"\s+", " ", context).strip()[:500],
+    }
+    if not test_scope.get("has_concrete_scope"):
+        return {
+            "scope_relation": "UNCERTAIN",
+            "scope_reason": "The scenario exposes no concrete target or literal.",
+            "source_scope": source_scope,
+        }
+
+    target_ids = set(test_scope.get("data_testids", []))
+    target_indexed = set(test_scope.get("indexed_identifiers", []))
+    source_ids = set(source_testids)
+    source_index_set = set(source_indexed)
+    if target_ids & source_ids or target_indexed & source_index_set:
+        return {
+            "scope_relation": "RELEVANT",
+            "scope_reason": "Nearby source identifiers match the active scenario target.",
+            "source_scope": source_scope,
+        }
+
+    target_families = {
+        _identifier_family(item): item
+        for item in target_ids | target_indexed
+    }
+    source_families = {
+        _identifier_family(item): item
+        for item in source_ids | source_index_set
+    }
+    shared_families = set(target_families) & set(source_families)
+    if shared_families:
+        return {
+            "scope_relation": "OUT_OF_SCOPE",
+            "scope_reason": (
+                "The mutant targets a different indexed member of a "
+                "scenario-targeted identifier family."
+            ),
+            "source_scope": source_scope,
+        }
+
+    normalized_original = re.sub(
+        r"\s+", " ", original.strip("\"'` \t\r\n")
+    ).lower()
+    target_literals = set(test_scope.get("scenario_literals", []))
+    target_numbers = set(test_scope.get("numeric_literals", []))
+    if (
+        normalized_original
+        and (
+            normalized_original in target_literals
+            or normalized_original in target_numbers
+        )
+    ):
+        return {
+            "scope_relation": "RELEVANT",
+            "scope_reason": "The mutated literal is explicitly used by the scenario.",
+            "source_scope": source_scope,
+        }
+
+    if (target_ids or target_indexed) and (source_ids or source_index_set):
+        return {
+            "scope_relation": "OUT_OF_SCOPE",
+            "scope_reason": "Nearby source identifiers do not match the scenario target.",
+            "source_scope": source_scope,
+        }
+    return {
+        "scope_relation": "UNCERTAIN",
+        "scope_reason": "No reliable target-level link or exclusion was found.",
+        "source_scope": source_scope,
+    }
+
+
+def calculate_relevant_mutation_metrics(
+    records: Sequence[MutationRecord | dict[str, Any]],
+) -> dict[str, Any]:
+    def value(record: MutationRecord | dict[str, Any], key: str) -> Any:
+        return record.get(key) if isinstance(record, dict) else getattr(record, key)
+
+    relevant = [
+        record for record in records
+        if value(record, "scope_relation") == "RELEVANT"
+    ]
+    killed = sum(value(item, "execution_verdict") == "KILLED" for item in relevant)
+    survived = sum(value(item, "execution_verdict") == "SURVIVED" for item in relevant)
+    invalid = sum(value(item, "execution_verdict") == "INVALID" for item in relevant)
+    valid = killed + survived
+    return {
+        "mutation_scope_status": (
+            "SCOPE_AWARE" if valid else "NO_RELEVANT_MUTANTS"
+        ),
+        "relevant_mutation_score": (
+            round(100.0 * killed / valid, 2) if valid else None
+        ),
+        "relevant_mutants_total": valid,
+        "relevant_mutants_killed": killed,
+        "relevant_mutants_survived": survived,
+        "relevant_mutants_inconclusive": invalid,
+        "out_of_scope_mutants_total": sum(
+            value(item, "scope_relation") == "OUT_OF_SCOPE"
+            for item in records
+        ),
+        "out_of_scope_mutants_survived": sum(
+            value(item, "scope_relation") == "OUT_OF_SCOPE"
+            and value(item, "execution_verdict") == "SURVIVED"
+            for item in records
+        ),
+        "uncertain_mutants_total": sum(
+            value(item, "scope_relation") == "UNCERTAIN"
+            for item in records
+        ),
+        "uncertain_mutants_survived": sum(
+            value(item, "scope_relation") == "UNCERTAIN"
+            and value(item, "execution_verdict") == "SURVIVED"
+            for item in records
+        ),
+    }
+
+
 def _safe_cleanup(workspace: Path, cleanup_root: Path) -> None:
     workspace = workspace.resolve()
     cleanup_root = cleanup_root.resolve()
@@ -891,7 +1102,7 @@ def run_mutation_campaign(
             "mutants_survived": 0,
             "mutants_timeout": 0,
             "mutants_inconclusive": 0,
-            "mutation_scope_status": "GENERAL_MUTATION_SET",
+            "mutation_scope_status": "NO_RELEVANT_MUTANTS",
             "relevant_mutation_score": None,
             "relevant_mutants_total": 0,
             "relevant_mutants_killed": 0,
@@ -992,7 +1203,24 @@ def run_mutation_campaign(
             records[-1].execution_status,
         )
 
+    test_scope = extract_test_scope(
+        str(state.get("excutable_test_test_case", "")), test_code
+    )
+    source_cache: dict[str, str] = {}
+    for record in records:
+        if record.source_file not in source_cache:
+            source_cache[record.source_file] = (
+                reference_dir / record.source_file
+            ).read_text(encoding="utf-8", errors="replace")
+        relevance = classify_mutant_relevance(
+            record, source_cache[record.source_file], test_scope
+        )
+        record.scope_relation = relevance["scope_relation"]
+        record.scope_reason = relevance["scope_reason"]
+        record.source_scope = relevance["source_scope"]
+
     metrics = calculate_mutation_metrics(records)
+    scope_metrics = calculate_relevant_mutation_metrics(records)
     serialized = [asdict(record) for record in records]
     survivors = [
         record for record in serialized
@@ -1025,6 +1253,8 @@ def run_mutation_campaign(
             "artifact_dir": state.get("execution_artifact_dir", ""),
         },
         **metrics,
+        **scope_metrics,
+        "test_scope": test_scope,
         "records": serialized,
         "surviving_mutant_report": survivors,
     }
@@ -1044,6 +1274,24 @@ def run_mutation_campaign(
         f"{item.mutant_id} {item.operator} {item.source_file}:{item.location['line']}"
         for item in records if item.execution_verdict == "SURVIVED"
     ]
+    relevant_survivor_descriptions = [
+        f"{item.mutant_id} {item.operator} {item.source_file}:{item.location['line']}"
+        for item in records
+        if item.execution_verdict == "SURVIVED"
+        and item.scope_relation == "RELEVANT"
+    ]
+    out_of_scope_survivor_descriptions = [
+        f"{item.mutant_id} {item.operator} {item.source_file}:{item.location['line']}"
+        for item in records
+        if item.execution_verdict == "SURVIVED"
+        and item.scope_relation == "OUT_OF_SCOPE"
+    ]
+    uncertain_survivor_descriptions = [
+        f"{item.mutant_id} {item.operator} {item.source_file}:{item.location['line']}"
+        for item in records
+        if item.execution_verdict == "SURVIVED"
+        and item.scope_relation == "UNCERTAIN"
+    ]
     return {
         "mutation_status": (
             "PASSED" if metrics["valid_mutants"] else "NO_VALID_MUTANTS"
@@ -1056,28 +1304,20 @@ def run_mutation_campaign(
         "mutants_survived": metrics["survived_mutants"],
         "mutants_timeout": timed_out,
         "mutants_inconclusive": metrics["invalid_mutants"],
-        "mutation_scope_status": "GENERAL_MUTATION_SET",
-        "relevant_mutation_score": metrics["mutation_score"],
-        "relevant_mutants_total": metrics["valid_mutants"],
-        "relevant_mutants_killed": metrics["killed_mutants"],
-        "relevant_mutants_survived": metrics["survived_mutants"],
+        **scope_metrics,
         "relevant_mutants_timeout": timed_out,
-        "relevant_mutants_inconclusive": metrics["invalid_mutants"],
-        "out_of_scope_mutants_total": 0,
-        "out_of_scope_mutants_survived": 0,
-        "uncertain_mutants_total": 0,
-        "uncertain_mutants_survived": 0,
-        "test_scope": {"mode": "GENERAL_SOURCE_MUTATION"},
+        "test_scope": test_scope,
         "mutation_report_path": str(report_path),
         "surviving_mutants": survivor_descriptions,
         "killed_mutant_report": killed_descriptions,
-        "scope_relevant_surviving_mutants": survivor_descriptions,
-        "scope_out_of_scope_surviving_mutants": [],
-        "scope_uncertain_surviving_mutants": [],
+        "scope_relevant_surviving_mutants": relevant_survivor_descriptions,
+        "scope_out_of_scope_surviving_mutants": out_of_scope_survivor_descriptions,
+        "scope_uncertain_surviving_mutants": uncertain_survivor_descriptions,
         "mutation_records": serialized,
         "surviving_mutant_report": survivors,
         "mutation_detail": (
             "General source mutation score excludes INVALID mutants. "
-            f"Score={metrics['killed_mutants']}/{metrics['valid_mutants']}*100."
+            f"Raw score={metrics['killed_mutants']}/{metrics['valid_mutants']}*100; "
+            f"scenario-relevant score={scope_metrics['relevant_mutation_score']}."
         ),
     }

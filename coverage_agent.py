@@ -35,7 +35,7 @@ from e2e_eval.runtime.utils import (
     safe_name as _safe_name,
     tail as _tail,
 )
-from reference_resolver import resolve_reference_source
+from reference_resolver import resolve_project_source
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ def _prepare_workspace(state: dict[str, Any], source_dir: Path) -> PreparedWorks
     workspace.mkdir(parents=True, exist_ok=True)
     artifact_dir.mkdir(parents=True, exist_ok=True)
 
-    app_dir = workspace / "app"
+    app_dir = workspace / "source_project"
     shutil.copytree(
         source_dir,
         app_dir,
@@ -214,19 +214,20 @@ def _run_coverage_agent(state: dict[str, Any]) -> dict[str, Any]:
         )
 
     source_value = str(
-        state.get("coverage_source_dir")
-        or state.get("reference_answer")
-        or ""
+        state.get("source_project_dir")
+        or state.get("coverage_source_dir")
     ).strip()
-    if not source_value:
+    reference_value = str(state.get("reference_answer") or "").strip()
+    if not source_value and not reference_value:
         return _empty_result(
             "skipped",
             "source_missing",
             "No coverage_source_dir or reference_answer was configured.",
         )
-    resolution = resolve_reference_source(
-        source_value,
-        state.get("reference_workspace_root") or REFERENCE_CACHE.parent,
+    resolution = resolve_project_source(
+        source_project_dir=source_value,
+        reference_url=reference_value,
+        workspace_root=state.get("reference_workspace_root") or REFERENCE_CACHE.parent,
         allow_network=_as_bool(
             state.get("reference_network_enabled"), False
         ),
@@ -243,7 +244,7 @@ def _run_coverage_agent(state: dict[str, Any]) -> dict[str, Any]:
         )
         result["reference_resolution"] = resolution
         return result
-    source_dir = Path(resolution["local_path"])
+    source_dir = Path(resolution["resolved_source_project_dir"])
 
     feature_text = str(state.get("excutable_test_test_case") or "")
     test_code = str(state.get("executable_test_code") or "")
@@ -428,8 +429,29 @@ def coverage_agent(state: dict[str, Any]) -> dict[str, Any]:
     result = _run_coverage_agent(working_state)
     result["reference_resolution"] = working_state.get(
         "_coverage_reference_resolution",
-        result.get("reference_resolution", {}),
+        state.get(
+            "reference_resolution",
+            result.get("reference_resolution", {}),
+        ),
     )
+    metadata = result["reference_resolution"]
+    result.update({
+        "source_origin": metadata.get("source_origin", state.get("source_origin", "")),
+        "input_source_project_dir": metadata.get(
+            "input_source_project_dir", state.get("source_project_dir", "")
+        ),
+        "resolved_source_project_dir": metadata.get(
+            "resolved_source_project_dir",
+            state.get("resolved_source_project_dir", ""),
+        ),
+        "resolved_entrypoint": metadata.get(
+            "resolved_entrypoint", state.get("resolved_entrypoint", "")
+        ),
+        "local_override_diagnostic": metadata.get(
+            "local_override_diagnostic",
+            state.get("local_override_diagnostic", ""),
+        ),
+    })
     result["coverage_result"] = {
         "coverage_status": result["coverage_status"],
         "execution_status": result["coverage_execution_status"],

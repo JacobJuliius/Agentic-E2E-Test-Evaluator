@@ -32,7 +32,7 @@ from e2e_eval.runtime.utils import (
     safe_name as _safe_name,
     tail as _tail,
 )
-from reference_resolver import resolve_reference_source
+from reference_resolver import resolve_project_source, resolve_reference_source
 
 DEFAULT_EXECUTION_TIMEOUT = int(os.getenv("E2E_EXECUTION_TIMEOUT_SECONDS", "90"))
 DEFAULT_MUTANT_TIMEOUT = int(os.getenv("E2E_MUTANT_TIMEOUT_SECONDS", "45"))
@@ -89,6 +89,7 @@ class PreparedWorkspace:
     app_dir: Path
     app_index: Path
     artifact_dir: Path
+    source_metadata: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -156,8 +157,30 @@ def _find_primary_index(app_dir: Path) -> Path:
     return candidates[0]
 
 
+class SourceResolutionError(RuntimeError):
+    def __init__(self, metadata: dict[str, Any]):
+        super().__init__(
+            metadata.get("failure_reason") or "Reference source resolution failed."
+        )
+        self.metadata = metadata
+
+
+def _resolve_state_source(state: dict[str, Any]) -> tuple[Path, dict[str, Any]]:
+    metadata = resolve_project_source(
+        source_project_dir=str(state.get("source_project_dir") or ""),
+        reference_url=str(state.get("reference_answer") or ""),
+        workspace_root=state.get("reference_workspace_root") or REFERENCE_CACHE.parent,
+        allow_network=_as_bool(state.get("reference_network_enabled"), False),
+        timeout_seconds=int(state.get("reference_timeout_seconds", 90)),
+        expected_patterns=state.get("reference_expected_patterns"),
+    )
+    if metadata["resolution_status"] != "success":
+        raise SourceResolutionError(metadata)
+    return Path(metadata["resolved_source_project_dir"]), metadata
+
+
 def _copy_reference_into_workspace(reference_dir: Path, workspace: Path, benchmark_id: str) -> tuple[Path, Path]:
-    app_dir = workspace / "app"
+    app_dir = workspace / "source_project"
     shutil.copytree(reference_dir, app_dir, ignore=shutil.ignore_patterns(".git", "node_modules", "__pycache__"))
     app_index = _find_primary_index(app_dir)
 
@@ -191,15 +214,27 @@ def _new_workspace(state: dict[str, Any], run_label: str, reference_dir: Path | 
     workspace.mkdir(parents=True, exist_ok=True)
     artifact_dir.mkdir(parents=True, exist_ok=True)
 
-    source = reference_dir or _clone_reference(
-        reference_answer,
-        workspace_root=state.get("reference_workspace_root"),
-        allow_network=_as_bool(state.get("reference_network_enabled"), False),
-        timeout_seconds=int(state.get("reference_timeout_seconds", 90)),
-        expected_patterns=state.get("reference_expected_patterns"),
-    )
+    source_metadata = dict(state.get("reference_resolution") or {})
+    if reference_dir is None:
+        source, source_metadata = _resolve_state_source(state)
+    else:
+        source = reference_dir
+        if not source_metadata:
+            entrypoint = _find_primary_index(source)
+            source_metadata = {
+                "resolution_status": "success",
+                "source_origin": state.get("source_origin", "REFERENCE_CACHE"),
+                "input_source_project_dir": state.get("source_project_dir", ""),
+                "resolved_source_project_dir": str(source.resolve()),
+                "resolved_entrypoint": str(entrypoint.resolve()),
+                "local_override_diagnostic": state.get(
+                    "local_override_diagnostic", ""
+                ),
+            }
     app_dir, app_index = _copy_reference_into_workspace(source, workspace, benchmark_id)
-    return PreparedWorkspace(workspace, app_dir, app_index, artifact_dir)
+    return PreparedWorkspace(
+        workspace, app_dir, app_index, artifact_dir, source_metadata
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -366,6 +401,8 @@ def _run_behave(prepared: PreparedWorkspace, state: dict[str, Any], timeout: int
             cwd=prepared.workspace,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             env=env,
         )
@@ -430,8 +467,10 @@ def execution_agent(state: dict[str, Any]) -> dict[str, Any]:
     if not _as_bool(state.get("enable_dynamic"), False):
         return _execution_skip("SKIPPED_DISABLED", "Dynamic evaluation disabled by configuration.")
 
-    required = ["reference_answer", "case_uid", "excutable_test_test_case", "executable_test_code"]
+    required = ["case_uid", "excutable_test_test_case", "executable_test_code"]
     missing = [field for field in required if not state.get(field)]
+    if not state.get("source_project_dir") and not state.get("reference_answer"):
+        missing.append("source_project_dir/reference_answer")
     if missing:
         return _execution_skip("HARNESS_INPUT_ERROR", f"Missing dynamic inputs: {', '.join(missing)}")
 
@@ -451,8 +490,40 @@ def execution_agent(state: dict[str, Any]) -> dict[str, Any]:
             "execution_success": result["execution_status"] == "PASSED",
             "execution_artifact_dir": str(prepared.artifact_dir),
             "workspace_dir": str(prepared.workspace),
+            "reference_resolution": prepared.source_metadata or {},
+            "source_origin": (prepared.source_metadata or {}).get(
+                "source_origin", ""
+            ),
+            "input_source_project_dir": (prepared.source_metadata or {}).get(
+                "input_source_project_dir", ""
+            ),
+            "resolved_source_project_dir": (prepared.source_metadata or {}).get(
+                "resolved_source_project_dir", ""
+            ),
+            "resolved_entrypoint": (prepared.source_metadata or {}).get(
+                "resolved_entrypoint", ""
+            ),
+            "local_override_diagnostic": (prepared.source_metadata or {}).get(
+                "local_override_diagnostic", ""
+            ),
         })
         return result
+    except SourceResolutionError as exc:
+        return {
+            **_execution_skip("HARNESS_SOURCE_ERROR", str(exc)),
+            "reference_resolution": exc.metadata,
+            "source_origin": exc.metadata.get("source_origin", ""),
+            "input_source_project_dir": exc.metadata.get(
+                "input_source_project_dir", ""
+            ),
+            "resolved_source_project_dir": exc.metadata.get(
+                "resolved_source_project_dir", ""
+            ),
+            "resolved_entrypoint": exc.metadata.get("resolved_entrypoint", ""),
+            "local_override_diagnostic": exc.metadata.get(
+                "local_override_diagnostic", ""
+            ),
+        }
     except Exception as exc:
         return {
             **_execution_skip("HARNESS_ERROR", repr(exc)),
@@ -1504,14 +1575,22 @@ def _run_general_mutation_evaluation(
     """Run the active modular mutation engine on isolated reference copies."""
     from mutation_testing import run_mutation_campaign
 
-    reference_dir = _clone_reference(
-        str(state["reference_answer"]),
-        workspace_root=state.get("reference_workspace_root"),
-        allow_network=_as_bool(state.get("reference_network_enabled"), False),
-        timeout_seconds=int(state.get("reference_timeout_seconds", 90)),
-        expected_patterns=state.get("reference_expected_patterns"),
-    )
+    reference_dir, source_metadata = _resolve_state_source(state)
     campaign_state = dict(state)
+    campaign_state.update({
+        "reference_resolution": source_metadata,
+        "source_origin": source_metadata.get("source_origin", ""),
+        "input_source_project_dir": source_metadata.get(
+            "input_source_project_dir", ""
+        ),
+        "resolved_source_project_dir": source_metadata.get(
+            "resolved_source_project_dir", ""
+        ),
+        "resolved_entrypoint": source_metadata.get("resolved_entrypoint", ""),
+        "local_override_diagnostic": source_metadata.get(
+            "local_override_diagnostic", ""
+        ),
+    })
     if run_namespace == "refined":
         campaign_state["execution_status"] = state.get(
             "validation_execution_status"
@@ -1522,7 +1601,7 @@ def _run_general_mutation_evaluation(
         campaign_state["execution_artifact_dir"] = state.get(
             "validation_execution_artifact_dir", ""
         )
-    return run_mutation_campaign(
+    result = run_mutation_campaign(
         campaign_state,
         test_code,
         reference_dir,
@@ -1533,6 +1612,21 @@ def _run_general_mutation_evaluation(
         run_namespace=run_namespace,
         cleanup_root=ARTIFACT_ROOT / "workspaces",
     )
+    return {
+        **result,
+        "reference_resolution": source_metadata,
+        "source_origin": source_metadata.get("source_origin", ""),
+        "input_source_project_dir": source_metadata.get(
+            "input_source_project_dir", ""
+        ),
+        "resolved_source_project_dir": source_metadata.get(
+            "resolved_source_project_dir", ""
+        ),
+        "resolved_entrypoint": source_metadata.get("resolved_entrypoint", ""),
+        "local_override_diagnostic": source_metadata.get(
+            "local_override_diagnostic", ""
+        ),
+    }
 
 
 def mutation_agent(state: dict[str, Any]) -> dict[str, Any]:

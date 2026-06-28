@@ -140,6 +140,126 @@ def validate_source_directory(
     }
 
 
+def _locate_index(directory: Path) -> Path | None:
+    direct = directory / "index.html"
+    if direct.is_file():
+        return direct.resolve()
+    matches = sorted(directory.rglob("index.html"))
+    return matches[0].resolve() if matches else None
+
+
+def resolve_project_source(
+    *,
+    source_project_dir: str = "",
+    reference_url: str = "",
+    workspace_root: str | Path = "artifacts",
+    allow_network: bool = False,
+    timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
+    expected_patterns: Iterable[str] | None = None,
+    max_archive_bytes: int = DEFAULT_MAX_ARCHIVE_BYTES,
+) -> dict[str, Any]:
+    """Resolve a project local-first and attach execution provenance.
+
+    A supplied local directory is accepted only when an ``index.html`` can be
+    found recursively. Its parent becomes the canonical project root. Invalid
+    overrides are recorded and then fall back to the normal cache/network
+    resolver.
+    """
+    input_dir = str(source_project_dir or "").strip()
+    override_diagnostic = ""
+    if input_dir:
+        candidate = Path(input_dir).expanduser()
+        if not candidate.is_dir():
+            override_diagnostic = (
+                (
+                    f"Local source override does not exist: {candidate}"
+                    if not candidate.exists()
+                    else f"Local source override is not a directory: {candidate}"
+                )
+            )
+        else:
+            entrypoint = _locate_index(candidate.resolve())
+            if entrypoint is None:
+                override_diagnostic = (
+                    f"Local source override contains no index.html: {candidate}"
+                )
+            else:
+                project_root = entrypoint.parent
+                validation = validate_source_directory(
+                    project_root, expected_patterns
+                )
+                return {
+                    "resolution_status": "success",
+                    "source_url": reference_url,
+                    "project_identifier": derive_project_identifier(
+                        reference_url or str(project_root)
+                    ),
+                    "local_path": str(project_root),
+                    "cache_hit": False,
+                    "retrieval_method": "local_override",
+                    "validation_result": validation,
+                    "failure_reason": "",
+                    "source_origin": "LOCAL_SOURCE_OVERRIDE",
+                    "input_source_project_dir": input_dir,
+                    "resolved_source_project_dir": str(project_root),
+                    "resolved_entrypoint": str(entrypoint),
+                    "local_override_diagnostic": "",
+                }
+
+    resolution = resolve_reference_source(
+        reference_url,
+        workspace_root,
+        allow_network=allow_network,
+        timeout_seconds=timeout_seconds,
+        expected_patterns=expected_patterns,
+        max_archive_bytes=max_archive_bytes,
+    )
+    resolved_dir = ""
+    resolved_entrypoint = ""
+    if resolution["resolution_status"] == "success":
+        root = Path(resolution["local_path"])
+        entrypoint = _locate_index(root)
+        if entrypoint is None:
+            resolution = {
+                **resolution,
+                "resolution_status": "failed",
+                "failure_reason": (
+                    "Resolved reference contains no index.html: " + str(root)
+                ),
+            }
+        else:
+            resolved_dir = str(entrypoint.parent)
+            resolved_entrypoint = str(entrypoint)
+            resolution["local_path"] = resolved_dir
+
+    network_method = resolution.get("retrieval_method") in {
+        "archive_download", "git_clone"
+    } and not resolution.get("cache_hit", False)
+    if (
+        resolution.get("resolution_status") != "success"
+        and override_diagnostic
+    ):
+        resolution["failure_reason"] = (
+            override_diagnostic
+            + (
+                " Fallback resolution failed: "
+                + str(resolution.get("failure_reason", ""))
+                if resolution.get("failure_reason")
+                else ""
+            )
+        )
+    return {
+        **resolution,
+        "source_origin": (
+            "NETWORK_REFERENCE" if network_method else "REFERENCE_CACHE"
+        ),
+        "input_source_project_dir": input_dir,
+        "resolved_source_project_dir": resolved_dir,
+        "resolved_entrypoint": resolved_entrypoint,
+        "local_override_diagnostic": override_diagnostic,
+    }
+
+
 def _result(
     *,
     status: str,
@@ -432,6 +552,8 @@ def resolve_reference_source(
                     command,
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
+                    errors="replace",
                     timeout=timeout_seconds,
                 )
             except FileNotFoundError as exc:

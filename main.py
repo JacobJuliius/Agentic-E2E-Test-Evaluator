@@ -197,6 +197,18 @@ def run_batch_evaluation(
             "reference_resolution": _json_cell(
                 result.get("reference_resolution", {})
             ),
+            "source_origin": result.get("source_origin", ""),
+            "input_source_project_dir": result.get(
+                "input_source_project_dir",
+                state.get("source_project_dir", ""),
+            ),
+            "resolved_source_project_dir": result.get(
+                "resolved_source_project_dir", ""
+            ),
+            "resolved_entrypoint": result.get("resolved_entrypoint", ""),
+            "local_override_diagnostic": result.get(
+                "local_override_diagnostic", ""
+            ),
 
             # Mutation tool evidence
             "dynamic_mutation_status": result.get("mutation_status", "NOT_RUN"),

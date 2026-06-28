@@ -181,6 +181,7 @@ class EvaluationConfig:
             "requirement_summary": _text(row.get("requirement_summary")),
             "prompt": _text(row.get("prompt")),
             "reference_answer": _text(row.get("reference_answer")),
+            "source_project_dir": source_dir,
             "benchmark_id": case_id,
             "case_uid": (
                 f"{case_id}_req{req_id}_test{test_id}_row{row_index}"
@@ -208,4 +209,3 @@ class EvaluationConfig:
             encoding="utf-8",
         )
         return target
-

@@ -20,6 +20,7 @@ class EvaluationInputs(TypedDict, total=False):
     requirement_summary: str
     prompt: str
     reference_answer: str
+    source_project_dir: str
     case_uid: str
     benchmark_id: str
     enable_dynamic: bool

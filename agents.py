@@ -404,6 +404,7 @@ def hallucination_smell_agent(state: dict) -> dict:
     fine_grained_reqs = state.get("fine_grained_reqs", "")
     code = state.get("executable_test_code", "")
     original_prompt = state.get("prompt", "")  # NEW
+    test_case_bdd = state.get("excutable_test_test_case", "")
     critic_feedback = state.get("critic_feedback", "")
 
     feedback_prompt = (
@@ -414,11 +415,15 @@ def hallucination_smell_agent(state: dict) -> dict:
 
     system_prompt = f"""You are an Expert QA Automation Architect acting as the "Hallucination & Smell Agent".
     Focus ONLY on:
-    1. Fabricated business actions (hallucinations): actions in the test code that have NO basis in the requirements OR the Original Prompt (which contains UI structure details).
+    1. Fabricated business actions (hallucinations): actions in the test code that have NO basis in the requirements, Original Prompt, OR active Gherkin scenario.
     2. Basic test smells related to test logic: e.g., time.sleep() abuse, test interdependencies, missing teardown.
 
     Do NOT evaluate selector quality or code maintainability — that is handled by a separate Maintainability Agent.
-    Before calling an action a "hallucination", check if it was explicitly mentioned in the Original Prompt UI details.
+    Treat concrete data defined by the active scenario (for example product names,
+    prices, seat IDs, typed search terms, input values, and expected visible text)
+    as valid test context even when it is not repeated verbatim in the fine-grained
+    requirements. Flag only genuinely unsupported UI elements, behavior, or
+    persistence/format assumptions.
     {feedback_prompt}
 
     Output Constraint: Return ONLY a valid JSON object.
@@ -434,6 +439,7 @@ def hallucination_smell_agent(state: dict) -> dict:
     context_content = (
         f"Original Context Prompt (UI & System Details):\n{original_prompt}\n\n"
         f"Fine-Grained Requirements:\n{fine_grained_reqs}\n\n"
+        f"Active Gherkin Scenario / Test Case:\n{test_case_bdd}\n\n"
         f"Test Code:\n{code}"
     )
 
