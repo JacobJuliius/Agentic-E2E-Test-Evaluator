@@ -1,0 +1,12 @@
+﻿duration_seconds,error_message,error_type,execution_status,mutant_id,normalized_url,operator,original,replacement,return_code,verdict,workspace
+9.481,,,pass,M001,True,corrupt_drag_title_payload,"ev.dataTransfer.setData('title', aP[0].innerHTML);","ev.dataTransfer.setData('title', 'MUTANT_TITLE');",0,survived,deleted_after_execution
+9.581,,BehaveScenarioFailure,fail,M002,True,corrupt_drag_price_payload,"ev.dataTransfer.setData('money', aP[1].innerHTML);","ev.dataTransfer.setData('money', 'MUTANT_PRICE');",1,killed,deleted_after_execution
+8.634,,,pass,M003,True,corrupt_drop_title_key,ev.dataTransfer.getData('title'),ev.dataTransfer.getData('title_mutant'),0,survived,deleted_after_execution
+19.219,,BehaveScenarioFailure,fail,M004,True,corrupt_drop_price_key,ev.dataTransfer.getData('money'),ev.dataTransfer.getData('money_mutant'),1,killed,deleted_after_execution
+9.175,,,pass,M005,True,break_quantity_increment,parseInt(box1[i].innerHTML) + 1,parseInt(box1[i].innerHTML) + 0,0,survived,deleted_after_execution
+8.67,,BehaveScenarioFailure,fail,M006,True,break_total_accumulation,iNum += moneyValue;,iNum += 0;,1,killed,deleted_after_execution
+8.75,,BehaveScenarioFailure,fail,M007,True,wrong_total_precision,iNum.toFixed(2),iNum.toFixed(0),1,killed,deleted_after_execution
+9.216,,,pass,M008,True,disable_drop_default_prevention,"oDiv.ondragover = function (ev) {
+        ev.preventDefault();","oDiv.ondragover = function (ev) {
+        return;",0,survived,deleted_after_execution
+8.707,,BehaveScenarioFailure,fail,M009,True,change_product_1_price,"<p data-testid=""product-price-1"">$40</p>","<p data-testid=""product-price-1"">$999</p>",1,killed,deleted_after_execution

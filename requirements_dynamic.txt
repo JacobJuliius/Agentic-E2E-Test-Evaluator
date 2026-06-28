@@ -1,0 +1,11 @@
+# Existing project dependencies (retain currently working versions where possible)
+langgraph
+langchain-google-genai
+python-dotenv
+pandas
+tqdm
+
+# Added for local dynamic evaluation
+behave>=1.2.7
+selenium>=4.11.0
+coverage>=7.3.0

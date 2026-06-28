@@ -1,0 +1,82 @@
+{
+  "selected_row_index": 0,
+  "selected_case": {
+    "id": "E2ESD_Bench_01",
+    "req_id": "1",
+    "test_id": "1"
+  },
+  "dependencies": {
+    "python_version": "3.11.15 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:12:53) [MSC v.1942 64 bit (AMD64)]",
+    "python_executable": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe",
+    "python_modules": {
+      "langgraph": true,
+      "langchain-google-genai": true,
+      "python-dotenv": true,
+      "pandas": true,
+      "tqdm": true,
+      "behave": true,
+      "selenium": true
+    },
+    "executables": {
+      "git": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "node": "G:\\node\\node.EXE",
+      "npm": "G:\\node\\npm.CMD"
+    },
+    "missing_required": [],
+    "ready": true
+  },
+  "dependency_installation": null,
+  "reference_resolution": {
+    "resolution_status": "success",
+    "source_url": "https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_01/",
+    "project_identifier": "E2ESD_Bench_01--563834470a",
+    "local_path": "G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\reference_cache\\E2ESD_Bench_01",
+    "cache_hit": true,
+    "retrieval_method": "cache",
+    "validation_result": {
+      "valid": true,
+      "expected_patterns": [],
+      "matched_files": [
+        "source_project/index.html"
+      ],
+      "missing_patterns": [],
+      "message": "Validated 1 source file(s)."
+    },
+    "failure_reason": ""
+  },
+  "configuration": {
+    "input_file": "data/e2edev_sample.csv",
+    "output_file": "artifacts/reports/evaluation_results.csv",
+    "max_cases": 0,
+    "case_sleep_seconds": 5.0,
+    "enable_dynamic": false,
+    "enable_coverage": false,
+    "enable_mutation": false,
+    "enable_dynamic_analyst": false,
+    "enable_critic": true,
+    "enable_refiner": true,
+    "enable_refinement_validation": false,
+    "enable_refinement_mutation_validation": false,
+    "reference_workspace_root": "artifacts",
+    "reference_network_enabled": false,
+    "reference_timeout_seconds": 90,
+    "reference_expected_patterns": [],
+    "coverage_source_dir": "",
+    "coverage_timeout_seconds": 120,
+    "coverage_include_patterns": [],
+    "coverage_exclude_patterns": [],
+    "coverage_branch_enabled": true,
+    "coverage_include_tests": false,
+    "max_mutants": 5,
+    "mutation_max_mutants_per_file": 5,
+    "mutation_seed": 1337,
+    "mutation_include_patterns": [],
+    "mutation_exclude_patterns": [],
+    "mutation_project_validation_command": [],
+    "mutation_keep_workspaces": false,
+    "execution_timeout_seconds": 90,
+    "mutant_timeout_seconds": 45,
+    "relevant_mutation_refine_threshold": 80.0,
+    "headless": true
+  }
+}

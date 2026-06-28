@@ -1,0 +1,79 @@
+[
+{
+  "description": [
+    "The system should initiate a drag event when a user drags a product item from the product list, capturing the product's title and price for transfer."
+  ],
+  "elements": [
+    {
+      "keyword": "Scenario",
+      "location": "features/generated.feature:5",
+      "name": "[Edge] Dragging a product item with the highest price",
+      "status": "failed",
+      "steps": [
+        {
+          "keyword": "Given",
+          "location": "features/generated.feature:6",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:51"
+          },
+          "name": "the webpage is loaded with a product list",
+          "result": {
+            "duration": 3.405698776245117,
+            "status": "passed"
+          },
+          "step_type": "given"
+        },
+        {
+          "keyword": "When",
+          "location": "features/generated.feature:7",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:59"
+          },
+          "name": "the user drags the product item with data-testid \"product-item-2\"",
+          "result": {
+            "duration": 1.094801902770996,
+            "status": "passed"
+          },
+          "step_type": "when"
+        },
+        {
+          "keyword": "Then",
+          "location": "features/generated.feature:8",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:74"
+          },
+          "name": "the drag event should be initiated",
+          "result": {
+            "duration": 0.26167964935302734,
+            "error_message": "ASSERT FAILED: Expected price '$120', but got '$121'",
+            "status": "failed"
+          },
+          "step_type": "then"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:9",
+          "name": "the product title \"JavaScript: The Definitive Guide\" should be captured",
+          "step_type": "then"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:10",
+          "name": "the product price \"$120\" should be captured",
+          "step_type": "then"
+        }
+      ],
+      "tags": [],
+      "type": "scenario"
+    }
+  ],
+  "keyword": "Feature",
+  "location": "features/generated.feature:1",
+  "name": "Drag and Drop Product Item",
+  "status": "failed",
+  "tags": []
+}
+]

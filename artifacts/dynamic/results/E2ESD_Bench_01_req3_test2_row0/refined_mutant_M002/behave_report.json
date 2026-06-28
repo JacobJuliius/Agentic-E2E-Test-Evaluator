@@ -1,0 +1,200 @@
+[
+{
+  "description": [
+    "The system should add the product to the cart display, showing the product's title, price, and quantity when a product item is dropped into the drop area."
+  ],
+  "elements": [
+    {
+      "keyword": "Scenario",
+      "location": "features/generated.feature:5",
+      "name": "[Normal] Add multiple different products to the cart",
+      "status": "failed",
+      "steps": [
+        {
+          "keyword": "Given",
+          "location": "features/generated.feature:6",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:53"
+          },
+          "name": "the webpage is loaded",
+          "result": {
+            "duration": 2.9022133350372314,
+            "status": "passed"
+          },
+          "step_type": "given"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:7",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:58"
+          },
+          "name": "the product items with data-testid \"product-item-1\" and \"product-item-2\" are visible",
+          "result": {
+            "duration": 0.09530282020568848,
+            "status": "passed"
+          },
+          "step_type": "given"
+        },
+        {
+          "keyword": "When",
+          "location": "features/generated.feature:8",
+          "match": {
+            "arguments": [
+              {
+                "name": "product_item",
+                "value": "product-item-1"
+              },
+              {
+                "name": "cart_id",
+                "value": "drop-area"
+              }
+            ],
+            "location": "features/steps/generated_steps.py:64"
+          },
+          "name": "the user drags the product with data-testid \"product-item-1\" and drops it into the cart container with data-testid \"drop-area\"",
+          "result": {
+            "duration": 0.061213016510009766,
+            "status": "passed"
+          },
+          "step_type": "when"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:9",
+          "match": {
+            "arguments": [
+              {
+                "name": "product_item",
+                "value": "product-item-2"
+              },
+              {
+                "name": "cart_id",
+                "value": "drop-area"
+              }
+            ],
+            "location": "features/steps/generated_steps.py:64"
+          },
+          "name": "the user drags the product with data-testid \"product-item-2\" and drops it into the cart container with data-testid \"drop-area\"",
+          "result": {
+            "duration": 0.04610919952392578,
+            "status": "passed"
+          },
+          "step_type": "when"
+        },
+        {
+          "keyword": "Then",
+          "location": "features/generated.feature:10",
+          "match": {
+            "arguments": [
+              {
+                "name": "title",
+                "value": "The Essence of JavaScript"
+              }
+            ],
+            "location": "features/steps/generated_steps.py:70"
+          },
+          "name": "the cart display should show a product with title \"The Essence of JavaScript\"",
+          "result": {
+            "duration": 0.07310700416564941,
+            "status": "passed"
+          },
+          "step_type": "then"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:11",
+          "match": {
+            "arguments": [
+              {
+                "name": "price",
+                "value": "$40"
+              }
+            ],
+            "location": "features/steps/generated_steps.py:75"
+          },
+          "name": "the price \"$40\"",
+          "result": {
+            "duration": 0.05506610870361328,
+            "status": "passed"
+          },
+          "step_type": "then"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:12",
+          "match": {
+            "arguments": [
+              {
+                "name": "quantity",
+                "value": "1"
+              }
+            ],
+            "location": "features/steps/generated_steps.py:81"
+          },
+          "name": "the quantity \"1\"",
+          "result": {
+            "duration": 0.05558371543884277,
+            "status": "passed"
+          },
+          "step_type": "then"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:13",
+          "match": {
+            "arguments": [
+              {
+                "name": "title",
+                "value": "JavaScript: The Definitive Guide"
+              }
+            ],
+            "location": "features/steps/generated_steps.py:70"
+          },
+          "name": "the cart display should show a product with title \"JavaScript: The Definitive Guide\"",
+          "result": {
+            "duration": 0.050072431564331055,
+            "status": "passed"
+          },
+          "step_type": "then"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:14",
+          "match": {
+            "arguments": [
+              {
+                "name": "price",
+                "value": "$120"
+              }
+            ],
+            "location": "features/steps/generated_steps.py:75"
+          },
+          "name": "the price \"$120\"",
+          "result": {
+            "duration": 0.05158114433288574,
+            "error_message": "ASSERT FAILED: Price '$120' not found in cart",
+            "status": "failed"
+          },
+          "step_type": "then"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:15",
+          "name": "the quantity \"1\"",
+          "step_type": "then"
+        }
+      ],
+      "tags": [],
+      "type": "scenario"
+    }
+  ],
+  "keyword": "Feature",
+  "location": "features/generated.feature:1",
+  "name": "Add product to cart display when dropped into the drop area",
+  "status": "failed",
+  "tags": []
+}
+]

@@ -1,0 +1,14 @@
+USING RUNNER: behave.runner:Runner
+Feature: Drag and Drop Product Item # features/generated.feature:1
+  The system should initiate a drag event when a user drags a product item from the product list, capturing the product's title and price for transfer.
+  Scenario: [Edge] Dragging a product item with the highest price               # features/generated.feature:5
+    Given the webpage is loaded with a product list                             # features/steps/generated_steps.py:15
+    When the user drags the product item with data-testid "product-item-2"      # features/steps/generated_steps.py:23
+    Then the drag event should be initiated                                     # features/steps/generated_steps.py:38
+    And the product title "JavaScript: The Definitive Guide" should be captured # features/steps/generated_steps.py:49
+    And the product price "$120" should be captured                             # features/steps/generated_steps.py:56
+
+1 feature passed, 0 failed, 0 skipped
+1 scenario passed, 0 failed, 0 skipped
+5 steps passed, 0 failed, 0 skipped
+Took 0min 8.305s

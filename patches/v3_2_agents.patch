@@ -1,0 +1,221 @@
+diff --git a/agents_v3_1_backup.py b/agents.py
+index 62d08f5..1f479e6 100644
+--- a/agents_v3_1_backup.py
++++ b/agents.py
+@@ -88,15 +88,21 @@ def clean_json_output(raw_output: str) -> str:
+ # ==========================================
+ 
+ def extract_static_metrics(code: str) -> dict:
+-    """
+-    Rule-based static analysis using Python's AST module.
+-    Extracts objective, countable metrics from the test code without any LLM call.
+-    This is the 'Rule-based' half of the Hybrid Evaluation strategy.
++    """Extract deterministic static evidence from Python Selenium/Playwright tests.
++
++    V3.2 changes:
++    - Count native Python ``assert`` statements (``ast.Assert``), not only assertion calls.
++    - Classify selectors into stable / medium / brittle rather than treating every CSS selector
++      as brittle. ``data-testid`` and ``data-test`` are stable test hooks.
++    - Preserve ``hardcoded_selectors`` as a backward-compatible alias for brittle selectors.
+     """
+     metrics = {
+         "actions_count": 0,
+         "assertions_count": 0,
+-        "hardcoded_selectors": [],
++        "hardcoded_selectors": [],  # legacy alias: brittle selectors only
++        "stable_selectors": [],
++        "medium_risk_selectors": [],
++        "brittle_selectors": [],
+         "magic_numbers": [],
+         "action_methods": [],
+         "assertion_methods": [],
+@@ -105,10 +111,8 @@ def extract_static_metrics(code: str) -> dict:
+     try:
+         tree = ast.parse(code)
+     except SyntaxError:
+-        # If syntax is broken, static analysis can't proceed — return empty metrics
+         return metrics
+ 
+-    # Playwright/Selenium action and assertion method names to detect
+     ACTION_METHODS = {
+         "click", "fill", "type", "press", "select_option", "check", "uncheck",
+         "hover", "focus", "tap", "double_click", "right_click", "drag_to",
+@@ -118,47 +122,58 @@ def extract_static_metrics(code: str) -> dict:
+     ASSERTION_METHODS = {
+         "expect", "assert_", "to_be_visible", "to_have_text", "to_have_value",
+         "to_be_enabled", "to_be_checked", "to_contain_text", "to_have_url",
+-        "to_have_title", "assert", "assertEqual", "assertTrue", "assertFalse",
+-        "assertIn", "assertIsNotNone", "assertRaises",
++        "to_have_title", "assertEqual", "assertTrue", "assertFalse", "assertIn",
++        "assertIsNotNone", "assertRaises",
+     }
+ 
+-    # Walk AST to find method calls
++    def classify_selector(selector: str) -> str:
++        normalized = selector.strip().lower()
++        # Preferred, explicit test hooks
++        if "data-testid" in normalized or "data-test" in normalized:
++            return "stable"
++        # XPath and positional DOM paths break easily after UI refactors
++        if (normalized.startswith("//") or normalized.startswith("xpath=")
++                or "by.xpath" in normalized or ":nth-child" in normalized
++                or ":nth-of-type" in normalized):
++            return "brittle"
++        # CSS classes / IDs are not automatically invalid, but couple tests to presentation.
++        if (normalized.startswith("#") or normalized.startswith(".")
++                or "[class" in normalized or "by.css_selector" in normalized):
++            return "medium"
++        return "unknown"
++
++    # Count native Python assert statements and assertion/action method calls.
+     for node in ast.walk(tree):
++        if isinstance(node, ast.Assert):
++            metrics["assertions_count"] += 1
++            metrics["assertion_methods"].append("python_assert")
++
+         if isinstance(node, ast.Call):
+-            func = node.func
+             method_name = None
++            if isinstance(node.func, ast.Attribute):
++                method_name = node.func.attr
++            elif isinstance(node.func, ast.Name):
++                method_name = node.func.id
++
++            if method_name in ACTION_METHODS:
++                metrics["actions_count"] += 1
++                metrics["action_methods"].append(method_name)
++            if method_name in ASSERTION_METHODS:
++                metrics["assertions_count"] += 1
++                metrics["assertion_methods"].append(method_name)
++
++            # Selenium locator calls: classify the locator argument when it is a string literal.
++            if method_name in {"find_element", "find_elements"} and len(node.args) >= 2:
++                locator = node.args[1]
++                if isinstance(locator, ast.Constant) and isinstance(locator.value, str):
++                    kind = classify_selector(locator.value)
++                    if kind == "stable":
++                        metrics["stable_selectors"].append(locator.value)
++                    elif kind == "medium":
++                        metrics["medium_risk_selectors"].append(locator.value)
++                    elif kind == "brittle":
++                        metrics["brittle_selectors"].append(locator.value)
+ 
+-            if isinstance(func, ast.Attribute):
+-                method_name = func.attr
+-            elif isinstance(func, ast.Name):
+-                method_name = func.id
+-
+-            if method_name:
+-                if method_name in ACTION_METHODS:
+-                    metrics["actions_count"] += 1
+-                    metrics["action_methods"].append(method_name)
+-                if method_name in ASSERTION_METHODS:
+-                    metrics["assertions_count"] += 1
+-                    metrics["assertion_methods"].append(method_name)
+-
+-    # Detect hardcoded/brittle CSS/XPath selectors using regex
+-    # Patterns like: "#some-id", ".some-class", "xpath=//...", "[data-testid=...]"
+-    BRITTLE_SELECTOR_PATTERNS = [
+-        r'"\s*#[\w\-]+\s*"',          # "#id"
+-        r'"\s*\.[\w\-]+\s*"',          # ".class"
+-        r'"xpath=//.*?"',               # "xpath=//..."
+-        r'"//.*?"',                     # "//..." (bare XPath)
+-        r'"\[class[^"]*\]"',            # "[class=...]"
+-        r'By\.XPATH,\s*["\'].*?["\']', # Selenium By.XPATH
+-        r'By\.CSS_SELECTOR,\s*["\'].*?["\']',  # Selenium By.CSS_SELECTOR
+-    ]
+-    for pattern in BRITTLE_SELECTOR_PATTERNS:
+-        found = re.findall(pattern, code)
+-        metrics["hardcoded_selectors"].extend(found)
+-
+-    # Detect magic numbers: bare numeric literals that are likely hardcoded timeouts/counts.
+-    # Threshold > 10 to avoid false-positives on common values (2, 3, 5 for retries/seconds).
+-    # Whitelist covers HTTP status codes and other domain-standard numbers.
+     MAGIC_NUMBER_WHITELIST = {200, 201, 204, 301, 302, 400, 401, 403, 404, 500, 502, 503}
+     for node in ast.walk(tree):
+         if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+@@ -167,10 +182,9 @@ def extract_static_metrics(code: str) -> dict:
+                     and node.value not in MAGIC_NUMBER_WHITELIST):
+                 metrics["magic_numbers"].append(node.value)
+ 
+-    # Deduplicate
+-    metrics["hardcoded_selectors"] = list(set(metrics["hardcoded_selectors"]))
+-    metrics["magic_numbers"] = list(set(metrics["magic_numbers"]))
+-
++    for key in ("stable_selectors", "medium_risk_selectors", "brittle_selectors", "magic_numbers"):
++        metrics[key] = sorted(set(metrics[key]), key=str)
++    metrics["hardcoded_selectors"] = metrics["brittle_selectors"].copy()
+     return metrics
+ 
+ 
+@@ -205,6 +219,9 @@ def syntax_linter_agent(state: dict) -> dict:
+         "static_actions_count": static_metrics["actions_count"],
+         "static_assertions_count": static_metrics["assertions_count"],
+         "static_hardcoded_selectors": static_metrics["hardcoded_selectors"],
++        "static_stable_selectors": static_metrics["stable_selectors"],
++        "static_medium_risk_selectors": static_metrics["medium_risk_selectors"],
++        "static_brittle_selectors": static_metrics["brittle_selectors"],
+         "static_magic_numbers": static_metrics["magic_numbers"],
+         "static_action_methods": static_metrics["action_methods"],
+         "static_assertion_methods": static_metrics["assertion_methods"],
+@@ -446,14 +463,18 @@ def maintainability_agent(state: dict) -> dict:
+     critic_feedback = state.get("critic_feedback", "")
+ 
+     # Provide the objective static findings as grounding context
+-    hardcoded_selectors = state.get("static_hardcoded_selectors", [])
++    stable_selectors = state.get("static_stable_selectors", [])
++    medium_risk_selectors = state.get("static_medium_risk_selectors", [])
++    brittle_selectors = state.get("static_brittle_selectors", state.get("static_hardcoded_selectors", []))
+     magic_numbers = state.get("static_magic_numbers", [])
+     actions_count = state.get("static_actions_count", "N/A")
+     assertions_count = state.get("static_assertions_count", "N/A")
+ 
+     static_context = f"""
+ [STATIC ANALYSIS CONTEXT (Objective, Rule-based — treat as facts)]
+-- Hardcoded/brittle selectors detected by AST scan: {hardcoded_selectors if hardcoded_selectors else 'None found'}
++- Stable test-hook selectors detected by AST scan: {stable_selectors if stable_selectors else 'None found'}
++- Medium-risk presentation-coupled selectors: {medium_risk_selectors if medium_risk_selectors else 'None found'}
++- Brittle selectors detected by AST scan: {brittle_selectors if brittle_selectors else 'None found'}
+ - Magic numbers detected: {magic_numbers if magic_numbers else 'None found'}
+ - Total action calls: {actions_count}
+ - Total assertion calls: {assertions_count}
+@@ -472,7 +493,7 @@ Use these facts to anchor your evaluation. Do not contradict them.
+     {feedback_prompt}
+ 
+     Evaluate these 4 dimensions:
+-    1. **Selector Robustness**: Are locators fragile (e.g., raw CSS IDs, XPath)? Prefer data-testid or accessible roles.
++    1. **Selector Robustness**: Treat data-testid/data-test selectors as stable test hooks. Flag XPath, positional selectors, and presentation-coupled class/ID selectors proportionately; do not penalize a selector merely because it is CSS.
+     2. **Code Duplication**: Is there repeated logic that should be extracted into helpers or Page Objects?
+     3. **Naming Quality**: Are test names, variable names, and step descriptions clear and descriptive?
+     4. **Readability**: Are magic numbers used? Is the code structured and easy to follow?
+@@ -604,7 +625,10 @@ def consensus_agent(state: dict) -> dict:
+     total_reqs = state.get("total_requirements_count", 1)
+     covered = len(state.get("covered_requirements", []))
+     partial = len(state.get("partially_covered_requirements", []))
+-    req_coverage_score = ((covered + 0.5 * partial) / max(total_reqs, 1)) * 100
++    # LLM-extracted counts can occasionally be inconsistent. Cap the score defensively
++    # while retaining the raw evidence for diagnosis in the output lists.
++    raw_req_coverage_score = ((covered + 0.5 * partial) / max(total_reqs, 1)) * 100
++    req_coverage_score = max(0.0, min(100.0, raw_req_coverage_score))
+ 
+     # --- Penalties from LLM agents ---
+     # assertion_score (0-100 from Assertion Agent) converted to a 0-10 penalty.
+@@ -637,7 +661,7 @@ def consensus_agent(state: dict) -> dict:
+     overall_score = max(0, min(100, req_coverage_score - total_penalty))
+ 
+     reasoning = (
+-        f"Coverage: {round(req_coverage_score, 2)}/100. "
++        f"Coverage: {round(req_coverage_score, 2)}/100 (raw={round(raw_req_coverage_score, 2)}). "
+         f"Total Penalty: -{round(total_penalty, 2)} "
+         f"(Assertion Quality: -{assertion_penalty} [score={assertion_score_val}/100], "
+         f"Hallucinations: -{hallucination_penalty}, "
+@@ -676,6 +700,9 @@ def refiner_agent(state: dict) -> dict:
+         "actions_count": state.get("static_actions_count", 0),
+         "assertions_count": state.get("static_assertions_count", 0),
+         "hardcoded_selectors": state.get("static_hardcoded_selectors", []),
++        "stable_selectors": state.get("static_stable_selectors", []),
++        "medium_risk_selectors": state.get("static_medium_risk_selectors", []),
++        "brittle_selectors": state.get("static_brittle_selectors", []),
+         "magic_numbers": state.get("static_magic_numbers", []),
+     }
+ 

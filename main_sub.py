@@ -59,6 +59,8 @@ def run_subset():
     maintainability_scores = []
     critic_conflict_flags = []
     final_rationales = []
+    improvement_reports = []  
+    fixed_codes = []          
     
     print("🕵️ [AI Jury] Invoking the pipeline (This may take a while)...\n")
     
@@ -98,6 +100,9 @@ def run_subset():
             maintainability_scores.append(final_state.get("maintainability_score", 0))
             critic_conflict_flags.append(1 if final_state.get("has_conflict", False) else 0)
             final_rationales.append(final_state.get("final_reasoning", "No reasoning generated."))
+            improvement_reports.append(final_state.get("improvement_report", "No report generated."))
+            fixed_codes.append(final_state.get("fixed_code", code))
+
 
         except Exception as e:
             print(f"❌ Pipeline Error on case {case_id}: {str(e)}")
@@ -113,6 +118,8 @@ def run_subset():
     df["eval_syntax_status"] = syntax_status_list
     df["eval_overall_score"] = overall_scores
     df["eval_final_reasoning"] = final_rationales
+    df["eval_improvement_report"] = improvement_reports  
+    df["eval_fixed_code"] = fixed_codes
     
     # 导出到 CSV
     output_dir = os.path.dirname(OUTPUT_FILE)

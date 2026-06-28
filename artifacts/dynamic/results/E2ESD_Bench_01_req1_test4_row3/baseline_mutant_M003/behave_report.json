@@ -1,0 +1,94 @@
+[
+{
+  "description": [
+    "The system should initiate a drag event when a user drags a product item from the product list, capturing the product's title and price for transfer."
+  ],
+  "elements": [
+    {
+      "keyword": "Scenario",
+      "location": "features/generated.feature:5",
+      "name": "[Error] Attempting to drag a non-draggable element",
+      "status": "passed",
+      "steps": [
+        {
+          "keyword": "Given",
+          "location": "features/generated.feature:6",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:48"
+          },
+          "name": "the webpage is loaded with a product list",
+          "result": {
+            "duration": 3.623410224914551,
+            "status": "passed"
+          },
+          "step_type": "given"
+        },
+        {
+          "keyword": "When",
+          "location": "features/generated.feature:7",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:54"
+          },
+          "name": "the user attempts to drag the non-draggable element with data-testid \"drop-area\"",
+          "result": {
+            "duration": 1.0591559410095215,
+            "status": "passed"
+          },
+          "step_type": "when"
+        },
+        {
+          "keyword": "Then",
+          "location": "features/generated.feature:8",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:62"
+          },
+          "name": "no drag event should be initiated",
+          "result": {
+            "duration": 0.002000093460083008,
+            "status": "passed"
+          },
+          "step_type": "then"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:9",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:66"
+          },
+          "name": "no product title should be captured",
+          "result": {
+            "duration": 0.0020017623901367188,
+            "status": "passed"
+          },
+          "step_type": "then"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:10",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:72"
+          },
+          "name": "no product price should be captured",
+          "result": {
+            "duration": 0.0019996166229248047,
+            "status": "passed"
+          },
+          "step_type": "then"
+        }
+      ],
+      "tags": [],
+      "type": "scenario"
+    }
+  ],
+  "keyword": "Feature",
+  "location": "features/generated.feature:1",
+  "name": "Drag and Drop Product Item",
+  "status": "passed",
+  "tags": []
+}
+]

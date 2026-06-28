@@ -1,0 +1,228 @@
+--- /mnt/data/main.py	2026-06-26 09:36:24.509249138 +0000
++++ /mnt/data/e2e_v5_complete/main.py	2026-06-26 09:40:20.378563574 +0000
+@@ -1,9 +1,14 @@
+-"""Batch entry point for the V4 pure-Python hybrid E2E test evaluator."""
++"""Batch entry point for the V5 hybrid static-dynamic E2E test evaluator.
++
++LLM calls are serial and rate-limited inside agents.invoke_with_retry.
++Dynamic execution, coverage, mutation, and refined-code validation are local tools.
++"""
+ from __future__ import annotations
+ 
+ import os
+ import time
+ from pathlib import Path
++from typing import Any
+ 
+ import pandas as pd
+ from dotenv import load_dotenv
+@@ -21,30 +26,59 @@
+     return value.strip().lower() in {"1", "true", "yes", "on"}
+ 
+ 
+-def _join(value: object) -> str:
+-    if not value:
++def _join(value: Any) -> str:
++    if value is None or value == "":
+         return "None"
+     if isinstance(value, list):
+         return "; ".join(str(item) for item in value) or "None"
+     return str(value)
+ 
+ 
++def _json_cell(value: Any) -> str:
++    """Store structured local/LLM evidence in CSV without losing list detail."""
++    if value is None:
++        return "[]"
++    if isinstance(value, (list, dict)):
++        import json
++        return json.dumps(value, ensure_ascii=False)
++    return str(value)
++
++
+ def run_batch_evaluation(input_csv_path: str, output_csv_path: str) -> None:
+-    if not Path(input_csv_path).exists():
+-        raise FileNotFoundError(f"Input file not found: {input_csv_path}")
++    input_path = Path(input_csv_path)
++    if not input_path.exists():
++        raise FileNotFoundError(f"Input file not found: {input_path}")
+ 
+-    df = pd.read_csv(input_csv_path)
++    df = pd.read_csv(input_path)
+     max_cases = int(os.getenv("E2E_MAX_CASES", "0"))
+     if max_cases > 0:
+         df = df.head(max_cases).copy()
+ 
+     enable_dynamic = _env_bool("E2E_ENABLE_DYNAMIC", False)
+     enable_mutation = _env_bool("E2E_ENABLE_MUTATION", False)
+-    print(f"Loaded {len(df)} cases. dynamic={enable_dynamic}; mutation={enable_mutation}")
+-    print("Pipeline: Syntax+AST → Requirement → Assertion → Hallucination → Maintainability "
+-          "→ Execution → DynamicCoverage → Mutation → Critic → Consensus → Refiner")
++    # The analyst is on by default whenever dynamic evaluation is on. This makes 7 serial
++    # LLM calls per valid test; 70 cases = 490 calls, still below a 500-RPD quota.
++    enable_dynamic_analyst = _env_bool("E2E_ENABLE_DYNAMIC_ANALYST", enable_dynamic)
++    enable_refiner = _env_bool("E2E_ENABLE_REFINER", True)
++    # Validation can multiply browser runtime, so it is opt-in. It does not add model calls.
++    enable_refinement_validation = _env_bool("E2E_ENABLE_REFINEMENT_VALIDATION", False)
++    enable_refinement_mutation_validation = _env_bool(
++        "E2E_ENABLE_REFINEMENT_MUTATION_VALIDATION", False
++    )
+ 
+-    rows: list[dict[str, object]] = []
++    print(
++        f"Loaded {len(df)} cases. dynamic={enable_dynamic}; mutation={enable_mutation}; "
++        f"dynamic_analyst={enable_dynamic_analyst}; refiner={enable_refiner}; "
++        f"refinement_validation={enable_refinement_validation}; "
++        f"refinement_mutation={enable_refinement_mutation_validation}"
++    )
++    print(
++        "Pipeline: Syntax+AST → Requirement → Assertion → Hallucination → Maintainability "
++        "→ Execution → BDDCoverage → Mutation → DynamicAnalyst → Critic → Consensus → Refiner "
++        "→ ValidationExecution → ValidationCoverage → ValidationMutation → BeforeAfterComparison"
++    )
++
++    rows: list[dict[str, Any]] = []
+     for index, row in tqdm(df.iterrows(), total=len(df), desc="Evaluation Progress"):
+         case_id = str(row.get("id", f"UNK_{index}"))
+         req_id = str(row.get("req_id", "NA"))
+@@ -64,6 +98,10 @@
+             "revision_count": 0,
+             "enable_dynamic": enable_dynamic,
+             "enable_mutation": enable_mutation,
++            "enable_dynamic_analyst": enable_dynamic_analyst,
++            "enable_refiner": enable_refiner,
++            "enable_refinement_validation": enable_refinement_validation,
++            "enable_refinement_mutation_validation": enable_refinement_mutation_validation,
+             "max_mutants": int(os.getenv("E2E_MAX_MUTANTS", "5")),
+             "execution_timeout_seconds": int(os.getenv("E2E_EXECUTION_TIMEOUT_SECONDS", "90")),
+             "mutant_timeout_seconds": int(os.getenv("E2E_MUTANT_TIMEOUT_SECONDS", "45")),
+@@ -72,7 +110,8 @@
+ 
+         try:
+             result = app.invoke(state)
+-        except Exception as exc:  # Keep one pipeline crash from losing a whole batch.
++        except Exception as exc:
++            # One failure must not discard an entire batch. No artificial dynamic zero is created.
+             result = {
+                 "syntax_passed": False,
+                 "overall_score": 0.0,
+@@ -80,10 +119,11 @@
+                 "execution_status": "PIPELINE_ERROR",
+                 "execution_stderr_tail": repr(exc),
+                 "fixed_code": original_code,
++                "repair_validation_status": "NOT_VALIDATED",
+             }
+ 
+         rows.append({
+-            # Existing static V3.2 fields
++            # Static fields
+             "eval_syntax_status": "PASSED" if result.get("syntax_passed") else "FAILED_SYNTAX",
+             "eval_requirement_score": result.get("requirement_coverage", 0.0),
+             "eval_assertion_score": result.get("assertion_score", 0),
+@@ -94,7 +134,10 @@
+             "eval_score_mode": result.get("score_mode", "STATIC_ONLY"),
+             "eval_final_summary": result.get("final_reasoning", ""),
+             "eval_has_conflict": result.get("has_conflict", False),
++            "eval_critic_feedback": result.get("critic_feedback", ""),
++            "eval_critic_score_caveat": result.get("critic_score_caveat", ""),
+             "eval_improvement_report": result.get("improvement_report", ""),
++            "eval_refiner_status": result.get("refiner_status", "NOT_RUN"),
+             "eval_fixed_code": result.get("fixed_code", original_code),
+             "static_actions_count": result.get("static_actions_count", 0),
+             "static_assertions_count": result.get("static_assertions_count", 0),
+@@ -107,17 +150,19 @@
+             "eval_naming_issues": _join(result.get("naming_issues", [])),
+             "eval_readability_issues": _join(result.get("readability_issues", [])),
+ 
+-            # Execution Agent evidence
++            # Baseline execution evidence
+             "dynamic_execution_status": result.get("execution_status", "NOT_RUN"),
+             "dynamic_execution_success": result.get("execution_success", False),
+             "dynamic_execution_return_code": result.get("execution_return_code", -1),
+             "dynamic_execution_seconds": result.get("execution_duration_seconds", 0.0),
+             "dynamic_execution_stdout_tail": result.get("execution_stdout_tail", ""),
+             "dynamic_execution_stderr_tail": result.get("execution_stderr_tail", ""),
++            "dynamic_execution_failed_steps": _json_cell(result.get("execution_failed_steps", [])),
++            "dynamic_execution_report_summary": result.get("execution_report_summary", ""),
+             "dynamic_execution_artifact_dir": result.get("execution_artifact_dir", ""),
+             "dynamic_behave_report_path": result.get("behave_report_path", ""),
+ 
+-            # Dynamic Coverage Agent evidence (BDD step/interaction/oracle coverage)
++            # BDD dynamic coverage
+             "dynamic_coverage_status": result.get("dynamic_coverage_status", "NOT_RUN"),
+             "dynamic_coverage_score": result.get("dynamic_coverage_score"),
+             "dynamic_step_success_coverage": result.get("step_success_coverage"),
+@@ -134,7 +179,7 @@
+             "dynamic_oracles_passed": result.get("dynamic_oracles_passed", 0),
+             "dynamic_coverage_detail": result.get("dynamic_coverage_detail", ""),
+ 
+-            # Mutation Agent evidence
++            # Mutation tool evidence
+             "dynamic_mutation_status": result.get("mutation_status", "NOT_RUN"),
+             "dynamic_mutation_score": result.get("mutation_score"),
+             "dynamic_mutants_total": result.get("mutants_total", 0),
+@@ -144,11 +189,55 @@
+             "dynamic_mutants_inconclusive": result.get("mutants_inconclusive", 0),
+             "dynamic_mutation_report_path": result.get("mutation_report_path", ""),
+             "dynamic_surviving_mutants": _join(result.get("surviving_mutants", [])),
++            "dynamic_killed_mutants": _join(result.get("killed_mutants", [])),
++            "dynamic_mutation_records": _json_cell(result.get("mutation_records", [])),
+             "dynamic_mutation_detail": result.get("mutation_detail", ""),
++
++            # Dynamic Evidence Analyst (LLM interpretation of tool evidence)
++            "eval_dynamic_analysis_status": result.get("dynamic_analysis_status", "NOT_RUN"),
++            "eval_dynamic_quality_label": result.get("dynamic_quality_label", "INCONCLUSIVE"),
++            "eval_dynamic_failure_category": result.get("failure_category", "NOT_ANALYZED"),
++            "eval_dynamic_root_cause": result.get("root_cause", ""),
++            "eval_dynamic_evidence_summary": result.get("dynamic_evidence_summary", ""),
++            "eval_dynamic_fault_detection_gaps": _join(result.get("fault_detection_gaps", [])),
++            "eval_dynamic_relevant_surviving_mutants": _join(result.get("relevant_surviving_mutants", [])),
++            "eval_dynamic_prioritized_repairs": _join(result.get("prioritized_repairs", [])),
++            "eval_dynamic_should_refine": result.get("should_refine", False),
++
++            # Local before/after validation of Refiner output
++            "validation_refined_syntax_passed": result.get("refined_syntax_passed", False),
++            "validation_execution_status": result.get("validation_execution_status", "NOT_RUN"),
++            "validation_execution_success": result.get("validation_execution_success", False),
++            "validation_execution_return_code": result.get("validation_execution_return_code", -1),
++            "validation_execution_seconds": result.get("validation_execution_duration_seconds", 0.0),
++            "validation_execution_failed_steps": _json_cell(result.get("validation_execution_failed_steps", [])),
++            "validation_execution_stdout_tail": result.get("validation_execution_stdout_tail", ""),
++            "validation_execution_stderr_tail": result.get("validation_execution_stderr_tail", ""),
++            "validation_execution_artifact_dir": result.get("validation_execution_artifact_dir", ""),
++            "validation_dynamic_coverage_status": result.get("validation_dynamic_coverage_status", "NOT_RUN"),
++            "validation_dynamic_coverage_score": result.get("validation_dynamic_coverage_score"),
++            "validation_step_success_coverage": result.get("validation_step_success_coverage"),
++            "validation_action_step_coverage": result.get("validation_action_step_coverage"),
++            "validation_oracle_step_coverage": result.get("validation_oracle_step_coverage"),
++            "validation_steps_total": result.get("validation_steps_total", 0),
++            "validation_steps_passed": result.get("validation_steps_passed", 0),
++            "validation_steps_failed": result.get("validation_steps_failed", 0),
++            "validation_dynamic_mutation_status": result.get("validation_mutation_status", "NOT_RUN"),
++            "validation_dynamic_mutation_score": result.get("validation_mutation_score"),
++            "validation_mutants_total": result.get("validation_mutants_total", 0),
++            "validation_mutants_killed": result.get("validation_mutants_killed", 0),
++            "validation_mutants_survived": result.get("validation_mutants_survived", 0),
++            "validation_mutants_timeout": result.get("validation_mutants_timeout", 0),
++            "validation_mutants_inconclusive": result.get("validation_mutants_inconclusive", 0),
++            "validation_mutation_report_path": result.get("validation_mutation_report_path", ""),
++            "validation_surviving_mutants": _join(result.get("validation_surviving_mutants", [])),
++            "repair_validation_status": result.get("repair_validation_status", "NOT_VALIDATED"),
++            "repair_delta_coverage": result.get("repair_delta_coverage"),
++            "repair_delta_mutation": result.get("repair_delta_mutation"),
++            "repair_comparison_summary": result.get("repair_comparison_summary", ""),
+         })
+ 
+-        # This does not create additional LLM calls. invoke_with_retry still remains the
+-        # global RPM guard for the six serial LLM nodes.
++        # Additional case spacing changes no API-call count and preserves a safe global pace.
+         time.sleep(float(os.getenv("E2E_CASE_SLEEP_SECONDS", "5")))
+ 
+     result_df = pd.concat([df.reset_index(drop=True), pd.DataFrame(rows)], axis=1)
+@@ -161,5 +250,5 @@
+ if __name__ == "__main__":
+     run_batch_evaluation(
+         os.getenv("E2E_INPUT_FILE", "data/e2edev_sample.csv"),
+-        os.getenv("E2E_OUTPUT_FILE", "data/evaluation_results_v4_pure_python.csv"),
++        os.getenv("E2E_OUTPUT_FILE", "data/evaluation_results_v5_complete.csv"),
+     )

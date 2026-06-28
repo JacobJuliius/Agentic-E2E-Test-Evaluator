@@ -1,0 +1,11 @@
+﻿duration_seconds,error_message,error_type,execution_status,mutant_id,normalized_url,operator,original,replacement,return_code,verdict,workspace
+9.765,,BehaveScenarioFailure,fail,M001,True,corrupt_drag_title_payload,"ev.dataTransfer.setData('title', aP[0].innerHTML);","ev.dataTransfer.setData('title', 'MUTANT_TITLE');",1,killed,deleted_after_execution
+9.732,,BehaveScenarioFailure,fail,M002,True,corrupt_drag_price_payload,"ev.dataTransfer.setData('money', aP[1].innerHTML);","ev.dataTransfer.setData('money', 'MUTANT_PRICE');",1,killed,deleted_after_execution
+9.908,,,pass,M003,True,corrupt_drop_title_key,ev.dataTransfer.getData('title'),ev.dataTransfer.getData('title_mutant'),0,survived,deleted_after_execution
+9.903,,,pass,M004,True,corrupt_drop_price_key,ev.dataTransfer.getData('money'),ev.dataTransfer.getData('money_mutant'),0,survived,deleted_after_execution
+10.129,,,pass,M005,True,break_quantity_increment,parseInt(box1[i].innerHTML) + 1,parseInt(box1[i].innerHTML) + 0,0,survived,deleted_after_execution
+9.576,,,pass,M006,True,break_total_accumulation,iNum += moneyValue;,iNum += 0;,0,survived,deleted_after_execution
+9.65,,,pass,M007,True,wrong_total_precision,iNum.toFixed(2),iNum.toFixed(0),0,survived,deleted_after_execution
+9.895,,,pass,M008,True,disable_drop_default_prevention,"oDiv.ondragover = function (ev) {
+        ev.preventDefault();","oDiv.ondragover = function (ev) {
+        return;",0,survived,deleted_after_execution

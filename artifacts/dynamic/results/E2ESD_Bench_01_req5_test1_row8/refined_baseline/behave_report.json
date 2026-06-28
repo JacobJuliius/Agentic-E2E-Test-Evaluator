@@ -1,0 +1,66 @@
+[
+{
+  "description": [
+    "The system should calculate and display the total price of all products in the cart, updating the total each time a product is added."
+  ],
+  "elements": [
+    {
+      "keyword": "Scenario",
+      "location": "features/generated.feature:5",
+      "name": "[Normal] Add a single product to the cart and verify total price",
+      "status": "passed",
+      "steps": [
+        {
+          "keyword": "Given",
+          "location": "features/generated.feature:6",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:41"
+          },
+          "name": "the webpage is loaded with a list of products",
+          "result": {
+            "duration": 2.61152720451355,
+            "status": "passed"
+          },
+          "step_type": "given"
+        },
+        {
+          "keyword": "When",
+          "location": "features/generated.feature:7",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:46"
+          },
+          "name": "the user drags the product with data-testid \"product-item-1\" to the drop area with data-testid \"drop-area\"",
+          "result": {
+            "duration": 0.0810997486114502,
+            "status": "passed"
+          },
+          "step_type": "when"
+        },
+        {
+          "keyword": "Then",
+          "location": "features/generated.feature:8",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:69"
+          },
+          "name": "the total price displayed in the element with id \"allMoney\" should be \"$40.00\"",
+          "result": {
+            "duration": 2.2843093872070312,
+            "status": "passed"
+          },
+          "step_type": "then"
+        }
+      ],
+      "tags": [],
+      "type": "scenario"
+    }
+  ],
+  "keyword": "Feature",
+  "location": "features/generated.feature:1",
+  "name": "Calculate and display the total price of products in the cart",
+  "status": "passed",
+  "tags": []
+}
+]

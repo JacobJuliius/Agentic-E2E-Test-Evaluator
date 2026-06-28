@@ -1,0 +1,67 @@
+[
+{
+  "description": [
+    "The system should calculate and display the total price of all products in the cart, updating the total each time a product is added."
+  ],
+  "elements": [
+    {
+      "keyword": "Scenario",
+      "location": "features/generated.feature:5",
+      "name": "[Normal] Add a single product to the cart and verify total price",
+      "status": "failed",
+      "steps": [
+        {
+          "keyword": "Given",
+          "location": "features/generated.feature:6",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:47"
+          },
+          "name": "the webpage is loaded with a list of products",
+          "result": {
+            "duration": 3.4450607299804688,
+            "status": "passed"
+          },
+          "step_type": "given"
+        },
+        {
+          "keyword": "When",
+          "location": "features/generated.feature:7",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:53"
+          },
+          "name": "the user drags the product with data-testid \"product-item-1\" to the drop area with data-testid \"drop-area\"",
+          "result": {
+            "duration": 1.0688347816467285,
+            "status": "passed"
+          },
+          "step_type": "when"
+        },
+        {
+          "keyword": "Then",
+          "location": "features/generated.feature:8",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:106"
+          },
+          "name": "the total price displayed in the element with id \"allMoney\" should be \"$40.00\"",
+          "result": {
+            "duration": 0.10260295867919922,
+            "error_message": "ASSERT FAILED: Expected total price '$40.00', but got '$41.00'",
+            "status": "failed"
+          },
+          "step_type": "then"
+        }
+      ],
+      "tags": [],
+      "type": "scenario"
+    }
+  ],
+  "keyword": "Feature",
+  "location": "features/generated.feature:1",
+  "name": "Calculate and display the total price of products in the cart",
+  "status": "failed",
+  "tags": []
+}
+]

@@ -1,0 +1,249 @@
+{
+  "configuration": {
+    "seed": 1337,
+    "max_mutants_per_file": 5,
+    "max_total_mutants": 3,
+    "include_patterns": [],
+    "exclude_patterns": [
+      "**/*.min.js",
+      "**/*.min.css",
+      "**/vendor/**",
+      "**/third_party/**",
+      "**/test_*",
+      "**/*_test.py",
+      "**/*.spec.js",
+      "**/*.test.js",
+      "**/tests/**"
+    ],
+    "mutant_timeout_seconds": 45,
+    "project_validation_command": []
+  },
+  "environment_metadata": {
+    "python_version": "3.11.15 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:12:53) [MSC v.1942 64 bit (AMD64)]",
+    "platform": "Windows-10-10.0.22631-SP0",
+    "executable": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe"
+  },
+  "baseline": {
+    "execution_status": "PASSED",
+    "command_run": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe -m behave features/generated.feature --no-capture --format=json.pretty --outfile G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline\\behave_report.json -D artifact_dir=G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline",
+    "artifact_dir": "artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline"
+  },
+  "total_mutants_generated": 3,
+  "valid_mutants": 3,
+  "killed_mutants": 0,
+  "survived_mutants": 3,
+  "invalid_mutants": 0,
+  "mutation_score": 0.0,
+  "per_operator_breakdown": {
+    "DOM_ATTRIBUTE_VALUE_MUTATION": {
+      "total_mutants_generated": 3,
+      "valid_mutants": 3,
+      "killed_mutants": 0,
+      "survived_mutants": 3,
+      "invalid_mutants": 0,
+      "mutation_score": 0.0
+    }
+  },
+  "records": [
+    {
+      "mutant_id": "M0001",
+      "operator": "DOM_ATTRIBUTE_VALUE_MUTATION",
+      "source_file": "source_project/index.html",
+      "location": {
+        "line": 121,
+        "column": 10,
+        "start_offset": 4054,
+        "end_offset": 4066
+      },
+      "original_code": "img/img4.jpg",
+      "replacement_code": "img/img4.jpg__MUTATED__",
+      "mutation_description": "Mutate DOM attribute 'src' value.",
+      "execution_verdict": "SURVIVED",
+      "execution_status": "PASSED",
+      "stdout_summary": "USING RUNNER: behave.runner:Runner\n1 feature passed, 0 failed, 0 skipped\n1 scenario passed, 0 failed, 0 skipped\n5 steps passed, 0 failed, 0 skipped\nTook 0min 5.889s\n",
+      "stderr_summary": "",
+      "command_run": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe -m behave features/generated.feature --no-capture --format=json.pretty --outfile G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0001\\behave_report.json -D artifact_dir=G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0001",
+      "environment_metadata": {
+        "python_version": "3.11.15 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:12:53) [MSC v.1942 64 bit (AMD64)]",
+        "platform": "Windows-10-10.0.22631-SP0",
+        "python_executable": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe",
+        "headless": "true"
+      },
+      "validation_result": {
+        "valid": true,
+        "status": "VALID",
+        "commands": [],
+        "failure_reason": ""
+      },
+      "duration_seconds": 10.0,
+      "artifact_dir": "artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0001"
+    },
+    {
+      "mutant_id": "M0002",
+      "operator": "DOM_ATTRIBUTE_VALUE_MUTATION",
+      "source_file": "source_project/index.html",
+      "location": {
+        "line": 112,
+        "column": 40,
+        "start_offset": 3655,
+        "end_offset": 3670
+      },
+      "original_code": "product-title-2",
+      "replacement_code": "product-title-2__MUTATED__",
+      "mutation_description": "Mutate DOM attribute 'data-testid' value.",
+      "execution_verdict": "SURVIVED",
+      "execution_status": "PASSED",
+      "stdout_summary": "USING RUNNER: behave.runner:Runner\n1 feature passed, 0 failed, 0 skipped\n1 scenario passed, 0 failed, 0 skipped\n5 steps passed, 0 failed, 0 skipped\nTook 0min 5.995s\n",
+      "stderr_summary": "",
+      "command_run": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe -m behave features/generated.feature --no-capture --format=json.pretty --outfile G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0002\\behave_report.json -D artifact_dir=G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0002",
+      "environment_metadata": {
+        "python_version": "3.11.15 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:12:53) [MSC v.1942 64 bit (AMD64)]",
+        "platform": "Windows-10-10.0.22631-SP0",
+        "python_executable": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe",
+        "headless": "true"
+      },
+      "validation_result": {
+        "valid": true,
+        "status": "VALID",
+        "commands": [],
+        "failure_reason": ""
+      },
+      "duration_seconds": 9.953,
+      "artifact_dir": "artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0002"
+    },
+    {
+      "mutant_id": "M0003",
+      "operator": "DOM_ATTRIBUTE_VALUE_MUTATION",
+      "source_file": "source_project/index.html",
+      "location": {
+        "line": 111,
+        "column": 37,
+        "start_offset": 3596,
+        "end_offset": 3611
+      },
+      "original_code": "product-image-2",
+      "replacement_code": "product-image-2__MUTATED__",
+      "mutation_description": "Mutate DOM attribute 'data-testid' value.",
+      "execution_verdict": "SURVIVED",
+      "execution_status": "PASSED",
+      "stdout_summary": "USING RUNNER: behave.runner:Runner\n1 feature passed, 0 failed, 0 skipped\n1 scenario passed, 0 failed, 0 skipped\n5 steps passed, 0 failed, 0 skipped\nTook 0min 5.752s\n",
+      "stderr_summary": "",
+      "command_run": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe -m behave features/generated.feature --no-capture --format=json.pretty --outfile G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0003\\behave_report.json -D artifact_dir=G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0003",
+      "environment_metadata": {
+        "python_version": "3.11.15 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:12:53) [MSC v.1942 64 bit (AMD64)]",
+        "platform": "Windows-10-10.0.22631-SP0",
+        "python_executable": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe",
+        "headless": "true"
+      },
+      "validation_result": {
+        "valid": true,
+        "status": "VALID",
+        "commands": [],
+        "failure_reason": ""
+      },
+      "duration_seconds": 9.703,
+      "artifact_dir": "artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0003"
+    }
+  ],
+  "surviving_mutant_report": [
+    {
+      "mutant_id": "M0001",
+      "operator": "DOM_ATTRIBUTE_VALUE_MUTATION",
+      "source_file": "source_project/index.html",
+      "location": {
+        "line": 121,
+        "column": 10,
+        "start_offset": 4054,
+        "end_offset": 4066
+      },
+      "original_code": "img/img4.jpg",
+      "replacement_code": "img/img4.jpg__MUTATED__",
+      "mutation_description": "Mutate DOM attribute 'src' value.",
+      "execution_verdict": "SURVIVED",
+      "execution_status": "PASSED",
+      "stdout_summary": "USING RUNNER: behave.runner:Runner\n1 feature passed, 0 failed, 0 skipped\n1 scenario passed, 0 failed, 0 skipped\n5 steps passed, 0 failed, 0 skipped\nTook 0min 5.889s\n",
+      "stderr_summary": "",
+      "command_run": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe -m behave features/generated.feature --no-capture --format=json.pretty --outfile G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0001\\behave_report.json -D artifact_dir=G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0001",
+      "environment_metadata": {
+        "python_version": "3.11.15 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:12:53) [MSC v.1942 64 bit (AMD64)]",
+        "platform": "Windows-10-10.0.22631-SP0",
+        "python_executable": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe",
+        "headless": "true"
+      },
+      "validation_result": {
+        "valid": true,
+        "status": "VALID",
+        "commands": [],
+        "failure_reason": ""
+      },
+      "duration_seconds": 10.0,
+      "artifact_dir": "artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0001"
+    },
+    {
+      "mutant_id": "M0002",
+      "operator": "DOM_ATTRIBUTE_VALUE_MUTATION",
+      "source_file": "source_project/index.html",
+      "location": {
+        "line": 112,
+        "column": 40,
+        "start_offset": 3655,
+        "end_offset": 3670
+      },
+      "original_code": "product-title-2",
+      "replacement_code": "product-title-2__MUTATED__",
+      "mutation_description": "Mutate DOM attribute 'data-testid' value.",
+      "execution_verdict": "SURVIVED",
+      "execution_status": "PASSED",
+      "stdout_summary": "USING RUNNER: behave.runner:Runner\n1 feature passed, 0 failed, 0 skipped\n1 scenario passed, 0 failed, 0 skipped\n5 steps passed, 0 failed, 0 skipped\nTook 0min 5.995s\n",
+      "stderr_summary": "",
+      "command_run": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe -m behave features/generated.feature --no-capture --format=json.pretty --outfile G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0002\\behave_report.json -D artifact_dir=G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0002",
+      "environment_metadata": {
+        "python_version": "3.11.15 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:12:53) [MSC v.1942 64 bit (AMD64)]",
+        "platform": "Windows-10-10.0.22631-SP0",
+        "python_executable": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe",
+        "headless": "true"
+      },
+      "validation_result": {
+        "valid": true,
+        "status": "VALID",
+        "commands": [],
+        "failure_reason": ""
+      },
+      "duration_seconds": 9.953,
+      "artifact_dir": "artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0002"
+    },
+    {
+      "mutant_id": "M0003",
+      "operator": "DOM_ATTRIBUTE_VALUE_MUTATION",
+      "source_file": "source_project/index.html",
+      "location": {
+        "line": 111,
+        "column": 37,
+        "start_offset": 3596,
+        "end_offset": 3611
+      },
+      "original_code": "product-image-2",
+      "replacement_code": "product-image-2__MUTATED__",
+      "mutation_description": "Mutate DOM attribute 'data-testid' value.",
+      "execution_verdict": "SURVIVED",
+      "execution_status": "PASSED",
+      "stdout_summary": "USING RUNNER: behave.runner:Runner\n1 feature passed, 0 failed, 0 skipped\n1 scenario passed, 0 failed, 0 skipped\n5 steps passed, 0 failed, 0 skipped\nTook 0min 5.752s\n",
+      "stderr_summary": "",
+      "command_run": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe -m behave features/generated.feature --no-capture --format=json.pretty --outfile G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0003\\behave_report.json -D artifact_dir=G:\\学\\语言资料\\语言学\\NLP_CL\\LMU_cis\\E2E\\Agentic_E2Etest_Evaluator_5\\artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0003",
+      "environment_metadata": {
+        "python_version": "3.11.15 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:12:53) [MSC v.1942 64 bit (AMD64)]",
+        "platform": "Windows-10-10.0.22631-SP0",
+        "python_executable": "F:\\anaconda3\\envs\\e2e_eval311\\python.exe",
+        "headless": "true"
+      },
+      "validation_result": {
+        "valid": true,
+        "status": "VALID",
+        "commands": [],
+        "failure_reason": ""
+      },
+      "duration_seconds": 9.703,
+      "artifact_dir": "artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test1_row0\\baseline_mutant_M0003"
+    }
+  ]
+}

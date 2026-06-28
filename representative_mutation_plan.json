@@ -1,0 +1,114 @@
+{
+  "notes": "Fill project_dir, baseline_command, source_file, pattern, and replacement from your local projects. Run mutation_runner.py --dry-run before executing.",
+  "cases": [
+    {
+      "case_id": "bench01_req1_test4",
+      "label": "Weak drag-and-drop shopping-cart test",
+      "project_dir": "C:/PATH/TO/E2ESD_Bench_01/source_project",
+      "baseline_command": "pytest -q tests/test_req1_test4.py",
+      "timeout_seconds": 180,
+      "mutations": [
+        {
+          "mutant_id": "M001",
+          "operator": "PRICE_PLUS_ONE",
+          "source_file": "index.html",
+          "kind": "literal_replace",
+          "pattern": "$40",
+          "replacement": "$41",
+          "expected_matches": 1
+        },
+        {
+          "mutant_id": "M002",
+          "operator": "TITLE_REPLACEMENT",
+          "source_file": "index.html",
+          "kind": "literal_replace",
+          "pattern": "The Essence of JavaScript",
+          "replacement": "Incorrect Product Title",
+          "expected_matches": 1
+        },
+        {
+          "mutant_id": "M003",
+          "operator": "REMOVE_DROP_HANDLER",
+          "source_file": "index.html",
+          "kind": "regex_replace",
+          "pattern": "dropArea\\.addEventListener\\('drop',[\\s\\S]*?\\n\\s*}\\);",
+          "replacement": "// MUTANT: drop handler removed",
+          "expected_matches": 1,
+          "dotall": true
+        }
+      ]
+    },
+    {
+      "case_id": "bench02_req4_test1",
+      "label": "Notes delete plus localStorage persistence",
+      "project_dir": "C:/PATH/TO/E2ESD_Bench_02/source_project",
+      "baseline_command": "pytest -q tests/test_req4_test1.py",
+      "timeout_seconds": 180,
+      "mutations": [
+        {
+          "mutant_id": "M001",
+          "operator": "DISABLE_DELETE_ACTION",
+          "source_file": "index.html",
+          "kind": "literal_replace",
+          "pattern": "REPLACE_WITH_EXACT_DELETE_HANDLER_LINE",
+          "replacement": "// MUTANT: delete action disabled",
+          "expected_matches": 1
+        },
+        {
+          "mutant_id": "M002",
+          "operator": "KEEP_LOCALSTORAGE_ITEM",
+          "source_file": "index.html",
+          "kind": "literal_replace",
+          "pattern": "REPLACE_WITH_EXACT_LOCALSTORAGE_REMOVE_LINE",
+          "replacement": "// MUTANT: persistence deletion disabled",
+          "expected_matches": 1
+        },
+        {
+          "mutant_id": "M003",
+          "operator": "KEEP_DOM_NOTE_VISIBLE",
+          "source_file": "index.html",
+          "kind": "literal_replace",
+          "pattern": "REPLACE_WITH_EXACT_DOM_REMOVE_LINE",
+          "replacement": "// MUTANT: DOM deletion disabled",
+          "expected_matches": 1
+        }
+      ]
+    },
+    {
+      "case_id": "bench03_req4_test1",
+      "label": "Movie booking: positive multi-step state update",
+      "project_dir": "C:/PATH/TO/E2ESD_Bench_03/source_project",
+      "baseline_command": "pytest -q tests/test_req4_test1.py",
+      "timeout_seconds": 180,
+      "mutations": [
+        {"mutant_id": "M001", "operator": "PRICE_PLUS_ONE", "source_file": "index.html", "kind": "literal_replace", "pattern": "REPLACE_WITH_EXACT_PRICE_TEXT", "replacement": "REPLACE_WITH_WRONG_PRICE_TEXT", "expected_matches": 1},
+        {"mutant_id": "M002", "operator": "COUNT_PLUS_ONE", "source_file": "index.html", "kind": "literal_replace", "pattern": "REPLACE_WITH_EXACT_COUNT_UPDATE", "replacement": "REPLACE_WITH_WRONG_COUNT_UPDATE", "expected_matches": 1},
+        {"mutant_id": "M003", "operator": "REMOVE_SEAT_SELECTION", "source_file": "index.html", "kind": "literal_replace", "pattern": "REPLACE_WITH_EXACT_SEAT_CLICK_OR_TOGGLE_LINE", "replacement": "// MUTANT: seat selection disabled", "expected_matches": 1}
+      ]
+    },
+    {
+      "case_id": "bench03_req4_test4",
+      "label": "Movie booking: occupied-seat negative boundary",
+      "project_dir": "C:/PATH/TO/E2ESD_Bench_03/source_project",
+      "baseline_command": "pytest -q tests/test_req4_test4.py",
+      "timeout_seconds": 180,
+      "mutations": [
+        {"mutant_id": "M001", "operator": "ALLOW_OCCUPIED_SEAT_SELECTION", "source_file": "index.html", "kind": "literal_replace", "pattern": "REPLACE_WITH_OCCUPIED_GUARD", "replacement": "/* MUTANT: guard removed */", "expected_matches": 1},
+        {"mutant_id": "M002", "operator": "COUNT_PLUS_ONE", "source_file": "index.html", "kind": "literal_replace", "pattern": "REPLACE_WITH_EXACT_COUNT_UPDATE", "replacement": "REPLACE_WITH_WRONG_COUNT_UPDATE", "expected_matches": 1},
+        {"mutant_id": "M003", "operator": "PRICE_PLUS_ONE", "source_file": "index.html", "kind": "literal_replace", "pattern": "REPLACE_WITH_EXACT_PRICE_TEXT", "replacement": "REPLACE_WITH_WRONG_PRICE_TEXT", "expected_matches": 1}
+      ]
+    },
+    {
+      "case_id": "bench05_req4_test1",
+      "label": "Dictionary reset: high-quality reset flow",
+      "project_dir": "C:/PATH/TO/E2ESD_Bench_05/source_project",
+      "baseline_command": "pytest -q tests/test_req4_test1.py",
+      "timeout_seconds": 180,
+      "mutations": [
+        {"mutant_id": "M001", "operator": "DISABLE_RESET_ACTION", "source_file": "index.html", "kind": "literal_replace", "pattern": "REPLACE_WITH_EXACT_RESET_HANDLER_LINE", "replacement": "// MUTANT: reset disabled", "expected_matches": 1},
+        {"mutant_id": "M002", "operator": "KEEP_INPUT_VALUE", "source_file": "index.html", "kind": "literal_replace", "pattern": "REPLACE_WITH_INPUT_CLEAR_LINE", "replacement": "// MUTANT: input remains populated", "expected_matches": 1},
+        {"mutant_id": "M003", "operator": "KEEP_RESULT_VISIBLE", "source_file": "index.html", "kind": "literal_replace", "pattern": "REPLACE_WITH_RESULT_HIDE_LINE", "replacement": "// MUTANT: result remains visible", "expected_matches": 1}
+      ]
+    }
+  ]
+}

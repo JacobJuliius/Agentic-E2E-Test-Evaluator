@@ -1,0 +1,563 @@
+--- /mnt/data/dynamic_agents.py	2026-06-26 09:36:24.489992345 +0000
++++ /mnt/data/e2e_v5_complete/dynamic_agents.py	2026-06-26 09:38:29.752254192 +0000
+@@ -14,6 +14,7 @@
+ """
+ from __future__ import annotations
+ 
++import ast
+ import json
+ import os
+ import re
+@@ -299,14 +300,43 @@
+     return "TEST_FAILED"
+ 
+ 
+-def _run_behave(prepared: PreparedWorkspace, state: dict[str, Any], timeout: int) -> dict[str, Any]:
+-    """Run Behave and persist a JSON report at an absolute artifact path.
++def _extract_behave_failure_evidence(report_path: Path) -> dict[str, Any]:
++    """Extract compact failure facts from Behave JSON without using an LLM."""
++    empty = {"execution_failed_steps": [], "execution_report_summary": ""}
++    if not report_path.exists():
++        return empty
++    try:
++        report = json.loads(report_path.read_text(encoding="utf-8"))
++    except Exception:
++        return empty
+ 
+-    Behave is launched with ``cwd=prepared.workspace``. Passing a relative report
+-    path would create ``behave_report.json`` inside that workspace, while the
+-    Coverage Agent looks under the project-level artifact directory. Resolving
+-    both paths ensures execution and coverage use the same file on every OS.
+-    """
++    failed: list[dict[str, str]] = []
++    for step in _iter_behave_steps(report):
++        result = step.get("result") or {}
++        status = str(result.get("status", "")).lower()
++        if status not in {"failed", "error", "undefined", "pending"}:
++            continue
++        error = result.get("error_message", "")
++        if isinstance(error, list):
++            error = "\n".join(str(x) for x in error)
++        failed.append({
++            "keyword": str(step.get("keyword", "")).strip(),
++            "name": str(step.get("name", "")).strip(),
++            "status": status or "unknown",
++            "error": _tail(str(error), 700),
++        })
++
++    if not failed:
++        return empty
++    summary = "; ".join(
++        f"{item['keyword']} {item['name']} [{item['status']}]"
++        for item in failed[:4]
++    )
++    return {"execution_failed_steps": failed[:8], "execution_report_summary": summary}
++
++
++def _run_behave(prepared: PreparedWorkspace, state: dict[str, Any], timeout: int) -> dict[str, Any]:
++    """Run Behave and persist a JSON report at an absolute artifact path."""
+     report_path = (prepared.artifact_dir / "behave_report.json").resolve()
+     artifact_dir = prepared.artifact_dir.resolve()
+     report_path.parent.mkdir(parents=True, exist_ok=True)
+@@ -341,16 +371,18 @@
+             env=env,
+         )
+         duration = round(time.monotonic() - started, 3)
++        evidence = _extract_behave_failure_evidence(report_path)
+         return {
+             "execution_status": _classify_result(proc.returncode, proc.stdout, proc.stderr),
+             "execution_return_code": int(proc.returncode),
+             "execution_duration_seconds": duration,
+             "execution_stdout_tail": _tail(proc.stdout),
+             "execution_stderr_tail": _tail(proc.stderr),
+-            # A failed test can still yield useful step-level evidence.
+             "behave_report_path": str(report_path) if report_path.exists() else "",
++            **evidence,
+         }
+     except subprocess.TimeoutExpired as exc:
++        evidence = _extract_behave_failure_evidence(report_path)
+         return {
+             "execution_status": "TIMEOUT",
+             "execution_return_code": -1,
+@@ -358,8 +390,10 @@
+             "execution_stdout_tail": _tail(exc.stdout),
+             "execution_stderr_tail": _tail(exc.stderr) + f"\nTimed out after {timeout}s.",
+             "behave_report_path": str(report_path) if report_path.exists() else "",
++            **evidence,
+         }
+ 
++
+ def _execution_skip(status: str, detail: str) -> dict[str, Any]:
+     return {
+         "execution_status": status,
+@@ -371,6 +405,8 @@
+         "execution_artifact_dir": "",
+         "workspace_dir": "",
+         "behave_report_path": "",
++        "execution_failed_steps": [],
++        "execution_report_summary": "",
+     }
+ 
+ 
+@@ -546,10 +582,11 @@
+     This is deliberately named `dynamic_coverage`, not `branch_coverage`: it measures
+     BDD behavior steps that successfully executed in a real browser run.
+     """
+-    if state.get("execution_status") != "PASSED":
++    execution_status = state.get("execution_status")
++    if execution_status not in {"PASSED", "TEST_FAILED"}:
+         return _coverage_skip(
+-            "SKIPPED_BASELINE_NOT_PASS",
+-            "Baseline execution did not pass; no valid dynamic coverage evidence exists.",
++            "SKIPPED_EXECUTION_NOT_ANALYZABLE",
++            "No Behave step evidence is available for this execution status.",
+         )
+ 
+     report_path_text = str(state.get("behave_report_path", ""))
+@@ -563,7 +600,7 @@
+         if summary["steps_total"] == 0:
+             return _coverage_skip("INCONCLUSIVE_EMPTY_REPORT", "Behave report contains no scenario steps.")
+         return {
+-            "dynamic_coverage_status": "PASSED",
++            "dynamic_coverage_status": "PASSED" if execution_status == "PASSED" else "PARTIAL_BASELINE_FAILURE",
+             "dynamic_coverage_score": summary["dynamic_coverage_score"],
+             "step_success_coverage": summary["step_success_coverage"],
+             "action_step_coverage": summary["action_step_coverage"],
+@@ -577,7 +614,11 @@
+             "dynamic_actions_passed": summary["actions_passed"],
+             "dynamic_oracles_total": summary["oracles_total"],
+             "dynamic_oracles_passed": summary["oracles_passed"],
+-            "dynamic_coverage_detail": "BDD successful-step coverage from Behave JSON report.",
++            "dynamic_coverage_detail": (
++                "BDD successful-step coverage from Behave JSON report."
++                if execution_status == "PASSED"
++                else "Partial BDD execution evidence from a failed baseline run."
++            ),
+         }
+     except Exception as exc:
+         return _coverage_skip("COVERAGE_HARNESS_ERROR", repr(exc))
+@@ -773,99 +814,346 @@
+         "mutants_inconclusive": 0,
+         "mutation_report_path": "",
+         "surviving_mutants": [],
++        "killed_mutants": [],
++        "mutation_records": [],
+         "mutation_detail": detail,
+     }
+ 
+ 
++def _run_mutation_evaluation(
++    state: dict[str, Any],
++    test_code: str,
++    run_namespace: str,
++    report_filename: str,
++) -> dict[str, Any]:
++    """Run the same deterministic mutant set against a supplied test implementation."""
++    max_mutants = max(0, int(state.get("max_mutants", DEFAULT_MAX_MUTANTS)))
++    if max_mutants == 0:
++        return _mutation_skip("SKIPPED_DISABLED", "max_mutants is 0.")
++
++    reference_dir = _clone_reference(str(state["reference_answer"]))
++    mutants = _discover_mutants(reference_dir, max_mutants)
++    if not mutants:
++        return _mutation_skip("NO_MUTANTS", "No supported mutation location found in the reference app.")
++
++    case_uid = _safe_name(str(state["case_uid"]))
++    report_dir = ARTIFACT_ROOT / "results" / case_uid
++    report_dir.mkdir(parents=True, exist_ok=True)
++    report_path = report_dir / report_filename
++    timeout = int(state.get("mutant_timeout_seconds", DEFAULT_MUTANT_TIMEOUT))
++    records: list[dict[str, Any]] = []
++    killed = survived = timed_out = inconclusive = 0
++
++    for mutant in mutants:
++        prepared = _new_workspace(state, f"{run_namespace}_mutant_{mutant.mutant_id}", reference_dir=reference_dir)
++        try:
++            _apply_mutant(prepared.app_dir, mutant)
++            _write_behave_project(
++                prepared,
++                str(state["excutable_test_test_case"]),
++                test_code,
++            )
++            run = _run_behave(prepared, state, timeout)
++            execution_status = run["execution_status"]
++            if execution_status == "PASSED":
++                verdict = "SURVIVED"
++                survived += 1
++            elif execution_status == "TEST_FAILED":
++                verdict = "KILLED"
++                killed += 1
++            elif execution_status == "TIMEOUT":
++                verdict = "TIMEOUT"
++                timed_out += 1
++            else:
++                verdict = "INCONCLUSIVE"
++                inconclusive += 1
++            records.append({
++                **asdict(mutant),
++                "verdict": verdict,
++                "execution_status": execution_status,
++                "duration_seconds": run["execution_duration_seconds"],
++                "artifact_dir": str(prepared.artifact_dir),
++                "failed_steps": run.get("execution_failed_steps", []),
++                "stderr_tail": run["execution_stderr_tail"],
++            })
++        except Exception as exc:
++            inconclusive += 1
++            records.append({**asdict(mutant), "verdict": "INCONCLUSIVE", "error": repr(exc)})
++
++    valid = killed + survived
++    score = round(100.0 * killed / valid, 2) if valid else None
++    report = {
++        "baseline_execution_status": state.get("execution_status"),
++        "mutation_score": score,
++        "mutants_total": len(mutants),
++        "mutants_killed": killed,
++        "mutants_survived": survived,
++        "mutants_timeout": timed_out,
++        "mutants_inconclusive": inconclusive,
++        "records": records,
++    }
++    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
++
++    def render(record: dict[str, Any]) -> str:
++        return (
++            f"{record.get('mutant_id')} {record.get('source_file')}:{record.get('line')} "
++            f"{record.get('original')}→{record.get('replacement')} "
++            f"[{record.get('operator')}]"
++        )
++
++    # Keep the LangGraph state compact yet structured enough for the LLM analyst.
++    compact_records = [
++        {
++            "mutant_id": record.get("mutant_id"),
++            "source_file": record.get("source_file"),
++            "line": record.get("line"),
++            "original": record.get("original"),
++            "replacement": record.get("replacement"),
++            "operator": record.get("operator"),
++            "verdict": record.get("verdict"),
++            "failed_steps": record.get("failed_steps", [])[:2],
++        }
++        for record in records
++    ]
++    survivors = [render(record) for record in records if record.get("verdict") == "SURVIVED"]
++    killed_mutants = [render(record) for record in records if record.get("verdict") == "KILLED"]
++    return {
++        "mutation_status": "PASSED" if valid else "NO_VALID_MUTANTS",
++        "mutation_score": score,
++        "mutants_total": len(mutants),
++        "mutants_killed": killed,
++        "mutants_survived": survived,
++        "mutants_timeout": timed_out,
++        "mutants_inconclusive": inconclusive,
++        "mutation_report_path": str(report_path),
++        "surviving_mutants": survivors,
++        "killed_mutants": killed_mutants,
++        "mutation_records": compact_records,
++        "mutation_detail": "Mutation score excludes timeout and harness-error mutants from its denominator.",
++    }
++
++
+ def mutation_agent(state: dict[str, Any]) -> dict[str, Any]:
+     """Run bounded app-source mutation testing only after a passing baseline test."""
+     if not _as_bool(state.get("enable_mutation"), False):
+         return _mutation_skip("SKIPPED_DISABLED", "Mutation testing is disabled by configuration.")
+     if state.get("execution_status") != "PASSED":
+         return _mutation_skip("SKIPPED_BASELINE_NOT_PASS", "Baseline execution did not pass.")
++    try:
++        return _run_mutation_evaluation(state, str(state["executable_test_code"]), "baseline", "mutation_report.json")
++    except Exception as exc:
++        return _mutation_skip("MUTATION_HARNESS_ERROR", repr(exc))
++
++
++# ---------------------------------------------------------------------------
++# Refinement validation: same local tools, separate state fields
++# ---------------------------------------------------------------------------
++
++def _normalise_fixed_code(code: Any) -> str:
++    text = str(code or "").strip()
++    if text.startswith("```"):
++        lines = text.splitlines()
++        if lines and lines[0].lstrip().startswith("```"):
++            lines = lines[1:]
++        if lines and lines[-1].strip() == "```":
++            lines = lines[:-1]
++        text = "\n".join(lines).strip()
++    return text
+ 
+-    max_mutants = max(0, int(state.get("max_mutants", DEFAULT_MAX_MUTANTS)))
+-    if max_mutants == 0:
+-        return _mutation_skip("SKIPPED_DISABLED", "max_mutants is 0.")
+ 
++def _validation_execution_skip(status: str, detail: str) -> dict[str, Any]:
++    return {
++        "refined_syntax_passed": False,
++        "validation_execution_status": status,
++        "validation_execution_success": False,
++        "validation_execution_return_code": -1,
++        "validation_execution_duration_seconds": 0.0,
++        "validation_execution_stdout_tail": "",
++        "validation_execution_stderr_tail": detail,
++        "validation_execution_failed_steps": [],
++        "validation_execution_artifact_dir": "",
++        "validation_workspace_dir": "",
++        "validation_behave_report_path": "",
++    }
++
++
++def validation_execution_agent(state: dict[str, Any]) -> dict[str, Any]:
++    """Execute Refiner output on the unmodified reference app without another LLM call."""
++    if not _as_bool(state.get("enable_refinement_validation"), False):
++        return _validation_execution_skip("SKIPPED_DISABLED", "Refinement validation disabled by configuration.")
++    if not state.get("fixed_code"):
++        return _validation_execution_skip("SKIPPED_NO_FIXED_CODE", "Refiner returned no code.")
++
++    fixed_code = _normalise_fixed_code(state.get("fixed_code"))
++    original_code = _normalise_fixed_code(state.get("executable_test_code"))
++    if not fixed_code or fixed_code == original_code:
++        return _validation_execution_skip("SKIPPED_UNCHANGED", "Refiner did not produce a changed implementation.")
+     try:
+-        reference_dir = _clone_reference(str(state["reference_answer"]))
+-        mutants = _discover_mutants(reference_dir, max_mutants)
+-        if not mutants:
+-            return _mutation_skip("NO_MUTANTS", "No supported mutation location found in the reference app.")
+-
+-        case_uid = _safe_name(str(state["case_uid"]))
+-        report_dir = ARTIFACT_ROOT / "results" / case_uid
+-        report_dir.mkdir(parents=True, exist_ok=True)
+-        report_path = report_dir / "mutation_report.json"
+-
+-        timeout = int(state.get("mutant_timeout_seconds", DEFAULT_MUTANT_TIMEOUT))
+-        records: list[dict[str, Any]] = []
+-        killed = survived = timed_out = inconclusive = 0
+-
+-        for mutant in mutants:
+-            prepared = _new_workspace(state, f"mutant_{mutant.mutant_id}", reference_dir=reference_dir)
+-            try:
+-                _apply_mutant(prepared.app_dir, mutant)
+-                _write_behave_project(
+-                    prepared,
+-                    str(state["excutable_test_test_case"]),
+-                    str(state["executable_test_code"]),
+-                )
+-                run = _run_behave(prepared, state, timeout)
+-                execution_status = run["execution_status"]
+-                if execution_status == "PASSED":
+-                    verdict = "SURVIVED"
+-                    survived += 1
+-                elif execution_status == "TEST_FAILED":
+-                    verdict = "KILLED"
+-                    killed += 1
+-                elif execution_status == "TIMEOUT":
+-                    verdict = "TIMEOUT"
+-                    timed_out += 1
+-                else:
+-                    verdict = "INCONCLUSIVE"
+-                    inconclusive += 1
+-                records.append({
+-                    **asdict(mutant),
+-                    "verdict": verdict,
+-                    "execution_status": execution_status,
+-                    "duration_seconds": run["execution_duration_seconds"],
+-                    "artifact_dir": str(prepared.artifact_dir),
+-                    "stderr_tail": run["execution_stderr_tail"],
+-                })
+-            except Exception as exc:
+-                inconclusive += 1
+-                records.append({**asdict(mutant), "verdict": "INCONCLUSIVE", "error": repr(exc)})
++        ast.parse(fixed_code)
++    except SyntaxError as exc:
++        return _validation_execution_skip("FIXED_CODE_SYNTAX_FAILED", f"Refined code does not parse: {exc}")
+ 
+-        valid = killed + survived
+-        score = round(100.0 * killed / valid, 2) if valid else None
+-        report = {
+-            "baseline_execution_status": state.get("execution_status"),
+-            "mutation_score": score,
+-            "mutants_total": len(mutants),
+-            "mutants_killed": killed,
+-            "mutants_survived": survived,
+-            "mutants_timeout": timed_out,
+-            "mutants_inconclusive": inconclusive,
+-            "records": records,
++    try:
++        prepared = _new_workspace(state, "refined_baseline")
++        _write_behave_project(prepared, str(state["excutable_test_test_case"]), fixed_code)
++        run = _run_behave(
++            prepared,
++            state,
++            timeout=int(state.get("execution_timeout_seconds", DEFAULT_EXECUTION_TIMEOUT)),
++        )
++        return {
++            "refined_syntax_passed": True,
++            "validation_execution_status": run["execution_status"],
++            "validation_execution_success": run["execution_status"] == "PASSED",
++            "validation_execution_return_code": run["execution_return_code"],
++            "validation_execution_duration_seconds": run["execution_duration_seconds"],
++            "validation_execution_stdout_tail": run["execution_stdout_tail"],
++            "validation_execution_stderr_tail": run["execution_stderr_tail"],
++            "validation_execution_failed_steps": run.get("execution_failed_steps", []),
++            "validation_execution_artifact_dir": str(prepared.artifact_dir),
++            "validation_workspace_dir": str(prepared.workspace),
++            "validation_behave_report_path": run.get("behave_report_path", ""),
+         }
+-        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+-        survivors = [
+-            f"{record['mutant_id']} {record['source_file']}:{record['line']} {record['operator']}"
+-            for record in records if record.get("verdict") == "SURVIVED"
+-        ]
++    except Exception as exc:
++        return _validation_execution_skip("HARNESS_ERROR", repr(exc))
++
++
++def _validation_coverage_skip(status: str, detail: str) -> dict[str, Any]:
++    return {
++        "validation_dynamic_coverage_status": status,
++        "validation_dynamic_coverage_score": None,
++        "validation_step_success_coverage": None,
++        "validation_action_step_coverage": None,
++        "validation_oracle_step_coverage": None,
++        "validation_steps_total": 0,
++        "validation_steps_passed": 0,
++        "validation_steps_failed": 0,
++        "validation_coverage_detail": detail,
++    }
++
++
++def validation_coverage_agent(state: dict[str, Any]) -> dict[str, Any]:
++    status = state.get("validation_execution_status")
++    if status not in {"PASSED", "TEST_FAILED"}:
++        return _validation_coverage_skip("SKIPPED_EXECUTION_NOT_ANALYZABLE", "No refined Behave step evidence is available.")
++    path_text = str(state.get("validation_behave_report_path", ""))
++    path = Path(path_text) if path_text else None
++    if not path or not path.exists():
++        return _validation_coverage_skip("INCONCLUSIVE_REPORT_MISSING", "Refined Behave JSON report was not created.")
++    try:
++        summary = _summarize_behave_report(json.loads(path.read_text(encoding="utf-8")))
++        if summary["steps_total"] == 0:
++            return _validation_coverage_skip("INCONCLUSIVE_EMPTY_REPORT", "Refined report contains no scenario steps.")
+         return {
+-            "mutation_status": "PASSED" if valid else "NO_VALID_MUTANTS",
+-            "mutation_score": score,
+-            "mutants_total": len(mutants),
+-            "mutants_killed": killed,
+-            "mutants_survived": survived,
+-            "mutants_timeout": timed_out,
+-            "mutants_inconclusive": inconclusive,
+-            "mutation_report_path": str(report_path),
+-            "surviving_mutants": survivors,
+-            "mutation_detail": "Mutation score excludes timeout and harness-error mutants from its denominator.",
++            "validation_dynamic_coverage_status": "PASSED" if status == "PASSED" else "PARTIAL_REFINED_FAILURE",
++            "validation_dynamic_coverage_score": summary["dynamic_coverage_score"],
++            "validation_step_success_coverage": summary["step_success_coverage"],
++            "validation_action_step_coverage": summary["action_step_coverage"],
++            "validation_oracle_step_coverage": summary["oracle_step_coverage"],
++            "validation_steps_total": summary["steps_total"],
++            "validation_steps_passed": summary["steps_passed"],
++            "validation_steps_failed": summary["steps_failed"],
++            "validation_coverage_detail": "BDD successful-step coverage of Refiner output.",
+         }
+     except Exception as exc:
+-        return _mutation_skip("MUTATION_HARNESS_ERROR", repr(exc))
++        return _validation_coverage_skip("COVERAGE_HARNESS_ERROR", repr(exc))
++
++
++def _validation_mutation_skip(status: str, detail: str) -> dict[str, Any]:
++    return {
++        "validation_mutation_status": status,
++        "validation_mutation_score": None,
++        "validation_mutants_total": 0,
++        "validation_mutants_killed": 0,
++        "validation_mutants_survived": 0,
++        "validation_mutants_timeout": 0,
++        "validation_mutants_inconclusive": 0,
++        "validation_mutation_report_path": "",
++        "validation_surviving_mutants": [],
++        "validation_mutation_detail": detail,
++    }
++
++
++def validation_mutation_agent(state: dict[str, Any]) -> dict[str, Any]:
++    """Run mutation validation of Refiner output only when explicitly enabled."""
++    if not _as_bool(state.get("enable_refinement_mutation_validation"), False):
++        return _validation_mutation_skip("SKIPPED_DISABLED", "Refined-code mutation validation disabled by configuration.")
++    if state.get("validation_execution_status") != "PASSED":
++        return _validation_mutation_skip("SKIPPED_REFINED_BASELINE_NOT_PASS", "Refined baseline did not pass.")
++    try:
++        # Reuse the configured mutant count; callers can set a small value for repair validation.
++        result = _run_mutation_evaluation(
++            state,
++            _normalise_fixed_code(state.get("fixed_code")),
++            "refined",
++            "refined_mutation_report.json",
++        )
++        return {
++            "validation_mutation_status": result["mutation_status"],
++            "validation_mutation_score": result["mutation_score"],
++            "validation_mutants_total": result["mutants_total"],
++            "validation_mutants_killed": result["mutants_killed"],
++            "validation_mutants_survived": result["mutants_survived"],
++            "validation_mutants_timeout": result["mutants_timeout"],
++            "validation_mutants_inconclusive": result["mutants_inconclusive"],
++            "validation_mutation_report_path": result["mutation_report_path"],
++            "validation_surviving_mutants": result["surviving_mutants"],
++            "validation_mutation_detail": result["mutation_detail"],
++        }
++    except Exception as exc:
++        return _validation_mutation_skip("MUTATION_HARNESS_ERROR", repr(exc))
++
++
++def repair_comparison_agent(state: dict[str, Any]) -> dict[str, Any]:
++    """Provide deterministic before/after evidence for the Refiner proposal."""
++    before_execution = str(state.get("execution_status", "NOT_RUN"))
++    after_execution = str(state.get("validation_execution_status", "NOT_RUN"))
++    before_coverage = state.get("dynamic_coverage_score")
++    after_coverage = state.get("validation_dynamic_coverage_score")
++    before_mutation = state.get("mutation_score")
++    after_mutation = state.get("validation_mutation_score")
++
++    if after_execution.startswith("SKIPPED") or after_execution == "NOT_RUN":
++        return {
++            "repair_validation_status": "NOT_VALIDATED",
++            "repair_delta_coverage": None,
++            "repair_delta_mutation": None,
++            "repair_comparison_summary": f"Refiner output was not dynamically validated: {after_execution}.",
++        }
++    if after_execution in {"HARNESS_ERROR", "FIXED_CODE_SYNTAX_FAILED"}:
++        return {
++            "repair_validation_status": "INCONCLUSIVE",
++            "repair_delta_coverage": None,
++            "repair_delta_mutation": None,
++            "repair_comparison_summary": f"Refined code could not be validly evaluated: {after_execution}.",
++        }
++    if before_execution != "PASSED" and after_execution == "PASSED":
++        status = "IMPROVED_EXECUTABILITY"
++    elif before_execution == "PASSED" and after_execution != "PASSED":
++        status = "REGRESSED_EXECUTABILITY"
++    else:
++        status = "NO_EXECUTABILITY_CHANGE"
++
++    def delta(after: Any, before: Any) -> float | None:
++        if isinstance(after, (int, float)) and isinstance(before, (int, float)):
++            return round(float(after) - float(before), 2)
++        return None
++
++    coverage_delta = delta(after_coverage, before_coverage)
++    mutation_delta = delta(after_mutation, before_mutation)
++    if mutation_delta is not None and mutation_delta > 0 and status != "REGRESSED_EXECUTABILITY":
++        status = "IMPROVED_FAULT_DETECTION"
++    elif mutation_delta is not None and mutation_delta < 0:
++        status = "REGRESSED_FAULT_DETECTION"
++    elif coverage_delta is not None and coverage_delta > 0 and status == "NO_EXECUTABILITY_CHANGE":
++        status = "IMPROVED_COVERAGE"
++
++    return {
++        "repair_validation_status": status,
++        "repair_delta_coverage": coverage_delta,
++        "repair_delta_mutation": mutation_delta,
++        "repair_comparison_summary": (
++            f"Before execution={before_execution}; after execution={after_execution}; "
++            f"BDD coverage delta={coverage_delta}; mutation delta={mutation_delta}."
++        ),
++    }

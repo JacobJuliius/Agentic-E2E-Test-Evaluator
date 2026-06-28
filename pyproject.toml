@@ -1,0 +1,37 @@
+[project]
+name = "agentic-e2e-evaluator"
+version = "0.6.0"
+description = "Agentic quality evaluation for generated E2E tests"
+requires-python = ">=3.10"
+dependencies = [
+  "langgraph>=0.2,<2",
+  "langchain-google-genai>=2,<4",
+  "python-dotenv>=0.20",
+  "pandas>=1.5",
+  "tqdm>=4.66",
+  "behave>=1.2.7",
+  "selenium>=4.11",
+  "coverage>=7.3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "ruff>=0.5"]
+playwright = ["playwright>=1.45", "pytest-playwright>=0.5"]
+
+[tool.pytest.ini_options]
+testpaths = [".", "tests"]
+addopts = "-p no:cacheprovider"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+exclude = [
+  "artifacts",
+  "data",
+  "patches",
+  "venv",
+  "workspace",
+]
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82"]

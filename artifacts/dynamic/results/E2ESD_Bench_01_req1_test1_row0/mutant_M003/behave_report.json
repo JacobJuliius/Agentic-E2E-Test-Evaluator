@@ -1,0 +1,94 @@
+[
+{
+  "description": [
+    "The system should initiate a drag event when a user drags a product item from the product list, capturing the product's title and price for transfer."
+  ],
+  "elements": [
+    {
+      "keyword": "Scenario",
+      "location": "features/generated.feature:5",
+      "name": "[Normal] Dragging a product item initiates a drag event",
+      "status": "passed",
+      "steps": [
+        {
+          "keyword": "Given",
+          "location": "features/generated.feature:6",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:44"
+          },
+          "name": "the webpage is loaded with a product list",
+          "result": {
+            "duration": 3.5403010845184326,
+            "status": "passed"
+          },
+          "step_type": "given"
+        },
+        {
+          "keyword": "When",
+          "location": "features/generated.feature:7",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:50"
+          },
+          "name": "the user drags the product item with data-testid \"product-item-1\"",
+          "result": {
+            "duration": 2.096464157104492,
+            "status": "passed"
+          },
+          "step_type": "when"
+        },
+        {
+          "keyword": "Then",
+          "location": "features/generated.feature:8",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:66"
+          },
+          "name": "the drag event should be initiated",
+          "result": {
+            "duration": 0.03558063507080078,
+            "status": "passed"
+          },
+          "step_type": "then"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:9",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:78"
+          },
+          "name": "the product title \"The Essence of JavaScript\" should be captured",
+          "result": {
+            "duration": 0.029958486557006836,
+            "status": "passed"
+          },
+          "step_type": "then"
+        },
+        {
+          "keyword": "And",
+          "location": "features/generated.feature:10",
+          "match": {
+            "arguments": [],
+            "location": "features/steps/generated_steps.py:88"
+          },
+          "name": "the product price \"$40\" should be captured",
+          "result": {
+            "duration": 0.031587839126586914,
+            "status": "passed"
+          },
+          "step_type": "then"
+        }
+      ],
+      "tags": [],
+      "type": "scenario"
+    }
+  ],
+  "keyword": "Feature",
+  "location": "features/generated.feature:1",
+  "name": "Drag and Drop Product Item",
+  "status": "passed",
+  "tags": []
+}
+]

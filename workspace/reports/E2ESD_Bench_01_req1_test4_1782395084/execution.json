@@ -1,0 +1,15 @@
+{
+  "benchmark_id": "E2ESD_Bench_01",
+  "req_id": "1",
+  "test_id": "4",
+  "execution_status": "pass",
+  "return_code": 0,
+  "duration_seconds": 9.357,
+  "normalized_url": true,
+  "workspace": "deleted_after_success",
+  "stdout_path": "C:\\Users\\ASUSP\\Desktop\\E2E\\Agentic_E2Etest_Evaluator_3\\workspace\\reports\\E2ESD_Bench_01_req1_test4_1782395084\\stdout.txt",
+  "stderr_path": "C:\\Users\\ASUSP\\Desktop\\E2E\\Agentic_E2Etest_Evaluator_3\\workspace\\reports\\E2ESD_Bench_01_req1_test4_1782395084\\stderr.txt",
+  "report_path": "C:\\Users\\ASUSP\\Desktop\\E2E\\Agentic_E2Etest_Evaluator_3\\workspace\\reports\\E2ESD_Bench_01_req1_test4_1782395084\\execution.json",
+  "error_type": null,
+  "error_message": null
+}

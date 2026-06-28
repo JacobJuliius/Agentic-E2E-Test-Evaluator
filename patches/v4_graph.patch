@@ -1,0 +1,249 @@
+--- /mnt/data/graph.py	2026-06-25 17:31:13.445803274 +0000
++++ /mnt/data/e2e_v4_dynamic/graph.py	2026-06-25 17:35:16.384480572 +0000
+@@ -1,40 +1,50 @@
+-from typing import TypedDict, List
+-from langgraph.graph import StateGraph, END
++"""LangGraph orchestration for V4 hybrid static-dynamic E2E test evaluation."""
++from typing import List, TypedDict
++
+ from dotenv import load_dotenv
++from langgraph.graph import END, StateGraph
++
+ from agents import (
+-    syntax_linter_agent,
+-    requirement_alignment_agent,
+     assertion_quality_agent,
+-    hallucination_smell_agent,
+-    maintainability_agent,   
+-    critic_agent,
+     consensus_agent,
+-    refiner_agent
++    critic_agent,
++    hallucination_smell_agent,
++    maintainability_agent,
++    refiner_agent,
++    requirement_alignment_agent,
++    syntax_linter_agent,
+ )
++from dynamic_agents import branch_coverage_agent, execution_agent, mutation_agent
+ 
+ load_dotenv()
+ 
+-# ==========================================
+-# 1. Define the State Dictionary (V3.1 - Enhanced Context + RPD-safe routing)
+-# ==========================================
+-class E2EEvalState(TypedDict):
+-    # --- Base Inputs ---
++
++class E2EEvalState(TypedDict, total=False):
++    # Base benchmark inputs
+     fine_grained_reqs: str
+     executable_test_code: str
+-    
+-    # --- NEW CONTEXT INPUTS ---
+-    excutable_test_test_case: str  # BDD intent
+-    requirement_summary: str       # High-level context
+-    prompt: str                    # Original LLM generation prompt for UI specs
++    excutable_test_test_case: str
++    requirement_summary: str
++    prompt: str
++    reference_answer: str
++    case_uid: str
++    benchmark_id: str
++
++    # Dynamic configuration (local tools only; no LLM calls)
++    enable_dynamic: bool
++    enable_branch_coverage: bool
++    enable_mutation: bool
++    max_mutants: int
++    headless: bool
++    execution_timeout_seconds: int
++    mutant_timeout_seconds: int
+ 
+-    # --- Syntax Gatekeeper Outputs ---
++    # Static syntax/AST evidence
+     syntax_passed: bool
+     error_message: str
+-
+-    # --- AST Static Metrics ---
+     static_actions_count: int
+     static_assertions_count: int
+-    static_hardcoded_selectors: List[str]  # V3.1 legacy alias for brittle selectors
++    static_hardcoded_selectors: List[str]
+     static_stable_selectors: List[str]
+     static_medium_risk_selectors: List[str]
+     static_brittle_selectors: List[str]
+@@ -42,24 +52,18 @@
+     static_action_methods: List[str]
+     static_assertion_methods: List[str]
+ 
+-    # --- Requirement Agent Outputs ---
++    # LLM static evaluators
+     total_requirements_count: int
+     covered_requirements: List[str]
+     partially_covered_requirements: List[str]
+     missing_requirements: List[str]
+-
+-    # --- Assertion Agent Outputs ---
+     assertion_score: int
+     strong_assertions: List[str]
+     weak_assertions: List[str]
+     missing_assertions_rationale: str
+-
+-    # --- Hallucination & Smell Agent Outputs ---
+     hallucination_count: int
+     hallucinations: List[str]
+     test_smells: List[str]
+-
+-    # --- Maintainability Agent Outputs ---
+     maintainability_score: int
+     hardcoded_selector_issues: List[str]
+     duplication_issues: List[str]
+@@ -67,74 +71,98 @@
+     readability_issues: List[str]
+     maintainability_rationale: str
+ 
+-    # --- Critic Agent Outputs (Reflection) ---
++    # Dynamic execution agent
++    execution_status: str
++    execution_success: bool
++    execution_return_code: int
++    execution_duration_seconds: float
++    execution_stdout_tail: str
++    execution_stderr_tail: str
++    execution_artifact_dir: str
++    workspace_dir: str
++
++    # Dynamic branch-coverage agent
++    branch_coverage_status: str
++    branch_coverage: float | None
++    branches_covered: int
++    branches_total: int
++    instrumented_js_files: int
++    coverage_execution_status: str
++    coverage_artifact_dir: str
++    coverage_detail: str
++
++    # Dynamic mutation agent
++    mutation_status: str
++    mutation_score: float | None
++    mutants_total: int
++    mutants_killed: int
++    mutants_survived: int
++    mutants_timeout: int
++    mutants_inconclusive: int
++    mutation_report_path: str
++    surviving_mutants: List[str]
++    mutation_detail: str
++
++    # Critic, consensus and refiner
+     critic_feedback: str
+     revision_count: int
+     has_conflict: bool
+-
+-    # --- Consensus Agent Outputs ---
+-    overall_score: float
+     requirement_coverage: float
++    static_overall_score: float
++    overall_score: float
++    score_mode: str
+     final_reasoning: str
+-
+-    # --- Refiner Agent Outputs (Self-Healing) ---
+     improvement_report: str
+     fixed_code: str
+ 
+ 
+-# ==========================================
+-# 2. Define Conditional Routing Logic
+-# ==========================================
+-def route_after_syntax(state: E2EEvalState):
+-    if state.get("syntax_passed", False):
+-        return "requirement_node"
+-    else:
+-        return "consensus_node"
+-
+-def route_after_critic(state: E2EEvalState):
+-    """
+-    RPD budget control: with 70 cases × 6 calls = 420 calls (84% of 500 RPD limit),
+-    re-running evaluators on conflict would push worst-case to 770 calls (154% — over limit).
+-    Conflict is recorded in state (eval_has_conflict column) for analysis, but re-runs are
+-    disabled. The critic_feedback is still passed to agents as context if needed in future.
+-    """
+-    return "consensus_node"
+-
+-# ==========================================
+-# 3. Build Graph Orchestration
+-# ==========================================
+-workflow = StateGraph(E2EEvalState)
++def route_after_syntax(state: E2EEvalState) -> str:
++    return "requirement_node" if state.get("syntax_passed", False) else "consensus_node"
++
++
++def route_after_execution(state: E2EEvalState) -> str:
++    # Branch/mutation evidence is only meaningful when the unmodified app passes.
++    return "branch_coverage_node" if state.get("execution_status") == "PASSED" else "critic_node"
+ 
+-workflow.add_node("syntax_node",          syntax_linter_agent)
+-workflow.add_node("requirement_node",     requirement_alignment_agent)
+-workflow.add_node("assertion_node",       assertion_quality_agent)
+-workflow.add_node("hallucination_node",   hallucination_smell_agent)
++
++workflow = StateGraph(E2EEvalState)
++workflow.add_node("syntax_node", syntax_linter_agent)
++workflow.add_node("requirement_node", requirement_alignment_agent)
++workflow.add_node("assertion_node", assertion_quality_agent)
++workflow.add_node("hallucination_node", hallucination_smell_agent)
+ workflow.add_node("maintainability_node", maintainability_agent)
+-workflow.add_node("critic_node",          critic_agent)
+-workflow.add_node("consensus_node",       consensus_agent)
+-workflow.add_node("refiner_node",         refiner_agent)
++workflow.add_node("execution_node", execution_agent)
++workflow.add_node("branch_coverage_node", branch_coverage_agent)
++workflow.add_node("mutation_node", mutation_agent)
++workflow.add_node("critic_node", critic_agent)
++workflow.add_node("consensus_node", consensus_agent)
++workflow.add_node("refiner_node", refiner_agent)
+ 
+ workflow.set_entry_point("syntax_node")
+-
+ workflow.add_conditional_edges(
+     "syntax_node",
+     route_after_syntax,
+-    {
+-        "requirement_node": "requirement_node",
+-        "consensus_node":   "consensus_node",
+-    }
++    {"requirement_node": "requirement_node", "consensus_node": "consensus_node"},
+ )
+ 
+-workflow.add_edge("requirement_node",     "assertion_node")
+-workflow.add_edge("assertion_node",       "hallucination_node")
+-workflow.add_edge("hallucination_node",   "maintainability_node")
+-workflow.add_edge("maintainability_node", "critic_node")
++# LLM calls remain serial to stay under the 15 RPM rate limit.
++workflow.add_edge("requirement_node", "assertion_node")
++workflow.add_edge("assertion_node", "hallucination_node")
++workflow.add_edge("hallucination_node", "maintainability_node")
+ 
+-# route_after_critic always returns "consensus_node" (re-run disabled for RPD budget).
+-# Use a plain edge instead of conditional to make the intent explicit.
+-workflow.add_edge("critic_node", "consensus_node")
++# Local dynamic tool agents add no Gemini requests.
++workflow.add_edge("maintainability_node", "execution_node")
++workflow.add_conditional_edges(
++    "execution_node",
++    route_after_execution,
++    {"branch_coverage_node": "branch_coverage_node", "critic_node": "critic_node"},
++)
++workflow.add_edge("branch_coverage_node", "mutation_node")
++workflow.add_edge("mutation_node", "critic_node")
+ 
++# Critic remains one serial LLM call. Re-running the static jury is still disabled for RPD control.
++workflow.add_edge("critic_node", "consensus_node")
+ workflow.add_edge("consensus_node", "refiner_node")
+ workflow.add_edge("refiner_node", END)
+ 
+-app = workflow.compile()
+\ No newline at end of file
++app = workflow.compile()

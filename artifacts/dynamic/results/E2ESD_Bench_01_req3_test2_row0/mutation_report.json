@@ -1,0 +1,157 @@
+{
+  "baseline_execution_status": "PASSED",
+  "test_scope": {
+    "element_ids": [
+      "drop-area",
+      "product-item-1",
+      "product-item-2"
+    ],
+    "product_indices": [
+      "1",
+      "2"
+    ],
+    "prices": [
+      "$120",
+      "$40"
+    ],
+    "primary_source": "BDD_SCENARIO",
+    "confidence": "HIGH",
+    "bdd_scope": {
+      "element_ids": [
+        "drop-area",
+        "product-item-1",
+        "product-item-2"
+      ],
+      "product_indices": [
+        "1",
+        "2"
+      ],
+      "prices": [
+        "$120",
+        "$40"
+      ]
+    },
+    "assertion_scope": {
+      "element_ids": [],
+      "product_indices": [],
+      "prices": [
+        "$120",
+        "$120.00",
+        "$40",
+        "$40.00"
+      ]
+    },
+    "scenario_step_text": "Given the webpage is loaded And the product items with data-testid \"product-item-1\" and \"product-item-2\" are visible When the user drags the product with data-testid \"product-item-1\" and drops it into the cart container with data-testid \"drop-area\" And the user drags the product with data-testid \"product-item-2\" and drops it into the cart container with data-testid \"drop-area\" Then the cart display should show a product with title \"The Essence of JavaScript\" And the price \"$40\" And the quantity \"1\" And the cart display should show a product with title \"JavaScript: The Definitive Guide\" And the price \"$120\" And the quantity \"1\""
+  },
+  "mutation_score": 0.0,
+  "scope_aware_summary": {
+    "mutation_scope_status": "SCOPE_AWARE",
+    "relevant_mutants_total": 2,
+    "relevant_mutants_killed": 0,
+    "relevant_mutants_survived": 2,
+    "relevant_mutants_timeout": 0,
+    "relevant_mutants_inconclusive": 0,
+    "relevant_mutation_score": 0.0,
+    "out_of_scope_mutants_total": 1,
+    "out_of_scope_mutants_survived": 1,
+    "uncertain_mutants_total": 0,
+    "uncertain_mutants_survived": 0
+  },
+  "mutants_total": 3,
+  "mutants_killed": 0,
+  "mutants_survived": 3,
+  "mutants_timeout": 0,
+  "mutants_inconclusive": 0,
+  "records": [
+    {
+      "mutant_id": "M001",
+      "source_file": "source_project\\index.html",
+      "start": 3494,
+      "end": 3497,
+      "original": "$40",
+      "replacement": "$41",
+      "operator": "PRICE_PLUS_ONE",
+      "line": 108,
+      "scope_relation": "RELEVANT",
+      "scope_reason": "The mutated source card matches the concrete product index named by the current BDD/assertion target.",
+      "source_scope": {
+        "element_ids": [
+          "product-image-1",
+          "product-item-1",
+          "product-price-1",
+          "product-title-1"
+        ],
+        "product_indices": [
+          "1"
+        ],
+        "context_excerpt": "<li draggable=\"true\" data-testid=\"product-item-1\"> <img src=\"img/img1.jpg\" data-testid=\"product-image-1\"/> <p style=\"font-size: 12px\" data-testid=\"product-title-1\">The Essence of JavaScript</p> <p data-testid=\"product-price-1\">$40</p> </li>"
+      },
+      "verdict": "SURVIVED",
+      "execution_status": "PASSED",
+      "duration_seconds": 17.532,
+      "artifact_dir": "artifacts\\dynamic\\results\\E2ESD_Bench_01_req3_test2_row0\\baseline_mutant_M001",
+      "failed_steps": [],
+      "stderr_tail": ""
+    },
+    {
+      "mutant_id": "M002",
+      "source_file": "source_project\\index.html",
+      "start": 3742,
+      "end": 3746,
+      "original": "$120",
+      "replacement": "$121",
+      "operator": "PRICE_PLUS_ONE",
+      "line": 113,
+      "scope_relation": "RELEVANT",
+      "scope_reason": "The mutated source card matches the concrete product index named by the current BDD/assertion target.",
+      "source_scope": {
+        "element_ids": [
+          "product-image-2",
+          "product-item-2",
+          "product-price-2",
+          "product-title-2"
+        ],
+        "product_indices": [
+          "2"
+        ],
+        "context_excerpt": "<li draggable=\"true\" data-testid=\"product-item-2\"> <img src=\"img/img2.jpg\" data-testid=\"product-image-2\"/> <p style=\"font-size: 12px\" data-testid=\"product-title-2\">JavaScript: The Definitive Guide</p> <p data-testid=\"product-price-2\">$120</p> </li>"
+      },
+      "verdict": "SURVIVED",
+      "execution_status": "PASSED",
+      "duration_seconds": 17.734,
+      "artifact_dir": "artifacts\\dynamic\\results\\E2ESD_Bench_01_req3_test2_row0\\baseline_mutant_M002",
+      "failed_steps": [],
+      "stderr_tail": ""
+    },
+    {
+      "mutant_id": "M003",
+      "source_file": "source_project\\index.html",
+      "start": 3979,
+      "end": 3982,
+      "original": "$35",
+      "replacement": "$36",
+      "operator": "PRICE_PLUS_ONE",
+      "line": 118,
+      "scope_relation": "OUT_OF_SCOPE",
+      "scope_reason": "The mutant belongs to a different concrete product card than the current BDD/assertion target.",
+      "source_scope": {
+        "element_ids": [
+          "product-image-3",
+          "product-item-3",
+          "product-price-3",
+          "product-title-3"
+        ],
+        "product_indices": [
+          "3"
+        ],
+        "context_excerpt": "<li draggable=\"true\" data-testid=\"product-item-3\"> <img src=\"img/img3.jpg\" data-testid=\"product-image-3\"/> <p style=\"font-size: 12px\" data-testid=\"product-title-3\">Mastering JavaScript</p> <p data-testid=\"product-price-3\">$35</p> </li>"
+      },
+      "verdict": "SURVIVED",
+      "execution_status": "PASSED",
+      "duration_seconds": 17.547,
+      "artifact_dir": "artifacts\\dynamic\\results\\E2ESD_Bench_01_req3_test2_row0\\baseline_mutant_M003",
+      "failed_steps": [],
+      "stderr_tail": ""
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "baseline_execution_status": "PASSED",
+  "test_scope": {
+    "element_ids": [
+      "drop-area"
+    ],
+    "product_indices": [],
+    "prices": [],
+    "primary_source": "BDD_SCENARIO",
+    "confidence": "HIGH",
+    "bdd_scope": {
+      "element_ids": [
+        "drop-area"
+      ],
+      "product_indices": [],
+      "prices": []
+    },
+    "assertion_scope": {
+      "element_ids": [],
+      "product_indices": [],
+      "prices": []
+    },
+    "scenario_step_text": "Given the webpage is loaded with a product list When the user attempts to drag the non-draggable element with data-testid \"drop-area\" Then no drag event should be initiated And no product title should be captured And no product price should be captured"
+  },
+  "mutation_score": 100.0,
+  "scope_aware_summary": {
+    "mutation_scope_status": "SCOPE_AWARE",
+    "relevant_mutants_total": 1,
+    "relevant_mutants_killed": 1,
+    "relevant_mutants_survived": 0,
+    "relevant_mutants_timeout": 0,
+    "relevant_mutants_inconclusive": 0,
+    "relevant_mutation_score": 100.0,
+    "out_of_scope_mutants_total": 0,
+    "out_of_scope_mutants_survived": 0,
+    "uncertain_mutants_total": 0,
+    "uncertain_mutants_survived": 0
+  },
+  "mutants_total": 1,
+  "mutants_killed": 1,
+  "mutants_survived": 0,
+  "mutants_timeout": 0,
+  "mutants_inconclusive": 0,
+  "records": [
+    {
+      "mutant_id": "M001",
+      "source_file": "source_project\\index.html",
+      "start": 4245,
+      "end": 4245,
+      "original": "",
+      "replacement": " draggable=\"true\"",
+      "operator": "DRAGGABLE_MISSING_TO_TRUE",
+      "line": 126,
+      "scope_relation": "RELEVANT",
+      "scope_reason": "The mutant shares an explicit product data-testid with the current target.",
+      "source_scope": {
+        "element_ids": [
+          "div1",
+          "drop-area"
+        ],
+        "product_indices": [],
+        "context_excerpt": "<div data-testid=\"drop-area\" id=\"div1\">"
+      },
+      "verdict": "KILLED",
+      "execution_status": "TEST_FAILED",
+      "duration_seconds": 8.734,
+      "artifact_dir": "artifacts\\dynamic\\results\\E2ESD_Bench_01_req1_test4_row0\\baseline_mutant_M001",
+      "failed_steps": [
+        {
+          "keyword": "Then",
+          "name": "no drag event should be initiated",
+          "status": "failed",
+          "error": "ASSERT FAILED: Drag event was incorrectly initiated for a non-draggable element."
+        }
+      ],
+      "stderr_tail": ""
+    }
+  ]
+}
