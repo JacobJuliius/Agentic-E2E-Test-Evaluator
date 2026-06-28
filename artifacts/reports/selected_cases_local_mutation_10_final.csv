@@ -1,0 +1,394 @@
+﻿id,req_id,test_id,prompt,requirement_summary,fine_grained_reqs,reference_answer,excutable_test_test_case,excutable_test_step_code,source_project_dir,source_origin,input_source_project_dir,resolved_source_project_dir,resolved_entrypoint,dynamic_execution_status,dynamic_execution_return_code,dynamic_execution_stderr_tail,dynamic_coverage_status,dynamic_coverage_detail,dynamic_mutation_status,dynamic_mutation_score,dynamic_relevant_mutation_score,dynamic_mutation_scope_status,dynamic_total_mutants_generated,dynamic_valid_mutants,dynamic_killed_mutants_count,dynamic_survived_mutants_count,dynamic_invalid_mutants,dynamic_mutation_report_path
+E2ESD_Bench_01,1,4,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The application is a drag-and-drop shopping cart interface where users can drag items from a list and drop them into a designated area to add them to their cart. The application calculates and displays the total cost of the items in the cart."",
+    ""predefined_options"": ""The application uses predefined product titles and prices for each item, which are displayed in a list format."",
+    ""external_resources"": ""Images for each product are used as external resources, sourced from local paths such as 'img/img1.jpg', 'img/img2.jpg', etc."",
+    ""external_js_libraries"": ""No external JavaScript libraries are explicitly mentioned in the provided code.""
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+When the user drags a product item (li element) from the product list, the system should initiate a drag event, capturing the product's title and price for transfer. The product items are represented as 'li' elements with the attribute 'draggable' set to 'true'. Each product item contains an image, a title, and a price, identified by data-testid attributes such as 'product-item-1', 'product-title-1', and 'product-price-1'. The drag event should capture the title and price of the product being dragged. 
+- Requirement 2: 
+The system should allow users to drag and drop product items(data-testid=""product-item-1"", data-testid=""product-item-2"", etc.) into a designated drop area (id=""div1"", data-testid=""drop-area"") to add them to the cart. Upon dropping, the cart display should automatically update: the product title appears in .box2, the unit price in .box3, and the quantity in .box1. The system supports adding both different and repeated products.
+- Requirement 3: 
+""The system calculates the total price by summing the prices of all products in the cart, formatting the total to two decimal places with the appropriate currency symbol (e.g., '$80.00'), and displays the total in the <div id=""allMoney""> element.""
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The application is a drag-and-drop shopping cart interface where users can drag items from a list and drop them into a designated area to add them to their cart. The application calculates and displays the total cost of the items in the cart.', 'predefined_options': 'The application uses predefined product titles and prices for each item, which are displayed in a list format.', 'external_resources': ""Images for each product are used as external resources, sourced from local paths such as 'img/img1.jpg', 'img/img2.jpg', etc."", 'external_js_libraries': 'No external JavaScript libraries are explicitly mentioned in the provided code.'}","When the user drags a product item (li element) from the product list, the system should initiate a drag event, capturing the product's title and price for transfer. The product items are represented as 'li' elements with the attribute 'draggable' set to 'true'. Each product item contains an image, a title, and a price, identified by data-testid attributes such as 'product-item-1', 'product-title-1', and 'product-price-1'. The drag event should capture the title and price of the product being dragged. ",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_01/,"Feature: Drag and Drop Product Item
+  The system should initiate a drag event when a user drags a product item from the product list, capturing the product's title and price for transfer.
+
+
+  Scenario: [Error] Attempting to drag a non-draggable element
+    Given the webpage is loaded with a product list
+    When the user attempts to drag the non-draggable element with data-testid ""drop-area""
+    Then no drag event should be initiated
+    And no product title should be captured
+    And no product price should be captured","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_drag_event_initiated(driver, element):
+    # This function checks if a drag event is initiated by checking if the element is draggable
+    return element.get_attribute(""draggable"") == ""true""
+
+@given('the webpage is loaded with a product list')
+def step_given_webpage_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)  # Allow time for the page to load
+
+@when('the user attempts to drag the non-draggable element with data-testid ""drop-area""')
+def step_when_attempt_drag_non_draggable(context):
+    drop_area = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='drop-area']""))
+    )
+    context.drag_event_initiated = is_drag_event_initiated(context.driver, drop_area)
+    time.sleep(1)
+
+@then('no drag event should be initiated')
+def step_then_no_drag_event_initiated(context):
+    assert not context.drag_event_initiated, ""Drag event was incorrectly initiated for a non-draggable element.""
+
+@then('no product title should be captured')
+def step_then_no_product_title_captured(context):
+    # Since no drag event is initiated, no title should be captured
+    # This is a placeholder check as actual drag data capture would require JS execution
+    assert True, ""No product title should be captured.""
+
+@then('no product price should be captured')
+def step_then_no_product_price_captured(context):
+    # Since no drag event is initiated, no price should be captured
+    # This is a placeholder check as actual drag data capture would require JS execution
+    assert True, ""No product price should be captured.""
+
+def after_scenario(context, scenario):
+    context.driver.quit()",G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_01\source_projcet,LOCAL_SOURCE_OVERRIDE,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_01\source_projcet,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_01\source_projcet,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_01\source_projcet\index.html,PASSED,0,,PASSED,Diagnostic BDD step-execution evidence; it does not measure requirement completeness or source branch coverage.,PASSED,0.0,,NO_RELEVANT_MUTANTS,5,5,0,5,0,artifacts\dynamic\results\E2ESD_Bench_01_req1_test4_row0\mutation_report.json
+E2ESD_Bench_02,1,1,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Notes App allows users to create, edit, and delete notes. Users can add new notes, edit existing ones using a toggle between a textarea and a display mode, and delete notes. The application uses localStorage to persist notes across sessions."",
+    ""predefined_options"": ""The application does not have predefined options for note content; users start with an empty note or edit existing ones."",
+    ""external_resources"": ""Font Awesome icons for buttons (plus, edit, delete) sourced from a CDN."",
+    ""external_js_libraries"": ""Marked.js for Markdown rendering, sourced from a CDN.""
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+When the user clicks the ""Add note"" button (id=""add"", class=""add"", data-testid=""add-note-button""), a new note is created and appended to the document body as a <div> element with the class ""note"". Inside each note, there is a visible, empty <textarea> (data-testid=""note-textarea"") for user input. The application supports multiple rapid clicks on the ""Add note"" button, with each click creating a separate note, each containing its own textarea.
+- Requirement 2: 
+The Notes App must allow users to edit notes with Markdown rendering support. When editing a note, the user interacts with a textarea (data-testid=""note-textarea"") where they can input or modify Markdown content. As the user types Markdown (e.g., # Heading, **bold**, _italic_, [link](...)), the content is dynamically rendered in the main display area (data-testid=""note-main"") in real-time, with proper HTML formatting (e.g., **Bold** becomes <strong>Bold</strong>). The app should handle complex Markdown syntax, ensuring that even invalid Markdown (e.g., unmatched **) does not cause crashes or errors, and instead displays the raw input when the user exits the edit mode by clicking the ""Edit"" button (data-testid=""edit-note-button""). All changes should be reflected immediately in local storage to persist the current state of the note.
+- Requirement 3: 
+The Notes App must allow users to create and manage notes with seamless view and edit functionality. When the app page loads, users can create a new note by clicking the ""Add note"" button (data-testid=""add-note-button""). Upon creation, the note should immediately enter edit mode: the textarea (data-testid=""note-textarea"") is visible for user input, while the main content area (data-testid=""note-main"") remains hidden. Users can switch between edit and view modes by clicking the ""Edit"" button (data-testid=""edit-note-button""). In view mode, the main content area becomes visible to display the formatted content, and the textarea is hidden; in edit mode, this behavior is reversed. All changes typed into the textarea should be automatically saved to local storage, preserving the note’s state across sessions.
+- Requirement 4: 
+When the user interacts with the Notes App, they should be able to delete a note by clicking the ""Delete"" button associated with that note (data-testid=""delete-note-button""). Upon clicking this button, the targeted note must be immediately removed from the DOM so it no longer appears on the page, and the corresponding entry must also be removed from localStorage to ensure it is no longer part of the stored notes array.
+- Requirement 5: 
+When the Notes App webpage loads, it must retrieve all saved notes from localStorage and display them accordingly. For each stored note, the app should dynamically create a div element with the class note, which includes a div with the class tools containing an ""Edit"" button (data-testid=""edit-note-button"") and a ""Delete"" button (data-testid=""delete-note-button""). Each note must also include a div with the class main (data-testid=""note-main"") to show the note content, and a textarea (data-testid=""note-textarea"") for editing. Notes retrieved from localStorage should be rendered with their content displayed in the main div, with the textarea hidden by default. For notes that have no content, the application should instead show the textarea and hide the main div, allowing immediate editing. If localStorage is empty, no notes should be shown. Internally, the notes variable is used to store the array of note content, retrieved using JSON.parse(localStorage.getItem('notes')).
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Notes App allows users to create, edit, and delete notes. Users can add new notes, edit existing ones using a toggle between a textarea and a display mode, and delete notes. The application uses localStorage to persist notes across sessions.', 'predefined_options': 'The application does not have predefined options for note content; users start with an empty note or edit existing ones.', 'external_resources': 'Font Awesome icons for buttons (plus, edit, delete) sourced from a CDN.', 'external_js_libraries': 'Marked.js for Markdown rendering, sourced from a CDN.'}","When the user clicks the ""Add note"" button (id=""add"", class=""add"", data-testid=""add-note-button""), a new note is created and appended to the document body as a <div> element with the class ""note"". Inside each note, there is a visible, empty <textarea> (data-testid=""note-textarea"") for user input. The application supports multiple rapid clicks on the ""Add note"" button, with each click creating a separate note, each containing its own textarea.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_02/,"Feature: Note Creation
+  The user can create a new note by clicking the 'Add note' button, which displays a new note with an empty textarea for input.
+
+
+  Scenario: [Normal] User clicks 'Add note' button to create a new note
+    Given the Notes App page is loaded
+    When the user clicks the 'Add note' button with data-testid 'add-note-button'
+    Then a new note is displayed on the page
+    And the new note contains an empty textarea with data-testid 'note-textarea'
+    And the textarea is visible
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+@given(""the Notes App page is loaded"")
+def step_given_notes_app_page_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)  # Allow time for the page to load
+
+@when(""the user clicks the 'Add note' button with data-testid 'add-note-button'"")
+def step_when_user_clicks_add_note_button(context):
+    add_note_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='add-note-button']""))
+    )
+    add_note_button.click()
+    time.sleep(1)  # Allow time for the note to be added
+
+@then(""a new note is displayed on the page"")
+def step_then_new_note_displayed(context):
+    notes = context.driver.find_elements(By.CSS_SELECTOR, "".note"")
+    assert len(notes) > 0, ""No new note was displayed on the page""
+
+@then(""the new note contains an empty textarea with data-testid 'note-textarea'"")
+def step_then_note_contains_empty_textarea(context):
+    textarea = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='note-textarea']"")
+    assert textarea.get_attribute(""value"") == """", ""The textarea is not empty""
+
+@then(""the textarea is visible"")
+def step_then_textarea_is_visible(context):
+    textarea = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='note-textarea']"")
+    assert textarea.is_displayed(), ""The textarea is not visible""
+
+def after_scenario(context, scenario):
+    context.driver.quit()",G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_02\source_projcet,LOCAL_SOURCE_OVERRIDE,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_02\source_projcet,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_02\source_projcet,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_02\source_projcet\index.html,PASSED,0,,PASSED,Diagnostic BDD step-execution evidence; it does not measure requirement completeness or source branch coverage.,PASSED,20.0,100.0,SCOPE_AWARE,10,10,2,8,0,artifacts\dynamic\results\E2ESD_Bench_02_req1_test1_row1\mutation_report.json
+E2ESD_Bench_03,2,2,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Movie Seat Booking application allows users to select a movie and book seats in a theater. Users can choose from a list of movies, select available seats, and view the total cost of their selections. The application retains user selections using local storage to persist data across sessions."",
+    ""predefined_options"": ""The application offers a set of predefined movie options, each associated with a specific ticket price and uniquely identifiable by its corresponding data-testid. The default selection is 'The Big Lebowski' priced at $10 (data-testid='movie-option-1'), followed by 'Fargo' at $12 (data-testid='movie-option-2'), 'O Brother' at $8 (data-testid='movie-option-3'), and 'No Country for Old Men' at $9 (data-testid='movie-option-4'). The theater seating is arranged in 6 rows, with each row containing 8 seats. Every seat is uniquely identifiable via a data-testid in the format seat-row-column. For example, seat-1-1 refers to the first seat in the first row, and seat-2-3 refers to the third seat in the second row. Initially, the following seats are marked as occupied: Row 2: Seat 4 (seat-2-4) and Seat 5 (seat-2-5); Row 3: Seat 7 (seat-3-7) and Seat 8 (seat-3-8); Row 5: Seat 4 (seat-5-4) and Seat 5 (seat-5-5); Row 6: Seat 5 (seat-6-5), Seat 6 (seat-6-6), and Seat 7 (seat-6-7). This configuration ensures that each seat and movie option can be distinctly identified and interacted with, facilitating robust and precise testing."",
+    ""external_resources"": ""No external resources such as images or audio files are directly referenced in the provided code."",
+    ""external_js_libraries"": ""No external JavaScript libraries are referenced in the provided code.""
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+Upon loading the webpage, users can interact with the seat map and movie dropdown to dynamically update the total price. Clicking on any available seat (i.e., a seat without the occupied class) marks it as selected, and the selected seat count updates in the element with data-testid=""selected-count"". Users can also select a movie from the dropdown (data-testid=""movie-select""), where each option has a value representing the ticket price. The total price, shown in the element with data-testid=""total-price"", is calculated as the number of selected seats multiplied by the selected movie’s price. Seats marked as occupied must not be selectable and should not affect the count or price. Changing the selected movie at any time updates the total price accordingly.
+- Requirement 2: 
+Upon interacting with the movie seat booking interface, users can select a movie from a dropdown menu, with options like 'The Big Lebowski ($10)', 'Fargo ($12)', 'O Brother ($8)', and 'No Country for Old Men ($9)', each identified by a specific data-testid. Once a movie is selected, its price updates accordingly. When users click on an available seat (e.g., identified by data-testid=""seat-1-1""), the system toggles the seat's selection status. Selected seats are visually marked, and their indices are stored in localStorage. The seat count (data-testid=""selected-count"") and total price (data-testid=""total-price"") are dynamically updated based on the number of selected seats and the chosen movie's price. Seats marked as 'occupied' cannot be selected or included in the calculation. Users can deselect previously selected seats by clicking on them again, and the UI, along with localStorage, updates accordingly.
+- Requirement 3: 
+Upon loading the 'Movie Seat Booking' webpage, the system retrieves and applies previously selected seats and the movie selection from local storage. If local storage contains the keys 'selectedSeats' and 'selectedMovieIndex', the system will mark the seats corresponding to the indices in 'selectedSeats' with the 'selected' class. Additionally, the movie dropdown will be set to the option corresponding to 'selectedMovieIndex'. If local storage does not contain these values, no seats will be marked as 'selected', and the dropdown will default to the first movie option, 'The Big Lebowski ($10)'.
+- Requirement 4: 
+The system must dynamically display the number of selected seats and the total price as the user interacts with seat selections and movie choices. Specifically, when the user selects a movie from the dropdown menu with data-testid 'movie-select', the ticket price should be set according to the selected movie's value. As the user clicks on available seats (those without the 'occupied' class) within the seating area, the system should toggle the 'selected' class on the clicked seat. The count of selected seats, displayed with data-testid 'selected-count', should update to reflect the current number of seats with the 'selected' class. The total price, displayed with data-testid 'total-price', should be calculated as the product of the number of selected seats and the current ticket price. If a user deselects a seat by clicking on it again, the count and total price should decrease accordingly. If the user changes the movie selection after selecting seats, the total price should update based on the new ticket price while maintaining the count of selected seats. The system must prevent users from selecting seats marked as 'occupied'.
+- Requirement 5: 
+On the Movie Seat Booking page, users can distinguish between available, selected, and occupied seats through legends that indicate the status of each seat. Each status has its own corresponding legend (e.g., data-testid = 'seat-select') to help users understand the different seat states. Occupied seats are non-interactive and clearly marked to prevent selection. Available seats can be clicked to toggle their selection. When users select or deselect seats, the count of selected seats and the total price are updated accordingly.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Movie Seat Booking application allows users to select a movie and book seats in a theater. Users can choose from a list of movies, select available seats, and view the total cost of their selections. The application retains user selections using local storage to persist data across sessions.', 'predefined_options': ""The application offers a set of predefined movie options, each associated with a specific ticket price and uniquely identifiable by its corresponding data-testid. The default selection is 'The Big Lebowski' priced at $10 (data-testid='movie-option-1'), followed by 'Fargo' at $12 (data-testid='movie-option-2'), 'O Brother' at $8 (data-testid='movie-option-3'), and 'No Country for Old Men' at $9 (data-testid='movie-option-4'). The theater seating is arranged in 6 rows, with each row containing 8 seats. Every seat is uniquely identifiable via a data-testid in the format seat-row-column. For example, seat-1-1 refers to the first seat in the first row, and seat-2-3 refers to the third seat in the second row. Initially, the following seats are marked as occupied: Row 2: Seat 4 (seat-2-4) and Seat 5 (seat-2-5); Row 3: Seat 7 (seat-3-7) and Seat 8 (seat-3-8); Row 5: Seat 4 (seat-5-4) and Seat 5 (seat-5-5); Row 6: Seat 5 (seat-6-5), Seat 6 (seat-6-6), and Seat 7 (seat-6-7). This configuration ensures that each seat and movie option can be distinctly identified and interacted with, facilitating robust and precise testing."", 'external_resources': 'No external resources such as images or audio files are directly referenced in the provided code.', 'external_js_libraries': 'No external JavaScript libraries are referenced in the provided code.'}","Upon interacting with the movie seat booking interface, users can select a movie from a dropdown menu, with options like 'The Big Lebowski ($10)', 'Fargo ($12)', 'O Brother ($8)', and 'No Country for Old Men ($9)', each identified by a specific data-testid. Once a movie is selected, its price updates accordingly. When users click on an available seat (e.g., identified by data-testid=""seat-1-1""), the system toggles the seat's selection status. Selected seats are visually marked, and their indices are stored in localStorage. The seat count (data-testid=""selected-count"") and total price (data-testid=""total-price"") are dynamically updated based on the number of selected seats and the chosen movie's price. Seats marked as 'occupied' cannot be selected or included in the calculation. Users can deselect previously selected seats by clicking on them again, and the UI, along with localStorage, updates accordingly.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_03/,"Feature: Seat Selection and Price Calculation
+  The system should allow users to toggle the selection status of available seats, update the count of selected seats, calculate the total price, and store the indices of selected seats in local storage.
+
+
+  Scenario: [Edge] Toggle multiple seats and verify count and price
+    Given the movie seat booking page is loaded
+    And the user selects ""Fargo ($12)"" from the movie dropdown with data-testid ""movie-select""
+    And the user sees 0 seats selected and a total price of $0
+    When the user clicks on available seats with data-testid ""seat-1-1"" and ""seat-1-2""
+    Then the seats with data-testid ""seat-1-1"" and ""seat-1-2"" should be marked as selected
+    And the user should see 2 seats selected and a total price of $24
+    And local storage should contain the indices of the selected seats
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+@given('the movie seat booking page is loaded')
+def step_given_page_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)
+
+@given('the user selects ""Fargo ($12)"" from the movie dropdown with data-testid ""movie-select""')
+def step_given_select_movie(context):
+    movie_select = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='movie-select']""))
+    )
+    movie_select.click()
+    time.sleep(1)
+    fargo_option = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='movie-option-2']"")
+    fargo_option.click()
+    time.sleep(1)
+
+@given('the user sees 0 seats selected and a total price of $0')
+def step_given_initial_seat_count(context):
+    selected_count = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='selected-count']"")
+    total_price = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='total-price']"")
+    assert selected_count.text.strip() == ""0"", f""Expected 0 seats selected, but got {selected_count.text.strip()}""
+    assert total_price.text.strip() == ""0"", f""Expected total price $0, but got {total_price.text.strip()}""
+
+@when('the user clicks on available seats with data-testid ""seat-1-1"" and ""seat-1-2""')
+def step_when_click_seats(context):
+    seat_1_1 = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='seat-1-1']""))
+    )
+    seat_1_1.click()
+    time.sleep(1)
+    seat_1_2 = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='seat-1-2']""))
+    )
+    seat_1_2.click()
+    time.sleep(1)
+
+@then('the seats with data-testid ""seat-1-1"" and ""seat-1-2"" should be marked as selected')
+def step_then_seats_marked_selected(context):
+    seat_1_1 = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='seat-1-1']"")
+    seat_1_2 = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='seat-1-2']"")
+    assert ""selected"" in seat_1_1.get_attribute(""class""), ""Seat 1-1 is not marked as selected""
+    assert ""selected"" in seat_1_2.get_attribute(""class""), ""Seat 1-2 is not marked as selected""
+
+@then('the user should see 2 seats selected and a total price of $24')
+def step_then_seat_count_and_price(context):
+    selected_count = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='selected-count']"")
+    total_price = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='total-price']"")
+    assert selected_count.text.strip() == ""2"", f""Expected 2 seats selected, but got {selected_count.text.strip()}""
+    assert total_price.text.strip() == ""24"", f""Expected total price $24, but got {total_price.text.strip()}""
+
+@then('local storage should contain the indices of the selected seats')
+def step_then_local_storage(context):
+    selected_seats = context.driver.execute_script(""return localStorage.getItem('selectedSeats');"")
+    assert selected_seats is not None, ""Local storage does not contain selected seats""
+    selected_seats_indices = [int(index) for index in selected_seats.strip('[]').split(',')]
+    assert 0 in selected_seats_indices, ""Seat index 0 (seat-1-1) not found in local storage""
+    assert 1 in selected_seats_indices, ""Seat index 1 (seat-1-2) not found in local storage""
+
+def after_scenario(context, scenario):
+    context.driver.quit()",G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_03\source_projcet,LOCAL_SOURCE_OVERRIDE,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_03\source_projcet,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_03\source_projcet,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_03\source_projcet\index.html,PASSED,0,,PASSED,Diagnostic BDD step-execution evidence; it does not measure requirement completeness or source branch coverage.,PASSED,40.0,50.0,SCOPE_AWARE,10,10,4,6,0,artifacts\dynamic\results\E2ESD_Bench_03_req2_test2_row2\mutation_report.json
+E2ESD_Bench_05,3,1,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The application is a web-based dictionary that allows users to search for word definitions, pronunciations, and examples. It also provides a daily quote, manages bookmarks for frequently accessed words, and maintains a history of recent searches."",
+    ""predefined_options"": ""The application uses predefined options such as default values for input fields and preset selections for bookmarks and recent searches."",
+    ""external_resources"": ""The application uses external resources such as quotes from 'https://type.fit/api/quotes' and 'http://api.quotable.io/random', and word data from 'https://api.dictionaryapi.dev/api/v2/entries/en/'."",
+    ""external_js_libraries"": ""The application uses external JavaScript libraries such as jQuery (https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js), Bootstrap (https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js), and Modernizr (https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js).""
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The system must allow users to interact with the search functionality on the 'Dictionary' webpage. When the search input field, identified by data-testid 'search-input', is empty and the user clicks the 'Search' button (data-testid 'search-button'), a toast notification with data-testid 'error-toast' should be displayed, containing the message ""ERROR: Please type the word to be searched..."". If the search input contains a valid word, the error toast should not be shown, ensuring the user is only prompted when necessary.
+- Requirement 2: 
+The web application must allow users to search for word details. When a user enters a word in the search input field (data-testid 'search-input') and clicks the 'Search' button (data-testid 'search-button'), the system should fetch the word's definition, pronunciation, and example from the dictionary API. A result card (data-testid 'result-card') should then be displayed with the searched word as the title (data-testid 'card-title'), its pronunciation (data-testid 'word-pronunciation'), meaning (data-testid 'word-meaning'), and an example sentence (data-testid 'word-example'). 
+- Requirement 3: 
+The system must provide a 'Reset' button on the Dictionary page that clears the search input field and hides the result card. When the user clicks the 'Reset' button (data-testid 'reset-button'), the search input field (data-testid 'search-input') should be cleared, and the result card (data-testid 'result-card') should be hidden. This functionality should work whether the search input field is empty or contains text, and regardless of whether a search has been performed. The system should ensure that the result card remains hidden after the reset, providing a consistent user experience.
+- Requirement 4: 
+The web application must allow users to toggle the bookmark status of a word's result card and update the list of bookmarked words in the offcanvas section. When the user clicks the 'Bookmark' icon (data-testid 'bookmark-icon') on a word's result card (data-testid 'result-card'), the system should update the icon to reflect the current bookmark status. If the word is bookmarked, it should be added to the list of bookmarked words displayed in the offcanvas section (data-testid 'bookmarked-words-list'). The user can view this list by clicking the 'Bookmarks' button (data-testid 'bookmark-button'), which opens the offcanvas section. The system must ensure that the list accurately reflects the bookmarked words, allowing users to add and remove words from the bookmark list by toggling the bookmark icon.
+- Requirement 5: 
+The system should maintain a list of the five most recent searched words and display them in the 'Recent Searches' section (data-testid 'recently-searched'). Each time the user performs a search by entering a word in the search input field (data-testid 'search-input') and clicking the 'Search' button (data-testid 'search-button'), the system should update the list. If the list exceeds five entries, the oldest search should be removed to make room for the new one. 
+- Requirement 6: 
+The web application must display a 'Back to Top' button (data-testid 'back-to-top-button') when the user scrolls more than 20 pixels down. Clicking the button should smoothly scroll the page to the top, and the button should hide once the page is at the top.
+- Requirement 7: 
+The system must allow users to manage bookmarked words in the offcanvas section. When the user clicks the 'Bookmarks' button (data-testid=""bookmark-button""), the offcanvas opens, displaying the bookmarked words list (data-testid=""bookmarked-words-list""). Each word has a close button (data-testid=""bookmark-delete-button-${index}"") for removal. Clicking the close button deletes the word and updates the list. If no words are bookmarked, an <h5> with the text 'No words bookmarked !!' is shown in the offcanvas.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The application is a web-based dictionary that allows users to search for word definitions, pronunciations, and examples. It also provides a daily quote, manages bookmarks for frequently accessed words, and maintains a history of recent searches.', 'predefined_options': 'The application uses predefined options such as default values for input fields and preset selections for bookmarks and recent searches.', 'external_resources': ""The application uses external resources such as quotes from 'https://type.fit/api/quotes' and 'http://api.quotable.io/random', and word data from 'https://api.dictionaryapi.dev/api/v2/entries/en/'."", 'external_js_libraries': 'The application uses external JavaScript libraries such as jQuery (https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js), Bootstrap (https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js), and Modernizr (https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js).'}","The web application must allow users to search for word details. When a user enters a word in the search input field (data-testid 'search-input') and clicks the 'Search' button (data-testid 'search-button'), the system should fetch the word's definition, pronunciation, and example from the dictionary API. A result card (data-testid 'result-card') should then be displayed with the searched word as the title (data-testid 'card-title'), its pronunciation (data-testid 'word-pronunciation'), meaning (data-testid 'word-meaning'), and an example sentence (data-testid 'word-example'). ",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_05/,"Feature: Fetch and display word details upon clicking the 'Search' button
+  The system should fetch the word's definition, pronunciation, and example from the dictionary API and display them in the result card when a valid word is entered and the 'Search' button is clicked.
+
+
+Scenario: [Normal] Display word details for a valid word
+    Given the user is on the Dictionary page
+    And the search input field with data-testid 'search-input' is visible
+    When the user enters 'example' into the search input field with data-testid 'search-input'
+    And the user clicks the 'Search' button with data-testid 'search-button'
+    Then the result card with data-testid 'result-card' should be visible
+    And the card title with data-testid 'card-title' should display 'example'
+    And the word pronunciation with data-testid 'word-pronunciation' should display the pronunciation text
+    And the word meaning with data-testid 'word-meaning' should display the definition
+    And the word example with data-testid 'word-example' should display an example sentence","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_visible(element):
+    return element.is_displayed()
+
+@given('the user is on the Dictionary page')
+def step_given_user_on_dictionary_page(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)
+
+@given('the search input field with data-testid \'search-input\' is visible')
+def step_given_search_input_visible(context):
+    search_input = WebDriverWait(context.driver, 10).until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, ""[data-testid='search-input']""))
+    )
+    assert is_visible(search_input), ""Search input field is not visible""
+
+@when('the user enters \'example\' into the search input field with data-testid \'search-input\'')
+def step_when_user_enters_example(context):
+    search_input = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='search-input']"")
+    search_input.clear()
+    search_input.send_keys(""example"")
+    time.sleep(1)
+
+@when('the user clicks the \'Search\' button with data-testid \'search-button\'')
+def step_when_user_clicks_search_button(context):
+    search_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='search-button']""))
+    )
+    search_button.click()
+    time.sleep(1)
+
+@then('the result card with data-testid \'result-card\' should be visible')
+def step_then_result_card_visible(context):
+    result_card = WebDriverWait(context.driver, 10).until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, ""[data-testid='result-card']""))
+    )
+    assert is_visible(result_card), ""Result card is not visible""
+
+@then('the card title with data-testid \'card-title\' should display \'example\'')
+def step_then_card_title_displays_example(context):
+    card_title = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='card-title']"")
+    expected_text = ""example""
+    assert expected_text.lower() in card_title.text.lower(), f""Expected '{expected_text}' in '{card_title.text}'""
+
+@then('the word pronunciation with data-testid \'word-pronunciation\' should display the pronunciation text')
+def step_then_word_pronunciation_displays(context):
+    word_pronunciation = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='word-pronunciation']"")
+    assert word_pronunciation.text.strip(), ""Word pronunciation text is not displayed""
+
+@then('the word meaning with data-testid \'word-meaning\' should display the definition')
+def step_then_word_meaning_displays(context):
+    word_meaning = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='word-meaning']"")
+    assert word_meaning.text.strip(), ""Word meaning text is not displayed""
+
+@then('the word example with data-testid \'word-example\' should display an example sentence')
+def step_then_word_example_displays(context):
+    word_example = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='word-example']"")
+    assert word_example.text.strip(), ""Word example text is not displayed""
+
+def after_scenario(context, scenario):
+    context.driver.quit()",G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_05\source_projcet,LOCAL_SOURCE_OVERRIDE,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_05\source_projcet,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_05\source_projcet,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_05\source_projcet\index.html,PASSED,0,,PASSED,Diagnostic BDD step-execution evidence; it does not measure requirement completeness or source branch coverage.,PASSED,0.0,0.0,SCOPE_AWARE,10,10,0,10,0,artifacts\dynamic\results\E2ESD_Bench_05_req3_test1_row3\mutation_report.json

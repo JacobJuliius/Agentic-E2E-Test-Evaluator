@@ -200,6 +200,39 @@ def test_javascript_validation_timeout_marks_mutant_invalid(
     assert validation["status"] == "VALIDATION_TIMEOUT"
 
 
+def test_javascript_validation_uses_absolute_path_with_source_cwd(
+    monkeypatch, tmp_path: Path
+):
+    app_dir = tmp_path / "mutant-workspace" / "source_project"
+    app_dir.mkdir(parents=True)
+    source = app_dir / "script.js"
+    source.write_text("const value = 1;", encoding="utf-8")
+    mutant = next(
+        iter(NumericLiteralOperator().generate(source.read_text(), "script.js"))
+    )
+    apply_mutation(app_dir, mutant)
+    monkeypatch.setattr(shutil, "which", lambda executable: "node")
+    observed = {}
+
+    def fake_runner(command, **kwargs):
+        observed["command"] = command
+        observed["cwd"] = kwargs["cwd"]
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    validation = validate_mutated_project(
+        app_dir,
+        mutant,
+        timeout_seconds=2,
+        subprocess_runner=fake_runner,
+    )
+
+    checked_path = Path(observed["command"][-1])
+    assert validation["valid"] is True
+    assert checked_path.is_absolute()
+    assert checked_path == source.resolve()
+    assert Path(observed["cwd"]) == app_dir
+
+
 def _fixture_callbacks(tmp_path: Path, execution_status: str):
     cleanup_root = tmp_path / "workspaces"
     cleanup_root.mkdir()

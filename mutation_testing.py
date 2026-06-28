@@ -689,7 +689,7 @@ def validate_mutated_project(
         elif suffix in {".js", ".mjs", ".cjs"}:
             node = shutil.which("node")
             if node:
-                command = [node, "--check", str(target)]
+                command = [node, "--check", str(target.resolve())]
                 commands.append(subprocess.list2cmdline(command))
                 completed = subprocess_runner(
                     command,

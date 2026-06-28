@@ -21,3 +21,13 @@ env/
 # 5. 系统垃圾文件
 .DS_Store
 Thumbs.db
+
+__pycache__/
+*.pyc
+artifacts/dynamic/workspaces/
+artifacts/dynamic/results/
+artifacts/runtime/
+node_modules/
+.pytest_cache/
+.coverage
+htmlcov/

@@ -41,9 +41,9 @@ def test_dynamic_coverage_by_bdd_phase():
     assert summary["oracle_step_coverage"] == 100.0
 
 
-def test_dynamic_coverage_skips_when_baseline_failed():
+def test_dynamic_coverage_requires_report_when_baseline_failed():
     result = dynamic_coverage_agent({"execution_status": "TEST_FAILED"})
-    assert result["dynamic_coverage_status"] == "SKIPPED_BASELINE_NOT_PASS"
+    assert result["dynamic_coverage_status"] == "INCONCLUSIVE_REPORT_MISSING"
 
 
 def test_dynamic_coverage_reads_json_report(tmp_path: Path):

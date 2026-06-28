@@ -5,8 +5,12 @@ from pathlib import Path
 def _load_consensus_agent():
     source = Path("agents.py").read_text(encoding="utf-8")
     module = ast.parse(source)
-    function = next(node for node in module.body if isinstance(node, ast.FunctionDef) and node.name == "consensus_agent")
-    isolated = ast.Module(body=[function], type_ignores=[])
+    functions = [
+        node for node in module.body
+        if isinstance(node, ast.FunctionDef)
+        and node.name in {"_as_number", "consensus_agent"}
+    ]
+    isolated = ast.Module(body=functions, type_ignores=[])
     ast.fix_missing_locations(isolated)
     namespace = {}
     exec(compile(isolated, "agents.py", "exec"), namespace)
@@ -28,20 +32,20 @@ def _clean_static_state():
     }
 
 
-def test_hybrid_score_uses_execution_branch_and_mutation():
+def test_hybrid_score_uses_execution_and_relevant_mutation():
     consensus = _load_consensus_agent()
     result = consensus({
         **_clean_static_state(),
         "execution_status": "PASSED",
-        "branch_coverage_status": "PASSED",
-        "branch_coverage": 80.0,
         "mutation_status": "PASSED",
         "mutation_score": 60.0,
+        "mutation_scope_status": "SCOPE_AWARE",
+        "relevant_mutation_score": 60.0,
     })
-    # 100*.50 + 100*.20 + 80*.15 + 60*.15 = 91
+    # 100*.60 + 100*.15 + 60*.25 = 90
     assert result["static_overall_score"] == 100.0
-    assert result["overall_score"] == 91.0
-    assert result["score_mode"] == "HYBRID_STATIC_EXECUTION_BRANCH_COVERAGE_MUTATION_SCORE"
+    assert result["overall_score"] == 90.0
+    assert result["score_mode"] == "HYBRID_STATIC_EXECUTION_SCOPE_AWARE_MUTATION"
 
 
 def test_real_execution_failure_caps_score():
@@ -61,6 +65,6 @@ def test_harness_error_stays_inconclusive_not_zero():
 def test_graph_has_dynamic_execution_coverage_mutation_path():
     graph = Path("graph.py").read_text(encoding="utf-8")
     assert 'workflow.add_edge("maintainability_node", "execution_node")' in graph
-    assert '"branch_coverage_node": "branch_coverage_node"' in graph
-    assert 'workflow.add_edge("branch_coverage_node", "mutation_node")' in graph
-    assert 'workflow.add_edge("mutation_node", "critic_node")' in graph
+    assert 'workflow.add_edge("dynamic_coverage_node", "coverage_node")' in graph
+    assert 'workflow.add_edge("coverage_node", "mutation_node")' in graph
+    assert '"mutation_node",' in graph

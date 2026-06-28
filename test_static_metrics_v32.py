@@ -40,4 +40,4 @@ def test_css_class_is_medium_risk_not_automatically_brittle():
 
 
 def test_coverage_score_is_capped_in_source():
-    assert 'req_coverage_score = max(0.0, min(100.0, raw_req_coverage_score))' in source
+    assert 'req_coverage = max(0.0, min(100.0, raw_req_coverage))' in source

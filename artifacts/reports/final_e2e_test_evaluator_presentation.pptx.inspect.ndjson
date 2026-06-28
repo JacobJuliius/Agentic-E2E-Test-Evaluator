@@ -1,0 +1,225 @@
+{"kind":"deck","id":"pr/ht7ft2","name":"Deck"}
+{"kind":"layout","layoutId":"693805e6-3c7b-4ab0-9a1d-f9cb2fd861f8","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"59c32b91-d569-475a-9db3-4204c7f22fe3","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/i8jbhs","slide":1,"title":"01 · LITERATURE REVIEW","textShapes":6}
+{"kind":"textbox","id":"sh/y90je9cv","slide":1,"text":"01 · LITERATURE REVIEW","textPreview":"01 · LITERATURE REVIEW","textChars":22,"textLines":1,"bbox":[64,24,520,24]}
+{"kind":"textbox","id":"sh/5wjudg7a","slide":1,"text":"SOTA landscape: generation is advancing faster than evaluation","textPreview":"SOTA landscape: generation is advancing faster than evaluation","textChars":62,"textLines":1,"bbox":[64,50,1152,52]}
+{"kind":"shape","id":"sh/gbq1oryt","slide":1,"bbox":[64,112,96,5]}
+{"kind":"textbox","id":"sh/yhgn29gr","slide":1,"text":"Sources: arxiv.org/abs/2307.07221 · arxiv.org/abs/2305.04764 · microsoft.com/research/publication/codamosa… · arxiv.org/abs/2405.09965","textPreview":"Sources: arxiv.org/abs/2307.07221 · arxiv.org/abs/2305.04764 · microsoft.com/research/publication/codamosa… · arxiv.org/abs/2405.09965","textChars":134,"textLines":1,"bbox":[48,578,1184,28]}
+{"kind":"textbox","id":"sh/58z25kb6","slide":1,"text":"Gap: most SOTA systems generate tests; this project evaluates the quality of already generated E2E tests.","textPreview":"Gap: most SOTA systems generate tests; this project evaluates the quality of already generated E2E tests.","textChars":105,"textLines":1,"bbox":[48,659,1184,24]}
+{"kind":"textbox","id":"sh/gn29gr2p","slide":1,"text":"Literature URLs are embedded above for auditability","textPreview":"Literature URLs are embedded above for auditability","textChars":51,"textLines":1,"bbox":[64,686,1000,18]}
+{"kind":"textbox","id":"sh/neloj2t8","slide":1,"text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[1170,686,46,18]}
+{"kind":"table","id":"tb/m94fu18j","slide":1,"name":"","rows":5,"cols":7,"preview":"Method / paper | Core idea | Implementation | Strengths | Limitations | Level / domain | Relation here","bbox":[46,128,1188,430]}
+{"kind":"notes","id":"nt/i8jbhs","slide":1,"text":""}
+{"kind":"slide","id":"sl/bltumc","slide":2,"title":"02 · PROBLEM","textShapes":19}
+{"kind":"textbox","id":"sh/5wjudg7a","slide":2,"text":"02 · PROBLEM","textPreview":"02 · PROBLEM","textChars":12,"textLines":1,"bbox":[64,24,520,24]}
+{"kind":"textbox","id":"sh/y90je9cv","slide":2,"text":"A passing E2E test can still be a weak test","textPreview":"A passing E2E test can still be a weak test","textChars":43,"textLines":1,"bbox":[64,50,1152,52]}
+{"kind":"shape","id":"sh/nuxc3ylc","slide":2,"bbox":[64,112,96,5]}
+{"kind":"textbox","id":"sh/gn29gr2p","slide":2,"text":"Execution answers “does it run?” — not “would it catch the faults that matter?”","textPreview":"Execution answers “does it run?” — not “would it catch the faults that matter?”","textChars":79,"textLines":1,"bbox":[64,132,920,48]}
+{"kind":"shape","id":"sh/58z25kb6","slide":2,"bbox":[76,218,236,184]}
+{"kind":"textbox","id":"sh/yhgn29gr","slide":2,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[94,232,42,28]}
+{"kind":"textbox","id":"sh/n29gr2p8","slide":2,"text":"Runs","textPreview":"Runs","textChars":4,"textLines":1,"bbox":[94,272,200,34]}
+{"kind":"textbox","id":"sh/czed8v6p","slide":2,"text":"Syntax + browser\nexecution","textPreview":"Syntax + browser | execution","textChars":26,"textLines":2,"bbox":[94,316,200,58]}
+{"kind":"shape","id":"sh/5kb6xkf6","slide":2,"bbox":[380,218,236,184]}
+{"kind":"textbox","id":"sh/x4nap4r6","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[398,232,42,28]}
+{"kind":"textbox","id":"sh/8jqh0fep","slide":2,"text":"Aligns","textPreview":"Aligns","textChars":6,"textLines":1,"bbox":[398,272,200,34]}
+{"kind":"textbox","id":"sh/fyxobm58","slide":2,"text":"Case-level\nrequirements","textPreview":"Case-level | requirements","textChars":23,"textLines":2,"bbox":[398,316,200,58]}
+{"kind":"shape","id":"sh/qd4vmtwr","slide":2,"bbox":[684,218,236,184]}
+{"kind":"textbox","id":"sh/xczed8v6","slide":2,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[702,232,42,28]}
+{"kind":"textbox","id":"sh/8v6psfil","slide":2,"text":"Asserts","textPreview":"Asserts","textChars":7,"textLines":1,"bbox":[702,272,200,34]}
+{"kind":"textbox","id":"sh/fa9w3m94","slide":2,"text":"Specific, meaningful\noracles","textPreview":"Specific, meaningful | oracles","textChars":28,"textLines":2,"bbox":[702,316,200,58]}
+{"kind":"shape","id":"sh/qpg3ex0n","slide":2,"bbox":[988,218,236,184]}
+{"kind":"textbox","id":"sh/1gvy90je","slide":2,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1006,232,42,28]}
+{"kind":"textbox","id":"sh/8z25kb6x","slide":2,"text":"Detects faults","textPreview":"Detects faults","textChars":14,"textLines":1,"bbox":[1006,272,200,34]}
+{"kind":"textbox","id":"sh/83itgfml","slide":2,"text":"Sampled relevant\nmutants","textPreview":"Sampled relevant | mutants","textChars":24,"textLines":2,"bbox":[1006,316,200,58]}
+{"kind":"shape","id":"sh/xobm58z2","slide":2,"bbox":[76,438,1148,166]}
+{"kind":"textbox","id":"sh/qxs72x4n","slide":2,"text":"Evaluation question","textPreview":"Evaluation question","textChars":19,"textLines":1,"bbox":[104,458,230,30]}
+{"kind":"textbox","id":"sh/fil0rqd4","slide":2,"text":"Does the generated test provide credible evidence of behavioral quality — beyond merely reaching a green checkmark?","textPreview":"Does the generated test provide credible evidence of behavioral quality — beyond merely reaching a green checkmark?","textChars":115,"textLines":1,"bbox":[104,496,1040,66]}
+{"kind":"textbox","id":"sh/4fu18jqh","slide":2,"text":"E2E generated-test quality evaluator","textPreview":"E2E generated-test quality evaluator","textChars":36,"textLines":1,"bbox":[64,686,1000,18]}
+{"kind":"textbox","id":"sh/x0nuxc3y","slide":2,"text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[1170,686,46,18]}
+{"kind":"notes","id":"nt/bltumc","slide":2,"text":""}
+{"kind":"slide","id":"sl/rfmu3u","slide":3,"title":"03 · SYSTEM ARCHITECTURE","textShapes":14}
+{"kind":"textbox","id":"sh/g7adsji5","slide":3,"text":"03 · SYSTEM ARCHITECTURE","textPreview":"03 · SYSTEM ARCHITECTURE","textChars":24,"textLines":1,"bbox":[64,24,520,24]}
+{"kind":"textbox","id":"sh/rmhk3q5o","slide":3,"text":"Independent static judgment, deterministic dynamic evidence","textPreview":"Independent static judgment, deterministic dynamic evidence","textChars":59,"textLines":1,"bbox":[64,50,1152,52]}
+{"kind":"shape","id":"sh/y1kre1w7","slide":3,"bbox":[64,112,96,5]}
+{"kind":"shape","id":"sh/90je9cvi","slide":3,"bbox":[215,303,54,28]}
+{"kind":"shape","id":"sh/gfmlkjm1","slide":3,"bbox":[425,303,54,28]}
+{"kind":"shape","id":"sh/rytsvu9k","slide":3,"bbox":[635,303,54,28]}
+{"kind":"shape","id":"sh/yd0z6103","slide":3,"bbox":[845,303,54,28]}
+{"kind":"shape","id":"sh/9cvixcze","slide":3,"bbox":[1055,303,54,28]}
+{"kind":"shape","id":"sh/gr2p8nqx","slide":3,"bbox":[55,250,180,132]}
+{"kind":"textbox","id":"sh/ahoza1gv","slide":3,"text":"Generated test\n+ benchmark row","textPreview":"Generated test | + benchmark row","textChars":30,"textLines":2,"bbox":[67,274,156,82]}
+{"kind":"shape","id":"sh/32lszqtc","slide":3,"bbox":[265,250,180,132]}
+{"kind":"textbox","id":"sh/sneloj2t","slide":3,"text":"Syntax / linter\ngatekeeper","textPreview":"Syntax / linter | gatekeeper","textChars":26,"textLines":2,"bbox":[277,274,156,82]}
+{"kind":"shape","id":"sh/l87ed8ba","slide":3,"bbox":[475,250,180,132]}
+{"kind":"textbox","id":"sh/at47y1kr","slide":3,"text":"Static LLM\njudges","textPreview":"Static LLM | judges","textChars":17,"textLines":2,"bbox":[487,274,156,82]}
+{"kind":"shape","id":"sh/3ex0nuxc","slide":3,"bbox":[685,250,180,132]}
+{"kind":"textbox","id":"sh/szqtcj6t","slide":3,"text":"Isolated execution\n+ BDD diagnostic","textPreview":"Isolated execution | + BDD diagnostic","textChars":35,"textLines":2,"bbox":[697,274,156,82]}
+{"kind":"shape","id":"sh/lkjm1cfa","slide":3,"bbox":[895,250,180,132]}
+{"kind":"textbox","id":"sh/ex0nuxc3","slide":3,"text":"Scope-aware\nmutation","textPreview":"Scope-aware | mutation","textChars":20,"textLines":2,"bbox":[907,274,156,82]}
+{"kind":"shape","id":"sh/3itgfmlk","slide":3,"bbox":[1105,250,180,132]}
+{"kind":"textbox","id":"sh/vahoza1g","slide":3,"text":"Report + optional\nanalyst","textPreview":"Report + optional | analyst","textChars":25,"textLines":2,"bbox":[1117,274,156,82]}
+{"kind":"textbox","id":"sh/6tovahoz","slide":3,"text":"Fail → structured result; pipeline continues","textPreview":"Fail → structured result; pipeline continues","textChars":44,"textLines":1,"bbox":[258,410,360,28]}
+{"kind":"shape","id":"sh/dg7adsji","slide":3,"bbox":[334,382,34,30]}
+{"kind":"shape","id":"sh/ovahoza1","slide":3,"bbox":[180,480,920,100]}
+{"kind":"textbox","id":"sh/z25kb6xk","slide":3,"text":"Reproducibility envelope","textPreview":"Reproducibility envelope","textChars":24,"textLines":1,"bbox":[202,495,230,26]}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":3,"text":"local source override  •  network disabled  •  isolated workspaces  •  timeouts  •  stable mutation seed  •  artifacts saved","textPreview":"local source override  •  network disabled  •  isolated workspaces  •  timeouts  •  stable mutation seed  •  artifacts saved","textChars":124,"textLines":1,"bbox":[202,528,860,30]}
+{"kind":"textbox","id":"sh/d8v6psfi","slide":3,"text":"Dynamic evaluators never replace the static dimensions and never crash the full LangGraph pipeline.","textPreview":"Dynamic evaluators never replace the static dimensions and never crash the full LangGraph pipeline.","textChars":99,"textLines":1,"bbox":[180,608,920,32]}
+{"kind":"textbox","id":"sh/onyd0z61","slide":3,"text":"E2E generated-test quality evaluator","textPreview":"E2E generated-test quality evaluator","textChars":36,"textLines":1,"bbox":[64,686,1000,18]}
+{"kind":"textbox","id":"sh/vy90je9c","slide":3,"text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[1170,686,46,18]}
+{"kind":"notes","id":"nt/rfmu3u","slide":3,"text":""}
+{"kind":"slide","id":"sl/qp4pdh","slide":4,"title":"04 · STATIC EVALUATION","textShapes":6}
+{"kind":"textbox","id":"sh/t83itgfm","slide":4,"text":"04 · STATIC EVALUATION","textPreview":"04 · STATIC EVALUATION","textChars":22,"textLines":1,"bbox":[64,24,520,24]}
+{"kind":"textbox","id":"sh/mhk3q5o7","slide":4,"text":"Static agents inspect complementary failure modes","textPreview":"Static agents inspect complementary failure modes","textChars":49,"textLines":1,"bbox":[64,50,1152,52]}
+{"kind":"shape","id":"sh/b2hwfyxo","slide":4,"bbox":[64,112,96,5]}
+{"kind":"shape","id":"sh/twra5gbq","slide":4,"bbox":[88,566,1104,82]}
+{"kind":"textbox","id":"sh/m58z25kb","slide":4,"text":"Output","textPreview":"Output","textChars":6,"textLines":1,"bbox":[110,581,95,24]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":4,"text":"Independent scores + rationale + evidence → preserved in state → combined with dynamic evidence only after execution.","textPreview":"Independent scores + rationale + evidence → preserved in state → combined with dynamic evidence only after execution.","textChars":117,"textLines":1,"bbox":[210,574,940,40]}
+{"kind":"textbox","id":"sh/47y1kre1","slide":4,"text":"E2E generated-test quality evaluator","textPreview":"E2E generated-test quality evaluator","textChars":36,"textLines":1,"bbox":[64,686,1000,18]}
+{"kind":"textbox","id":"sh/tsvu9kni","slide":4,"text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[1170,686,46,18]}
+{"kind":"table","id":"tb/d8bat47y","slide":4,"name":"","rows":6,"cols":3,"preview":"Agent | Question answered | Evidence","bbox":[88,150,1104,390]}
+{"kind":"notes","id":"nt/qp4pdh","slide":4,"text":""}
+{"kind":"slide","id":"sl/pmprpa","slide":5,"title":"05 · DYNAMIC EXECUTION","textShapes":18}
+{"kind":"textbox","id":"sh/8nqxs72x","slide":5,"text":"05 · DYNAMIC EXECUTION","textPreview":"05 · DYNAMIC EXECUTION","textChars":22,"textLines":1,"bbox":[64,24,520,24]}
+{"kind":"textbox","id":"sh/j2t83itg","slide":5,"text":"Execution is isolated and reproducible by design","textPreview":"Execution is isolated and reproducible by design","textChars":48,"textLines":1,"bbox":[64,50,1152,52]}
+{"kind":"shape","id":"sh/qh0fepkz","slide":5,"bbox":[64,112,96,5]}
+{"kind":"shape","id":"sh/1w7mp0bi","slide":5,"bbox":[68,148,58,52]}
+{"kind":"textbox","id":"sh/8bat47y1","slide":5,"text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[76,150,44,44]}
+{"kind":"textbox","id":"sh/jqh0fepk","slide":5,"text":"Resolve source","textPreview":"Resolve source","textChars":14,"textLines":1,"bbox":[150,148,250,36]}
+{"kind":"textbox","id":"sh/q5o7qpg3","slide":5,"text":"Prefer explicit local source_project_dir; network retrieval optional.","textPreview":"Prefer explicit local source_project_dir; network retrieval optional.","textChars":69,"textLines":1,"bbox":[420,148,760,52]}
+{"kind":"shape","id":"sh/1kre1w7m","slide":5,"bbox":[68,256,58,52]}
+{"kind":"textbox","id":"sh/c3ylc7u5","slide":5,"text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[76,258,44,44]}
+{"kind":"textbox","id":"sh/a1gvy90j","slide":5,"text":"Copy workspace","textPreview":"Copy workspace","textChars":14,"textLines":1,"bbox":[150,256,250,36]}
+{"kind":"textbox","id":"sh/zidonyd0","slide":5,"text":"Generated test and source execute in an isolated artifact directory.","textPreview":"Generated test and source execute in an isolated artifact directory.","textChars":68,"textLines":1,"bbox":[420,256,760,52]}
+{"kind":"shape","id":"sh/s36hcrmh","slide":5,"bbox":[68,364,58,52]}
+{"kind":"textbox","id":"sh/hoza1gvy","slide":5,"text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[76,366,44,44]}
+{"kind":"textbox","id":"sh/ap4r65wj","slide":5,"text":"Run scenario","textPreview":"Run scenario","textChars":12,"textLines":1,"bbox":[150,364,250,36]}
+{"kind":"textbox","id":"sh/za1gvy90","slide":5,"text":"Behave + Selenium drive the browser under a hard timeout.","textPreview":"Behave + Selenium drive the browser under a hard timeout.","textChars":57,"textLines":1,"bbox":[420,364,760,52]}
+{"kind":"shape","id":"sh/svu9knih","slide":5,"bbox":[68,472,58,52]}
+{"kind":"textbox","id":"sh/hgn29gr2","slide":5,"text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[76,474,44,44]}
+{"kind":"textbox","id":"sh/adsji5sn","slide":5,"text":"Capture evidence","textPreview":"Capture evidence","textChars":16,"textLines":1,"bbox":[150,472,250,36]}
+{"kind":"textbox","id":"sh/3ylc7u54","slide":5,"text":"Return code, failed steps, stdout/stderr tails, commands, environment.","textPreview":"Return code, failed steps, stdout/stderr tails, commands, environment.","textChars":70,"textLines":1,"bbox":[420,472,760,52]}
+{"kind":"shape","id":"sh/vu9knih4","slide":5,"bbox":[76,592,1120,62]}
+{"kind":"textbox","id":"sh/29gr2p8n","slide":5,"text":"Important","textPreview":"Important","textChars":9,"textLines":1,"bbox":[98,605,110,24]}
+{"kind":"textbox","id":"sh/d0z61032","slide":5,"text":"BDD step-execution diagnostic is not source branch coverage; Python branch coverage is disabled for these primarily HTML/JS apps.","textPreview":"BDD step-execution diagnostic is not source branch coverage; Python branch coverage is disabled for these primarily HTML/JS apps.","textChars":129,"textLines":1,"bbox":[212,600,950,34]}
+{"kind":"textbox","id":"sh/kf6dcbul","slide":5,"text":"E2E generated-test quality evaluator","textPreview":"E2E generated-test quality evaluator","textChars":36,"textLines":1,"bbox":[64,686,1000,18]}
+{"kind":"textbox","id":"sh/v6psfil0","slide":5,"text":"5","textPreview":"5","textChars":1,"textLines":1,"bbox":[1170,686,46,18]}
+{"kind":"notes","id":"nt/pmprpa","slide":5,"text":""}
+{"kind":"slide","id":"sl/tgbz37","slide":6,"title":"06 · MUTATION TESTING","textShapes":20}
+{"kind":"textbox","id":"sh/7y1kre1w","slide":6,"text":"06 · MUTATION TESTING","textPreview":"06 · MUTATION TESTING","textChars":21,"textLines":1,"bbox":[64,24,520,24]}
+{"kind":"textbox","id":"sh/wjudg7ad","slide":6,"text":"Scope-aware mutation separates signal from noise","textPreview":"Scope-aware mutation separates signal from noise","textChars":48,"textLines":1,"bbox":[64,50,1152,52]}
+{"kind":"shape","id":"sh/p4r65wju","slide":6,"bbox":[64,112,96,5]}
+{"kind":"textbox","id":"sh/i5sneloj","slide":6,"text":"Every mutant runs in its own source copy; the original reference project is never modified.","textPreview":"Every mutant runs in its own source copy; the original reference project is never modified.","textChars":91,"textLines":1,"bbox":[64,126,1090,30]}
+{"kind":"shape","id":"sh/7qpg3ex0","slide":6,"bbox":[317,248,42,26]}
+{"kind":"shape","id":"sh/0bi9s36h","slide":6,"bbox":[72,190,244,140]}
+{"kind":"textbox","id":"sh/pwb2hwfy","slide":6,"text":"GENERATE","textPreview":"GENERATE","textChars":8,"textLines":1,"bbox":[90,208,208,25]}
+{"kind":"textbox","id":"sh/itgfmlkj","slide":6,"text":"Language-aware,\nnon-global edits","textPreview":"Language-aware, | non-global edits","textChars":32,"textLines":2,"bbox":[90,245,208,58]}
+{"kind":"shape","id":"sh/7ed8bat4","slide":6,"bbox":[609,248,42,26]}
+{"kind":"shape","id":"sh/r2p8nqxs","slide":6,"bbox":[364,190,244,140]}
+{"kind":"textbox","id":"sh/2hwfyxob","slide":6,"text":"VALIDATE","textPreview":"VALIDATE","textChars":8,"textLines":1,"bbox":[382,208,208,25]}
+{"kind":"textbox","id":"sh/94fu18jq","slide":6,"text":"Syntax / startup\nchecks","textPreview":"Syntax / startup | checks","textChars":23,"textLines":2,"bbox":[382,245,208,58]}
+{"kind":"shape","id":"sh/kjm1cfa9","slide":6,"bbox":[901,248,42,26]}
+{"kind":"shape","id":"sh/ra5gbq1o","slide":6,"bbox":[656,190,244,140]}
+{"kind":"textbox","id":"sh/2p8nqxs7","slide":6,"text":"EXECUTE","textPreview":"EXECUTE","textChars":7,"textLines":1,"bbox":[674,208,208,25]}
+{"kind":"textbox","id":"sh/9gr2p8nq","slide":6,"text":"Baseline then\none mutant at a time","textPreview":"Baseline then | one mutant at a time","textChars":34,"textLines":2,"bbox":[674,245,208,58]}
+{"kind":"shape","id":"sh/gvy90je9","slide":6,"bbox":[948,190,244,140]}
+{"kind":"textbox","id":"sh/re1w7mp0","slide":6,"text":"CLASSIFY","textPreview":"CLASSIFY","textChars":8,"textLines":1,"bbox":[966,208,208,25]}
+{"kind":"textbox","id":"sh/2t83itgf","slide":6,"text":"Relevant · out-of-scope\n· uncertain","textPreview":"Relevant · out-of-scope | · uncertain","textChars":35,"textLines":2,"bbox":[966,245,208,58]}
+{"kind":"shape","id":"sh/qpg3ex0n","slide":6,"bbox":[72,382,530,164]}
+{"kind":"textbox","id":"sh/fa9w3m94","slide":6,"text":"Raw mutation score","textPreview":"Raw mutation score","textChars":18,"textLines":1,"bbox":[96,401,480,32]}
+{"kind":"textbox","id":"sh/8v6psfil","slide":6,"text":"killed valid mutants ÷ all valid mutants","textPreview":"killed valid mutants ÷ all valid mutants","textChars":40,"textLines":1,"bbox":[96,445,480,28]}
+{"kind":"textbox","id":"sh/xczed8v6","slide":6,"text":"Useful suite-level signal, but can penalize a case for unrelated code.","textPreview":"Useful suite-level signal, but can penalize a case for unrelated code.","textChars":70,"textLines":1,"bbox":[96,485,470,42]}
+{"kind":"shape","id":"sh/qd4vmtwr","slide":6,"bbox":[678,382,530,164]}
+{"kind":"textbox","id":"sh/fyxobm58","slide":6,"text":"Relevant mutation score","textPreview":"Relevant mutation score","textChars":23,"textLines":1,"bbox":[702,401,480,32]}
+{"kind":"textbox","id":"sh/8jqh0fep","slide":6,"text":"killed relevant mutants ÷ relevant mutants","textPreview":"killed relevant mutants ÷ relevant mutants","textChars":42,"textLines":1,"bbox":[702,445,480,28]}
+{"kind":"textbox","id":"sh/x4nap4r6","slide":6,"text":"Meaningful only when relevant_mutants_total > 0.","textPreview":"Meaningful only when relevant_mutants_total > 0.","textChars":48,"textLines":1,"bbox":[702,485,470,42]}
+{"kind":"textbox","id":"sh/q1orytsv","slide":6,"text":"Evidence is sampled (max 10 mutants here), not exhaustive application-level coverage.","textPreview":"Evidence is sampled (max 10 mutants here), not exhaustive application-level coverage.","textChars":85,"textLines":1,"bbox":[72,590,1136,30]}
+{"kind":"textbox","id":"sh/fmlkjm1c","slide":6,"text":"E2E generated-test quality evaluator","textPreview":"E2E generated-test quality evaluator","textChars":36,"textLines":1,"bbox":[64,686,1000,18]}
+{"kind":"textbox","id":"sh/5sneloj2","slide":6,"text":"6","textPreview":"6","textChars":1,"textLines":1,"bbox":[1170,686,46,18]}
+{"kind":"notes","id":"nt/tgbz37","slide":6,"text":""}
+{"kind":"slide","id":"sl/uneewn","slide":7,"title":"07 · MAIN RESULTS","textShapes":14}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":7,"text":"07 · MAIN RESULTS","textPreview":"07 · MAIN RESULTS","textChars":17,"textLines":1,"bbox":[64,24,520,24]}
+{"kind":"textbox","id":"sh/d8v6psfi","slide":7,"text":"Dynamic evidence changes the quality picture","textPreview":"Dynamic evidence changes the quality picture","textChars":44,"textLines":1,"bbox":[64,50,1152,52]}
+{"kind":"shape","id":"sh/onyd0z61","slide":7,"bbox":[64,112,96,5]}
+{"kind":"shape","id":"sh/6tovahoz","slide":7,"bbox":[846,150,368,396]}
+{"kind":"textbox","id":"sh/dg7adsji","slide":7,"text":"What the bars hide","textPreview":"What the bars hide","textChars":18,"textLines":1,"bbox":[870,170,320,30]}
+{"kind":"textbox","id":"sh/ovahoza1","slide":7,"text":"Bench 01","textPreview":"Bench 01","textChars":8,"textLines":1,"bbox":[870,220,110,24]}
+{"kind":"textbox","id":"sh/vmtwra5g","slide":7,"text":"Runs, but static quality is only 9.95.","textPreview":"Runs, but static quality is only 9.95.","textChars":38,"textLines":1,"bbox":[982,216,200,36]}
+{"kind":"textbox","id":"sh/61032lsz","slide":7,"text":"Bench 02","textPreview":"Bench 02","textChars":8,"textLines":1,"bbox":[870,284,110,24]}
+{"kind":"textbox","id":"sh/wval87ed","slide":7,"text":"Useful add-note test; another requirement is omitted.","textPreview":"Useful add-note test; another requirement is omitted.","textChars":53,"textLines":1,"bbox":[982,277,200,50]}
+{"kind":"textbox","id":"sh/pg3ex0nu","slide":7,"text":"Bench 03","textPreview":"Bench 03","textChars":8,"textLines":1,"bbox":[870,356,110,24]}
+{"kind":"textbox","id":"sh/epkzupwb","slide":7,"text":"Moderate score, with persistence gaps.","textPreview":"Moderate score, with persistence gaps.","textChars":38,"textLines":1,"bbox":[982,350,200,42]}
+{"kind":"textbox","id":"sh/7adsji5s","slide":7,"text":"Bench 05","textPreview":"Bench 05","textChars":8,"textLines":1,"bbox":[870,420,110,24]}
+{"kind":"textbox","id":"sh/w7mp0bi9","slide":7,"text":"High score still misses a mutation-sensitive assertion.","textPreview":"High score still misses a mutation-sensitive assertion.","textChars":55,"textLines":1,"bbox":[982,413,200,55]}
+{"kind":"textbox","id":"sh/psfil0rq","slide":7,"text":"All four scenarios execute successfully.","textPreview":"All four scenarios execute successfully.","textChars":40,"textLines":1,"bbox":[846,566,368,30]}
+{"kind":"textbox","id":"sh/e1w7mp0b","slide":7,"text":"Scores are case-level; hybrid score preserves static dimensions","textPreview":"Scores are case-level; hybrid score preserves static dimensions","textChars":63,"textLines":1,"bbox":[64,686,1000,18]}
+{"kind":"textbox","id":"sh/7mp0bi9s","slide":7,"text":"7","textPreview":"7","textChars":1,"textLines":1,"bbox":[1170,686,46,18]}
+{"kind":"chart","id":"ch/nap4r65w","slide":7,"name":"","chartType":"bar","bbox":[58,140,760,455]}
+{"kind":"notes","id":"nt/uneewn","slide":7,"text":""}
+{"kind":"slide","id":"sl/aybm5w","slide":8,"title":"08 · SAMPLED MUTATION EVIDENCE","textShapes":7}
+{"kind":"textbox","id":"sh/3itgfmlk","slide":8,"text":"08 · SAMPLED MUTATION EVIDENCE","textPreview":"08 · SAMPLED MUTATION EVIDENCE","textChars":30,"textLines":1,"bbox":[64,24,520,24]}
+{"kind":"textbox","id":"sh/w3m94fu1","slide":8,"text":"Relevant mutation reveals where passing tests are brittle","textPreview":"Relevant mutation reveals where passing tests are brittle","textChars":57,"textLines":1,"bbox":[64,50,1152,52]}
+{"kind":"shape","id":"sh/loj2t83i","slide":8,"bbox":[64,112,96,5]}
+{"kind":"shape","id":"sh/wb2hwfyx","slide":8,"bbox":[770,458,448,112]}
+{"kind":"textbox","id":"sh/lwval87e","slide":8,"text":"Bench 01","textPreview":"Bench 01","textChars":8,"textLines":1,"bbox":[792,473,98,23]}
+{"kind":"textbox","id":"sh/ahoza1gv","slide":8,"text":"Relevant = N/A (0 relevant mutants), so raw 0% is not used to penalize this case.","textPreview":"Relevant = N/A (0 relevant mutants), so raw 0% is not used to penalize this case.","textChars":81,"textLines":1,"bbox":[894,466,292,70]}
+{"kind":"textbox","id":"sh/32lszqtc","slide":8,"text":"Max 10 deterministic mutants per case; invalid mutants are excluded from the denominator.","textPreview":"Max 10 deterministic mutants per case; invalid mutants are excluded from the denominator.","textChars":89,"textLines":1,"bbox":[54,592,1150,30]}
+{"kind":"textbox","id":"sh/rqd4vmtw","slide":8,"text":"E2E generated-test quality evaluator","textPreview":"E2E generated-test quality evaluator","textChars":36,"textLines":1,"bbox":[64,686,1000,18]}
+{"kind":"textbox","id":"sh/25kb6xkf","slide":8,"text":"8","textPreview":"8","textChars":1,"textLines":1,"bbox":[1170,686,46,18]}
+{"kind":"chart","id":"ch/e1w7mp0b","slide":8,"name":"","chartType":"bar","bbox":[42,138,700,408]}
+{"kind":"table","id":"tb/a9w3m94f","slide":8,"name":"","rows":5,"cols":5,"preview":"Case | Gen. | Valid | Inv. | Rel. K/T","bbox":[770,160,448,250]}
+{"kind":"notes","id":"nt/aybm5w","slide":8,"text":""}
+{"kind":"slide","id":"sl/yerqdz","slide":9,"title":"09 · EXPLANATORY LAYER","textShapes":19}
+{"kind":"textbox","id":"sh/1gvy90je","slide":9,"text":"09 · EXPLANATORY LAYER","textPreview":"09 · EXPLANATORY LAYER","textChars":22,"textLines":1,"bbox":[64,24,520,24]}
+{"kind":"textbox","id":"sh/qtcj6tov","slide":9,"text":"Optional analyst turns surviving mutants into repair hypotheses","textPreview":"Optional analyst turns surviving mutants into repair hypotheses","textChars":63,"textLines":1,"bbox":[64,50,1152,52]}
+{"kind":"shape","id":"sh/je9cvixc","slide":9,"bbox":[64,112,96,5]}
+{"kind":"shape","id":"sh/87ed8bat","slide":9,"bbox":[64,142,552,430]}
+{"kind":"textbox","id":"sh/xs72x4na","slide":9,"text":"Bench 03 · Seat selection","textPreview":"Bench 03 · Seat selection","textChars":25,"textLines":1,"bbox":[90,164,500,34]}
+{"kind":"textbox","id":"sh/q1orytsv","slide":9,"text":"50% relevant score","textPreview":"50% relevant score","textChars":18,"textLines":1,"bbox":[90,210,220,28]}
+{"kind":"textbox","id":"sh/fmlkjm1c","slide":9,"text":"2 of 4 relevant mutants killed","textPreview":"2 of 4 relevant mutants killed","textChars":30,"textLines":1,"bbox":[318,210,260,28]}
+{"kind":"textbox","id":"sh/8jqh0fep","slide":9,"text":"Surviving evidence","textPreview":"Surviving evidence","textChars":18,"textLines":1,"bbox":[90,260,210,24]}
+{"kind":"textbox","id":"sh/x4nap4r6","slide":9,"text":"• localStorage seat restoration\n• selected-movie index persistence","textPreview":"• localStorage seat restoration | • selected-movie index persistence","textChars":66,"textLines":2,"bbox":[90,294,470,70]}
+{"kind":"textbox","id":"sh/1w7mp0bi","slide":9,"text":"Interpretation","textPreview":"Interpretation","textChars":14,"textLines":1,"bbox":[90,392,180,24]}
+{"kind":"textbox","id":"sh/8bat47y1","slide":9,"text":"The scenario checks seat selection, but not the reload path that reconstructs state.","textPreview":"The scenario checks seat selection, but not the reload path that reconstructs state.","textChars":84,"textLines":1,"bbox":[90,425,470,82]}
+{"kind":"shape","id":"sh/jqh0fepk","slide":9,"bbox":[664,142,552,430]}
+{"kind":"textbox","id":"sh/q5o7qpg3","slide":9,"text":"Bench 05 · Dictionary search","textPreview":"Bench 05 · Dictionary search","textChars":28,"textLines":1,"bbox":[690,164,500,34]}
+{"kind":"textbox","id":"sh/18jqh0fe","slide":9,"text":"0% relevant score","textPreview":"0% relevant score","textChars":17,"textLines":1,"bbox":[690,210,220,28]}
+{"kind":"textbox","id":"sh/8nqxs72x","slide":9,"text":"0 of 1 relevant mutant killed","textPreview":"0 of 1 relevant mutant killed","textChars":29,"textLines":1,"bbox":[918,210,260,28]}
+{"kind":"textbox","id":"sh/j2t83itg","slide":9,"text":"Surviving evidence","textPreview":"Surviving evidence","textChars":18,"textLines":1,"bbox":[690,260,210,24]}
+{"kind":"textbox","id":"sh/qh0fepkz","slide":9,"text":"• word-example element ID changed\n• scenario still passed","textPreview":"• word-example element ID changed | • scenario still passed","textChars":57,"textLines":2,"bbox":[690,294,470,70]}
+{"kind":"textbox","id":"sh/1cfa9w3m","slide":9,"text":"Interpretation","textPreview":"Interpretation","textChars":14,"textLines":1,"bbox":[690,392,180,24]}
+{"kind":"textbox","id":"sh/crmhk3q5","slide":9,"text":"Text presence is asserted, but not the intended result-detail element or binding.","textPreview":"Text presence is asserted, but not the intended result-detail element or binding.","textChars":81,"textLines":1,"bbox":[690,425,470,82]}
+{"kind":"textbox","id":"sh/sfil0rqd","slide":9,"text":"The analyst explains evidence; it does not replace deterministic scoring.","textPreview":"The analyst explains evidence; it does not replace deterministic scoring.","textChars":73,"textLines":1,"bbox":[64,606,1152,30]}
+{"kind":"textbox","id":"sh/h0fepkzu","slide":9,"text":"E2E generated-test quality evaluator","textPreview":"E2E generated-test quality evaluator","textChars":36,"textLines":1,"bbox":[64,686,1000,18]}
+{"kind":"textbox","id":"sh/a9w3m94f","slide":9,"text":"9","textPreview":"9","textChars":1,"textLines":1,"bbox":[1170,686,46,18]}
+{"kind":"notes","id":"nt/yerqdz","slide":9,"text":""}
+{"kind":"slide","id":"sl/48yfi4","slide":10,"title":"10 · LIMITATIONS & NEXT STEPS","textShapes":20}
+{"kind":"textbox","id":"sh/w3m94fu1","slide":10,"text":"10 · LIMITATIONS & NEXT STEPS","textPreview":"10 · LIMITATIONS & NEXT STEPS","textChars":29,"textLines":1,"bbox":[64,24,520,24]}
+{"kind":"textbox","id":"sh/3itgfmlk","slide":10,"text":"What is established — and what remains open","textPreview":"What is established — and what remains open","textChars":43,"textLines":1,"bbox":[64,50,1152,52]}
+{"kind":"shape","id":"sh/ex0nuxc3","slide":10,"bbox":[64,112,96,5]}
+{"kind":"textbox","id":"sh/lwval87e","slide":10,"text":"Credible claims","textPreview":"Credible claims","textChars":15,"textLines":1,"bbox":[72,142,520,34]}
+{"kind":"shape","id":"sh/wb2hwfyx","slide":10,"bbox":[72,190,520,88]}
+{"kind":"textbox","id":"sh/3q5o7qpg","slide":10,"text":"Established","textPreview":"Established","textChars":11,"textLines":1,"bbox":[92,202,112,24]}
+{"kind":"textbox","id":"sh/e9cvixcz","slide":10,"text":"All four selected scenarios execute with local, network-free source overrides.","textPreview":"All four selected scenarios execute with local, network-free source overrides.","textChars":78,"textLines":1,"bbox":[210,200,355,60]}
+{"kind":"shape","id":"sh/l87ed8ba","slide":10,"bbox":[72,302,520,88]}
+{"kind":"textbox","id":"sh/sneloj2t","slide":10,"text":"Established","textPreview":"Established","textChars":11,"textLines":1,"bbox":[92,314,112,24]}
+{"kind":"textbox","id":"sh/qd4vmtwr","slide":10,"text":"Static dimensions remain independent from deterministic dynamic evaluators.","textPreview":"Static dimensions remain independent from deterministic dynamic evaluators.","textChars":75,"textLines":1,"bbox":[210,312,355,60]}
+{"kind":"shape","id":"sh/fyxobm58","slide":10,"bbox":[72,414,520,88]}
+{"kind":"textbox","id":"sh/8jqh0fep","slide":10,"text":"Established","textPreview":"Established","textChars":11,"textLines":1,"bbox":[92,426,112,24]}
+{"kind":"textbox","id":"sh/x4nap4r6","slide":10,"text":"Relevant mutation prevents out-of-scope mutants from distorting case-level conclusions.","textPreview":"Relevant mutation prevents out-of-scope mutants from distorting case-level conclusions.","textChars":87,"textLines":1,"bbox":[210,424,355,60]}
+{"kind":"textbox","id":"sh/qpg3ex0n","slide":10,"text":"Boundaries","textPreview":"Boundaries","textChars":10,"textLines":1,"bbox":[688,142,520,34]}
+{"kind":"shape","id":"sh/fa9w3m94","slide":10,"bbox":[688,190,520,88]}
+{"kind":"textbox","id":"sh/8v6psfil","slide":10,"text":"Limitation","textPreview":"Limitation","textChars":10,"textLines":1,"bbox":[708,202,112,24]}
+{"kind":"textbox","id":"sh/xczed8v6","slide":10,"text":"Four selected cases and ≤10 mutants each: evidence is illustrative, not exhaustive.","textPreview":"Four selected cases and ≤10 mutants each: evidence is illustrative, not exhaustive.","textChars":83,"textLines":1,"bbox":[826,200,355,60]}
+{"kind":"shape","id":"sh/qtcj6tov","slide":10,"bbox":[688,302,520,88]}
+{"kind":"textbox","id":"sh/je9cvixc","slide":10,"text":"Limitation","textPreview":"Limitation","textChars":10,"textLines":1,"bbox":[708,314,112,24]}
+{"kind":"textbox","id":"sh/rqd4vmtw","slide":10,"text":"No full JS source branch coverage; BDD diagnostics must not be relabeled as branch coverage.","textPreview":"No full JS source branch coverage; BDD diagnostics must not be relabeled as branch coverage.","textChars":92,"textLines":1,"bbox":[826,312,355,60]}
+{"kind":"shape","id":"sh/25kb6xkf","slide":10,"bbox":[688,414,520,88]}
+{"kind":"textbox","id":"sh/9w3m94fu","slide":10,"text":"Next","textPreview":"Next","textChars":4,"textLines":1,"bbox":[708,426,112,24]}
+{"kind":"textbox","id":"sh/kb6xkf6d","slide":10,"text":"Scale operator sampling, add JS instrumentation, calibrate scores, and evaluate more benchmark rows.","textPreview":"Scale operator sampling, add JS instrumentation, calibrate scores, and evaluate more benchmark rows.","textChars":100,"textLines":1,"bbox":[826,424,355,60]}
+{"kind":"shape","id":"sh/re1w7mp0","slide":10,"bbox":[72,574,1136,72]}
+{"kind":"textbox","id":"sh/2t83itgf","slide":10,"text":"Takeaway","textPreview":"Takeaway","textChars":8,"textLines":1,"bbox":[94,590,120,28]}
+{"kind":"textbox","id":"sh/9knih4by","slide":10,"text":"A generated test deserves trust only when its assertions survive evidence from the behavior it claims to test.","textPreview":"A generated test deserves trust only when its assertions survive evidence from the behavior it claims to test.","textChars":110,"textLines":1,"bbox":[220,584,950,42]}
+{"kind":"textbox","id":"sh/kzupwb2h","slide":10,"text":"E2E generated-test quality evaluator","textPreview":"E2E generated-test quality evaluator","textChars":36,"textLines":1,"bbox":[64,686,1000,18]}
+{"kind":"textbox","id":"sh/ra5gbq1o","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1170,686,46,18]}
+{"kind":"notes","id":"nt/48yfi4","slide":10,"text":""}

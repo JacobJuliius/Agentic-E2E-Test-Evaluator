@@ -19,7 +19,7 @@
           },
           "name": "the webpage is loaded with a product list",
           "result": {
-            "duration": 3.7358362674713135,
+            "duration": 3.6319634914398193,
             "status": "passed"
           },
           "step_type": "given"
@@ -33,7 +33,7 @@
           },
           "name": "the user attempts to drag the non-draggable element with data-testid \"drop-area\"",
           "result": {
-            "duration": 1.0490143299102783,
+            "duration": 1.074664831161499,
             "status": "passed"
           },
           "step_type": "when"
@@ -47,7 +47,7 @@
           },
           "name": "no drag event should be initiated",
           "result": {
-            "duration": 0.001994609832763672,
+            "duration": 0.001028299331665039,
             "status": "passed"
           },
           "step_type": "then"
@@ -61,7 +61,7 @@
           },
           "name": "no product title should be captured",
           "result": {
-            "duration": 0.0020034313201904297,
+            "duration": 0.0010042190551757812,
             "status": "passed"
           },
           "step_type": "then"
@@ -75,7 +75,7 @@
           },
           "name": "no product price should be captured",
           "result": {
-            "duration": 0.002008676528930664,
+            "duration": 0.001001119613647461,
             "status": "passed"
           },
           "step_type": "then"
