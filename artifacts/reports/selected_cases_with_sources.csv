@@ -79,7 +79,7 @@ def step_then_no_product_price_captured(context):
     assert True, ""No product price should be captured.""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_01\source_projcet
+    context.driver.quit()",data\reference_sources\E2EDev_data\E2ESD_Bench_01\source_projcet
 E2ESD_Bench_02,1,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -160,7 +160,7 @@ def step_then_textarea_is_visible(context):
     assert textarea.is_displayed(), ""The textarea is not visible""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_02\source_projcet
+    context.driver.quit()",data\reference_sources\E2EDev_data\E2ESD_Bench_02\source_projcet
 E2ESD_Bench_03,2,2,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -273,7 +273,7 @@ def step_then_local_storage(context):
     assert 1 in selected_seats_indices, ""Seat index 1 (seat-1-2) not found in local storage""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_03\source_projcet
+    context.driver.quit()",data\reference_sources\E2EDev_data\E2ESD_Bench_03\source_projcet
 E2ESD_Bench_05,3,1,"
     You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
     SUMMARY:
@@ -391,4 +391,4 @@ def step_then_word_example_displays(context):
     assert word_example.text.strip(), ""Word example text is not displayed""
 
 def after_scenario(context, scenario):
-    context.driver.quit()",G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\workspace\E2EDev_data\E2ESD_Bench_05\source_projcet
+    context.driver.quit()",data\reference_sources\E2EDev_data\E2ESD_Bench_05\source_projcet

@@ -1,33 +1,58 @@
-# 1. 环境变量与机密文件 (最重要！防盗刷防泄密)
+# Secrets and local environment
 .env
 *.env
-.env.local
+.env.*
+!.env.example
 
-# 2. Python 编译缓存 (没用的垃圾文件)
+# Python caches and environments
 __pycache__/
 *.py[cod]
 *$py.class
-
-# 3. 虚拟环境 (太大了，千万别传，别人 clone 代码后会自己装)
-venv/
-env/
-.venv/
-
-# 4. 开发工具和 IDE 的配置文件 (比如 VS Code 或 PyCharm 自动生成的)
-.vscode/
-.idea/
-*.swp
-
-# 5. 系统垃圾文件
-.DS_Store
-Thumbs.db
-
-__pycache__/
-*.pyc
-artifacts/dynamic/workspaces/
-artifacts/dynamic/results/
-artifacts/runtime/
-node_modules/
 .pytest_cache/
 .coverage
 htmlcov/
+.venv/
+venv/
+env/
+
+# JavaScript dependencies
+node_modules/
+
+# IDE and operating-system files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Generated evaluator runtime data (kept locally, never committed)
+artifacts/runtime/
+artifacts/dynamic/workspaces/
+artifacts/dynamic/results/
+workspace/
+
+# Keep reports allowlisted rather than ignoring all artifacts.
+artifacts/reports/*
+!artifacts/reports/consolidation_audit.md
+!artifacts/reports/repository_cleanup_audit.md
+!artifacts/reports/final_results_summary.csv
+!artifacts/reports/final_results_summary.md
+!artifacts/reports/final_results_summary_for_slides.csv
+!artifacts/reports/final_full_pipeline_baseline.csv
+!artifacts/reports/final_full_pipeline_baseline.config.json
+!artifacts/reports/final_scope_aware_mutation.csv
+!artifacts/reports/final_scope_aware_mutation.config.json
+!artifacts/reports/selected_cases_local_mutation_10_final.csv
+!artifacts/reports/selected_cases_local_mutation_10_final.config.json
+!artifacts/reports/dynamic_analyst_bench05.csv
+!artifacts/reports/dynamic_analyst_bench05.config.json
+!artifacts/reports/selected_cases_with_sources.csv
+!artifacts/reports/final_e2e_test_evaluator_presentation.pptx
+!artifacts/reports/figures/
+!artifacts/reports/figures/**
+
+# Accidental large local patch artifact; smaller curated patches/ remains tracked.
+/working_smoke_test.patch

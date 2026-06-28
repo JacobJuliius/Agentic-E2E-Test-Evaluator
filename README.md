@@ -5,6 +5,12 @@ tests as its primary task. The framework combines deterministic static analysis,
 independent LLM evaluators, isolated browser execution, Python source coverage,
 and general mutation testing.
 
+The main evaluation protocol is a hybrid evaluator: independent static LLM
+judges are followed by isolated Selenium/Behave execution, a BDD
+step-execution diagnostic, and deterministic scope-aware mutation testing.
+The optional dynamic analyst explains surviving-mutant evidence but is not a
+primary scoring component.
+
 ## Architecture
 
 ```text
@@ -190,6 +196,73 @@ python scripts/reproduce_selected_cases.py `
 
 `--local-dynamic-only` runs the real syntax, Selenium/Behave, BDD diagnostic,
 and mutation tools but deliberately skips external LLM calls.
+
+## Reproduce the final local-source experiments
+
+The final experiments use explicit `source_project_dir` values and disable
+reference-network access. This avoids benchmark-host availability affecting
+results. `artifacts/reports/selected_cases_with_sources.csv` uses
+repository-relative paths into the tracked lightweight fixtures under
+`data/reference_sources/`, so the commands do not depend on the ignored legacy
+`workspace/` directory.
+
+### 1. Baseline evaluation
+
+```powershell
+$env:E2E_REFERENCE_NETWORK_ENABLED = "0"
+$env:E2E_ENABLE_DYNAMIC = "1"
+$env:E2E_ENABLE_MUTATION = "0"
+$env:E2E_ENABLE_COVERAGE = "0"
+$env:E2E_HEADLESS = "1"
+
+python scripts/reproduce_selected_cases.py `
+  artifacts/reports/selected_cases_with_sources.csv `
+  --output artifacts/reports/selected_cases_local_baseline_final.csv `
+  --local-dynamic-only
+```
+
+### 2. Scope-aware mutation evaluation
+
+```powershell
+$env:E2E_REFERENCE_NETWORK_ENABLED = "0"
+$env:E2E_ENABLE_DYNAMIC = "1"
+$env:E2E_ENABLE_MUTATION = "1"
+$env:E2E_ENABLE_COVERAGE = "0"
+$env:E2E_HEADLESS = "1"
+
+python scripts/reproduce_selected_cases.py `
+  artifacts/reports/selected_cases_with_sources.csv `
+  --output artifacts/reports/selected_cases_local_mutation_10_final.csv `
+  --local-dynamic-only --mutation --max-mutants 10
+```
+
+### 3. Test suite
+
+```powershell
+python -m pytest -p no:cacheprovider -q
+```
+
+## Interpretation limitations
+
+- The BDD step-execution diagnostic is not source branch coverage.
+- Current `coverage.py` instrumentation measures Python code; it does not
+  measure HTML/JavaScript branches in the E2EDev applications.
+- Relevant mutation score is meaningful only when
+  `relevant_mutants_total > 0`; otherwise it is reported as unavailable.
+- Mutation results are sampled evidence, bounded by the configured mutant
+  limit, not full application-level coverage.
+- The dynamic analyst is an optional explanatory layer and does not replace
+  deterministic mutation scoring or the independent static judges.
+
+## Final results and presentation
+
+- [Final results summary](artifacts/reports/final_results_summary.md)
+- [Final results CSV](artifacts/reports/final_results_summary.csv)
+- [Baseline evaluation](artifacts/reports/final_full_pipeline_baseline.csv)
+- [10-mutant selected evaluation](artifacts/reports/selected_cases_local_mutation_10_final.csv)
+- [Dynamic analyst evidence](artifacts/reports/dynamic_analyst_bench05.csv)
+- [Presentation](artifacts/reports/final_e2e_test_evaluator_presentation.pptx)
+- [Figures](artifacts/reports/figures/)
 
 ## Coverage
 
