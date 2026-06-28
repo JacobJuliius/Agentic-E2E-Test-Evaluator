@@ -1,0 +1,164 @@
+﻿id,req_id,test_id,prompt,requirement_summary,fine_grained_reqs,reference_answer,excutable_test_test_case,excutable_test_step_code,eval_syntax_status,eval_requirement_score,eval_assertion_score,eval_hallucination_count,eval_maintainability_score,eval_static_overall_score,eval_overall_score,eval_score_mode,eval_final_summary,eval_has_conflict,eval_critic_feedback,eval_critic_score_caveat,eval_improvement_report,eval_refiner_status,eval_fixed_code,static_actions_count,static_assertions_count,static_stable_selectors,static_medium_risk_selectors,static_brittle_selectors,static_magic_numbers,eval_selector_issues,eval_duplication_issues,eval_naming_issues,eval_readability_issues,dynamic_execution_status,dynamic_execution_success,dynamic_execution_return_code,dynamic_execution_seconds,dynamic_execution_stdout_tail,dynamic_execution_stderr_tail,dynamic_execution_failed_steps,dynamic_execution_report_summary,dynamic_execution_artifact_dir,dynamic_behave_report_path,dynamic_coverage_status,dynamic_coverage_score,dynamic_step_success_coverage,dynamic_action_step_coverage,dynamic_oracle_step_coverage,dynamic_steps_total,dynamic_steps_executed,dynamic_steps_passed,dynamic_steps_failed,dynamic_steps_skipped,dynamic_actions_total,dynamic_actions_passed,dynamic_oracles_total,dynamic_oracles_passed,dynamic_coverage_detail,dynamic_mutation_status,dynamic_mutation_score,dynamic_mutants_total,dynamic_mutants_killed,dynamic_mutants_survived,dynamic_mutants_timeout,dynamic_mutants_inconclusive,dynamic_mutation_report_path,dynamic_surviving_mutants,dynamic_killed_mutants,dynamic_mutation_records,dynamic_mutation_detail,eval_dynamic_analysis_status,eval_dynamic_quality_label,eval_dynamic_failure_category,eval_dynamic_root_cause,eval_dynamic_evidence_summary,eval_dynamic_fault_detection_gaps,eval_dynamic_relevant_surviving_mutants,eval_dynamic_prioritized_repairs,eval_dynamic_should_refine,validation_refined_syntax_passed,validation_execution_status,validation_execution_success,validation_execution_return_code,validation_execution_seconds,validation_execution_failed_steps,validation_execution_stdout_tail,validation_execution_stderr_tail,validation_execution_artifact_dir,validation_dynamic_coverage_status,validation_dynamic_coverage_score,validation_step_success_coverage,validation_action_step_coverage,validation_oracle_step_coverage,validation_steps_total,validation_steps_passed,validation_steps_failed,validation_dynamic_mutation_status,validation_dynamic_mutation_score,validation_mutants_total,validation_mutants_killed,validation_mutants_survived,validation_mutants_timeout,validation_mutants_inconclusive,validation_mutation_report_path,validation_surviving_mutants,repair_validation_status,repair_delta_coverage,repair_delta_mutation,repair_comparison_summary
+E2ESD_Bench_01,1,1,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The application is a drag-and-drop shopping cart interface where users can drag items from a list and drop them into a designated area to add them to their cart. The application calculates and displays the total cost of the items in the cart."",
+    ""predefined_options"": ""The application uses predefined product titles and prices for each item, which are displayed in a list format."",
+    ""external_resources"": ""Images for each product are used as external resources, sourced from local paths such as 'img/img1.jpg', 'img/img2.jpg', etc."",
+    ""external_js_libraries"": ""No external JavaScript libraries are explicitly mentioned in the provided code.""
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+When the user drags a product item (li element) from the product list, the system should initiate a drag event, capturing the product's title and price for transfer. The product items are represented as 'li' elements with the attribute 'draggable' set to 'true'. Each product item contains an image, a title, and a price, identified by data-testid attributes such as 'product-item-1', 'product-title-1', and 'product-price-1'. The drag event should capture the title and price of the product being dragged. 
+- Requirement 2: 
+The system should allow users to drag and drop product items(data-testid=""product-item-1"", data-testid=""product-item-2"", etc.) into a designated drop area (id=""div1"", data-testid=""drop-area"") to add them to the cart. Upon dropping, the cart display should automatically update: the product title appears in .box2, the unit price in .box3, and the quantity in .box1. The system supports adding both different and repeated products.
+- Requirement 3: 
+""The system calculates the total price by summing the prices of all products in the cart, formatting the total to two decimal places with the appropriate currency symbol (e.g., '$80.00'), and displays the total in the <div id=""allMoney""> element.""
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The application is a drag-and-drop shopping cart interface where users can drag items from a list and drop them into a designated area to add them to their cart. The application calculates and displays the total cost of the items in the cart.', 'predefined_options': 'The application uses predefined product titles and prices for each item, which are displayed in a list format.', 'external_resources': ""Images for each product are used as external resources, sourced from local paths such as 'img/img1.jpg', 'img/img2.jpg', etc."", 'external_js_libraries': 'No external JavaScript libraries are explicitly mentioned in the provided code.'}","When the user drags a product item (li element) from the product list, the system should initiate a drag event, capturing the product's title and price for transfer. The product items are represented as 'li' elements with the attribute 'draggable' set to 'true'. Each product item contains an image, a title, and a price, identified by data-testid attributes such as 'product-item-1', 'product-title-1', and 'product-price-1'. The drag event should capture the title and price of the product being dragged. ",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_01/,"Feature: Drag and Drop Product Item
+  The system should initiate a drag event when a user drags a product item from the product list, capturing the product's title and price for transfer.
+
+
+  Scenario: [Normal] Dragging a product item initiates a drag event
+    Given the webpage is loaded with a product list
+    When the user drags the product item with data-testid ""product-item-1""
+    Then the drag event should be initiated
+    And the product title ""The Essence of JavaScript"" should be captured
+    And the product price ""$40"" should be captured
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+@given('the webpage is loaded with a product list')
+def step_given_webpage_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)  # Allow time for the page to load
+
+@when('the user drags the product item with data-testid ""product-item-1""')
+def step_when_user_drags_product_item(context):
+    product_item = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='product-item-1']""))
+    )
+    context.driver.execute_script(""arguments[0].scrollIntoView();"", product_item)
+    time.sleep(1)  # Allow time for the element to be interactable
+
+    # Simulate drag and drop using JavaScript
+    context.driver.execute_script(""""""
+        const dataTransfer = new DataTransfer();
+        const dragStartEvent = new DragEvent('dragstart', { dataTransfer });
+        arguments[0].dispatchEvent(dragStartEvent);
+    """""", product_item)
+    time.sleep(1)
+
+@then('the drag event should be initiated')
+def step_then_drag_event_initiated(context):
+    # Verify drag event initiation by checking if dataTransfer has data
+    product_item = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='product-item-1']"")
+    drag_data = context.driver.execute_script(""""""
+        const dataTransfer = new DataTransfer();
+        const dragStartEvent = new DragEvent('dragstart', { dataTransfer });
+        arguments[0].dispatchEvent(dragStartEvent);
+        return dataTransfer.types.includes('title') && dataTransfer.types.includes('money');
+    """""", product_item)
+    assert drag_data, ""Drag event was not initiated properly.""
+
+@then('the product title ""The Essence of JavaScript"" should be captured')
+def step_then_product_title_captured(context):
+    product_title = context.driver.execute_script(""""""
+        const dataTransfer = new DataTransfer();
+        const dragStartEvent = new DragEvent('dragstart', { dataTransfer });
+        arguments[0].dispatchEvent(dragStartEvent);
+        return dataTransfer.getData('title');
+    """""", context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='product-item-1']""))
+    assert product_title == ""The Essence of JavaScript"", f""Expected title 'The Essence of JavaScript', but got '{product_title}'""
+
+@then('the product price ""$40"" should be captured')
+def step_then_product_price_captured(context):
+    product_price = context.driver.execute_script(""""""
+        const dataTransfer = new DataTransfer();
+        const dragStartEvent = new DragEvent('dragstart', { dataTransfer });
+        arguments[0].dispatchEvent(dragStartEvent);
+        return dataTransfer.getData('money');
+    """""", context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='product-item-1']""))
+    assert product_price == ""$40"", f""Expected price '$40', but got '{product_price}'""
+
+def after_scenario(context, scenario):
+    context.driver.quit()",PASSED,87.5,2,2,45,34.45,53.83,HYBRID_STATIC_EXECUTION_DYNAMIC_COVERAGE_MUTATION,"Static=34.45 from requirement coverage 87.5 minus penalties 53.05 (assertion=9.8, hallucination=20.0, smells=15.0, maintainability=8.25, no_assertion=0.0). Dynamic tools: execution=PASSED; BDD_coverage=PASSED:100.0; mutation=PASSED:33.33. Mode=HYBRID_STATIC_EXECUTION_DYNAMIC_COVERAGE_MUTATION. Dynamic analyst=MODERATE: The test successfully validates the drag-and-drop behavior for the first product item. Mutation testing confirms that the assertion logic for the price is effective (M001 killed), but the test suite lacks coverage for other items in the product list, as evidenced by surviving mutants M002 and M003. Critic caveat=The 100% coverage score is a false positive; the test suite is functionally incomplete due to lack of parameterization or iteration over the product list.. Critic feedback=There is a logical contradiction between the 'PASSED' mutation status and the presence of surviving mutants (M002, M003). Furthermore, the Dynamic Analyst correctly identifies that the test is brittle/narrow (only testing item 1), which conflicts with the '100.0' coverage score reported by the tool. Consensus should prioritize the Dynamic Analyst's assessment of 'MODERATE' quality over the tool's inflated coverage score, as the test fails to generalize across the product list.",True,"There is a logical contradiction between the 'PASSED' mutation status and the presence of surviving mutants (M002, M003). Furthermore, the Dynamic Analyst correctly identifies that the test is brittle/narrow (only testing item 1), which conflicts with the '100.0' coverage score reported by the tool. Consensus should prioritize the Dynamic Analyst's assessment of 'MODERATE' quality over the tool's inflated coverage score, as the test fails to generalize across the product list.",The 100% coverage score is a false positive; the test suite is functionally incomplete due to lack of parameterization or iteration over the product list.,"## QA Diagnostic Report
+
+### Issues Identified
+1. **Redundancy & Flakiness**: The test suite repeatedly re-triggers the `dragstart` event in every `then` step, which is inefficient and prone to state inconsistency. `time.sleep()` calls are used instead of explicit `WebDriverWait` conditions.
+2. **Narrow Scope**: The tests were hardcoded to `product-item-1`, causing mutants in other product items (M002, M003) to survive. 
+3. **Maintainability**: Logic for simulating drag-and-drop was duplicated across steps. 
+
+### Improvements
+1. **Consolidated Interaction**: Created a single `when` step that performs the drag action and stores the `DataTransfer` state in the `context` object.
+2. **Parameterization**: Updated the BDD scenario to use a Scenario Outline, allowing coverage of all product items without code duplication.
+3. **Best Practices**: Replaced `time.sleep()` with `WebDriverWait` and centralized the JavaScript execution logic to ensure atomic state capture.",GENERATED,"from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+@given('the webpage is loaded with a product list')
+def step_given_webpage_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+
+@when('the user drags the product item with data-testid ""{testid}""')
+def step_when_user_drags_product_item(context, testid):
+    product_item = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, f""[data-testid='{testid}']""))
+    )
+    # Capture drag data once and store in context
+    context.drag_data = context.driver.execute_script(""""""
+        const el = arguments[0];
+        const dataTransfer = new DataTransfer();
+        const dragStartEvent = new DragEvent('dragstart', { dataTransfer });
+        el.dispatchEvent(dragStartEvent);
+        return {
+            title: dataTransfer.getData('title'),
+            money: dataTransfer.getData('money')
+        };
+    """""", product_item)
+
+@then('the drag event should be initiated')
+def step_then_drag_event_initiated(context):
+    assert context.drag_data is not None, ""Drag event was not initiated.""
+
+@then('the product title ""{expected_title}"" should be captured')
+def step_then_product_title_captured(context, expected_title):
+    assert context.drag_data['title'] == expected_title, f""Expected {expected_title}, got {context.drag_data['title']}""
+
+@then('the product price ""{expected_price}"" should be captured')
+def step_then_product_price_captured(context, expected_price):
+    assert context.drag_data['money'] == expected_price, f""Expected {expected_price}, got {context.drag_data['money']}""
+
+def after_scenario(context, scenario):
+    context.driver.quit()",3,3,[data-testid='product-item-1'],None,None,None,None,The JavaScript drag-and-drop simulation logic is duplicated across three separate 'then' steps.; The retrieval of the product element using the same CSS selector is repeated in every step.,None,"Use of 'time.sleep()' is a bad practice that leads to flaky tests; explicit waits should be used instead.; The test logic is tightly coupled to raw JavaScript execution within the Python steps, making it difficult to debug.; The 'then' steps perform redundant actions (re-triggering the drag event) rather than asserting state from a single interaction.",PASSED,True,0,9.704,"USING RUNNER: behave.runner:Runner
+1 feature passed, 0 failed, 0 skipped
+1 scenario passed, 0 failed, 0 skipped
+5 steps passed, 0 failed, 0 skipped
+Took 0min 5.940s
+",,[],,artifacts\dynamic\results\E2ESD_Bench_01_req1_test1_row0\baseline,G:\学\语言资料\语言学\NLP_CL\LMU_cis\E2E\Agentic_E2Etest_Evaluator_5\artifacts\dynamic\results\E2ESD_Bench_01_req1_test1_row0\baseline\behave_report.json,PASSED,100.0,100.0,100.0,100.0,5,5,5,0,0,1,1,3,3,BDD successful-step coverage from Behave JSON report.,PASSED,33.33,3,1,2,0,0,artifacts\dynamic\results\E2ESD_Bench_01_req1_test1_row0\mutation_report.json,M002 source_project\index.html:113 $120→$121 [PRICE_PLUS_ONE]; M003 source_project\index.html:118 $35→$36 [PRICE_PLUS_ONE],M001 source_project\index.html:108 $40→$41 [PRICE_PLUS_ONE],"[{""mutant_id"": ""M001"", ""source_file"": ""source_project\\index.html"", ""line"": 108, ""original"": ""$40"", ""replacement"": ""$41"", ""operator"": ""PRICE_PLUS_ONE"", ""verdict"": ""KILLED"", ""failed_steps"": [{""keyword"": ""And"", ""name"": ""the product price \""$40\"" should be captured"", ""status"": ""failed"", ""error"": ""ASSERT FAILED: Expected price '$40', but got '$41'""}]}, {""mutant_id"": ""M002"", ""source_file"": ""source_project\\index.html"", ""line"": 113, ""original"": ""$120"", ""replacement"": ""$121"", ""operator"": ""PRICE_PLUS_ONE"", ""verdict"": ""SURVIVED"", ""failed_steps"": []}, {""mutant_id"": ""M003"", ""source_file"": ""source_project\\index.html"", ""line"": 118, ""original"": ""$35"", ""replacement"": ""$36"", ""operator"": ""PRICE_PLUS_ONE"", ""verdict"": ""SURVIVED"", ""failed_steps"": []}]",Mutation score excludes timeout and harness-error mutants from its denominator.,ANALYZED,MODERATE,NONE,"The test suite passes, but it is narrowly scoped to a single product item (product-item-1), leaving other product items in the list unverified against the drag-and-drop requirements.","The test successfully validates the drag-and-drop behavior for the first product item. Mutation testing confirms that the assertion logic for the price is effective (M001 killed), but the test suite lacks coverage for other items in the product list, as evidenced by surviving mutants M002 and M003.","The test suite only validates 'product-item-1', failing to verify that the drag-and-drop functionality correctly captures data for other items in the product list.",M002 (Price mutation for product-item-2); M003 (Price mutation for product-item-3),"Parameterize the BDD scenario to accept different product IDs, titles, and prices, or add additional scenarios to cover the remaining product items in the list.",True,True,PASSED,True,0,6.297,[],"USING RUNNER: behave.runner:Runner
+1 feature passed, 0 failed, 0 skipped
+1 scenario passed, 0 failed, 0 skipped
+5 steps passed, 0 failed, 0 skipped
+Took 0min 2.531s
+",,artifacts\dynamic\results\E2ESD_Bench_01_req1_test1_row0\refined_baseline,PASSED,100.0,100.0,100.0,100.0,5,5,0,SKIPPED_DISABLED,,0,0,0,0,0,,None,NO_EXECUTABILITY_CHANGE,0.0,,Before execution=PASSED; after execution=PASSED; BDD coverage delta=0.0; mutation delta=None.

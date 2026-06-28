@@ -1,0 +1,654 @@
+--- /mnt/data/agents.py	2026-06-26 09:36:24.471620033 +0000
++++ /mnt/data/e2e_v5_complete/agents.py	2026-06-26 09:40:20.378120879 +0000
+@@ -31,17 +31,30 @@
+ # Utility Functions
+ # ==========================================
+ 
+-def invoke_with_retry(prompt, max_retries: int = 3, wait_time: int = 60) -> str:
+-    """
+-    Wrapper function to invoke the LLM with retry logic for handling rate limits.
++# One process-level guard. The pipeline is serial, so no lock is required.
++# With all optional LLM nodes enabled: Requirement + Assertion + Hallucination +
++# Maintainability + Dynamic Analyst + Critic + Refiner = 7 calls per valid case.
++# 70 cases therefore make at most 490 calls, below the 500 RPD quota.
++LLM_RPD_SOFT_LIMIT = int(__import__("os").getenv("E2E_LLM_RPD_SOFT_LIMIT", "490"))
++_llm_successful_calls = 0
++
++
++def invoke_with_retry(prompt, max_retries: int = 3, wait_time: int = 60, agent_name: str = "LLM agent") -> str:
++    """Invoke Gemini under one global serial RPM/RPD guard.
++
++    The graph intentionally keeps model nodes serial.  Dynamic execution, coverage,
++    mutation, and refinement validation are local Python tools and make no API calls.
++    ``E2E_LLM_RPD_SOFT_LIMIT`` protects a batch from exceeding the free-tier daily quota;
++    it counts successful calls in this Python process, not requests made before this run.
++    """
++    global _llm_successful_calls
++
++    if _llm_successful_calls >= LLM_RPD_SOFT_LIMIT:
++        raise RuntimeError(
++            f"LLM soft budget reached ({_llm_successful_calls}/{LLM_RPD_SOFT_LIMIT}). "
++            "Stop the batch or lower E2E_MAX_CASES; do not exceed the 500-RPD quota."
++        )
+ 
+-    Rate-limit strategy (gemini-3.1-flash-lite free tier: 15 RPM, 500 RPD):
+-    - After every successful call, sleep 5 seconds before returning.
+-      15 RPM = 1 req/4s; the +1s buffer prevents window-edge bursts.
+-      With 6 serial calls per case: effective RPM ≈ 12, safely under 15.
+-    - 70 cases × 6 calls = 420 total calls, within the 500 RPD limit.
+-    - On a 429 / RESOURCE_EXHAUSTED error, back off for `wait_time` seconds and retry.
+-    """
+     for attempt in range(max_retries):
+         try:
+             res = llm.invoke(prompt)
+@@ -56,20 +69,26 @@
+                 result = "".join(text_parts)
+             else:
+                 result = raw_content
+-            # ── Rate-limit guard: 15 RPM → sleep 5s (4s minimum + 1s buffer) ──
++
++            _llm_successful_calls += 1
++            # 15 RPM = one request each 4 seconds.  Five seconds keeps margin.
+             time.sleep(5)
+             return result
+         except Exception as e:
+             error_msg = str(e)
+             if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                 if attempt < max_retries - 1:
+-                    print(f"\n⚠️ Rate limit hit. Waiting {wait_time}s... ({attempt + 2}/{max_retries} attempt)")
++                    print(
++                        f"\n⚠️ {agent_name}: rate limit hit. Waiting {wait_time}s... "
++                        f"({attempt + 2}/{max_retries} attempt)"
++                    )
+                     time.sleep(wait_time)
+                 else:
+-                    print(f"\n❌ Failed after {max_retries} attempts.")
+-                    raise e
++                    print(f"\n❌ {agent_name}: failed after {max_retries} attempts.")
++                    raise
+             else:
+-                raise e
++                raise
++
+ 
+ def clean_json_output(raw_output: str) -> str:
+     """Helper function to strip markdown formatting from LLM outputs."""
+@@ -314,7 +333,7 @@
+     static_assertion_methods = state.get("static_assertion_methods", [])
+     static_context = (
+         f"\n\n[STATIC ANALYSIS CONTEXT (Objective, Rule-based)]\n"
+-        f"AST scan found {static_assertions_count} assertion call(s): {static_assertion_methods}.\n"
++        f"AST scan found {static_assertions_count} assertion construct(s), including Python assert statements: {static_assertion_methods}.\n"
+         f"Use this as a factual grounding when evaluating assertion quality and completeness."
+     )
+ 
+@@ -539,112 +558,248 @@
+         }
+ 
+ 
++
+ # ==========================================
+-# Agent 6: Critic Agent (Static + Dynamic Evidence)
++# Agent 6: Dynamic Evidence Analyst (LLM, budget-aware)
+ # ==========================================
+ 
+-def critic_agent(state: dict) -> dict:
+-    """Review static judgements together with local execution evidence.
++def _dynamic_analysis_skip(status: str, detail: str) -> dict:
++    return {
++        "dynamic_analysis_status": status,
++        "dynamic_quality_label": "INCONCLUSIVE",
++        "failure_category": "NOT_ANALYZED",
++        "root_cause": detail,
++        "dynamic_evidence_summary": detail,
++        "fault_detection_gaps": [],
++        "relevant_surviving_mutants": [],
++        "prioritized_repairs": [],
++        "should_refine": False,
++    }
++
++
++def dynamic_evidence_analyst_agent(state: dict) -> dict:
++    """Interpret deterministic runtime evidence; never fabricate execution metrics.
+ 
+-    This remains one serial LLM call, so the 15-RPM design is unchanged. Dynamic nodes make
+-    no model calls. Harness failures are evidence about the evaluation environment, not an
+-    automatic judgement that generated test logic is bad.
++    This node is deliberately an LLM *reader* of tool outputs.  Selenium/Behave
++    determine execution; Python calculates BDD coverage; the mutation engine decides
++    killed/survived.  The LLM determines what those facts imply for test quality and
++    how the test should be repaired.
+     """
+     if not state.get("syntax_passed", True):
++        return _dynamic_analysis_skip("SKIPPED_SYNTAX_FAILED", "Syntax gate failed.")
++    if not state.get("enable_dynamic", False):
++        return _dynamic_analysis_skip("SKIPPED_DYNAMIC_DISABLED", "Dynamic evaluation is disabled.")
++    if not state.get("enable_dynamic_analyst", True):
++        return _dynamic_analysis_skip("SKIPPED_DISABLED", "Dynamic Evidence Analyst disabled by configuration.")
++
++    execution_status = state.get("execution_status", "NOT_RUN")
++    if execution_status in {"NOT_RUN", "SKIPPED_DISABLED", "SKIPPED_SYNTAX_FAILED"}:
++        return _dynamic_analysis_skip("SKIPPED_NO_DYNAMIC_EVIDENCE", "No execution evidence is available.")
++
++    dynamic_evidence = {
++        "execution": {
++            "status": execution_status,
++            "success": state.get("execution_success", False),
++            "duration_seconds": state.get("execution_duration_seconds", 0.0),
++            "failed_steps": state.get("execution_failed_steps", []),
++            "stderr_tail": str(state.get("execution_stderr_tail", ""))[-1800:],
++        },
++        "bdd_dynamic_coverage": {
++            "status": state.get("dynamic_coverage_status", "NOT_RUN"),
++            "score": state.get("dynamic_coverage_score"),
++            "step_success": state.get("step_success_coverage"),
++            "action_success": state.get("action_step_coverage"),
++            "oracle_success": state.get("oracle_step_coverage"),
++            "steps": {
++                "total": state.get("dynamic_steps_total", 0),
++                "passed": state.get("dynamic_steps_passed", 0),
++                "failed": state.get("dynamic_steps_failed", 0),
++                "skipped": state.get("dynamic_steps_skipped", 0),
++            },
++        },
++        "mutation": {
++            "status": state.get("mutation_status", "NOT_RUN"),
++            "score": state.get("mutation_score"),
++            "total": state.get("mutants_total", 0),
++            "killed": state.get("mutants_killed", 0),
++            "survived": state.get("mutants_survived", 0),
++            "timeout": state.get("mutants_timeout", 0),
++            "inconclusive": state.get("mutants_inconclusive", 0),
++            "records": state.get("mutation_records", [])[:12],
++        },
++    }
++
++    system_prompt = """
++You are the Dynamic Evidence Analyst in a hybrid E2E-test evaluator.
++You interpret deterministic tool evidence, but you MUST NOT recalculate, alter, or
++invent execution, coverage, or mutation outcomes.
++
++Your task:
++1. Diagnose whether a runtime failure is most likely a generated-test issue, an
++   environment/harness issue, or inconclusive.
++2. Explain the fault-detection implications of killed and surviving mutants in relation
++   to the requirements, BDD scenario, and test code.
++3. Identify only concrete assertion/behavior gaps that the supplied evidence supports.
++4. Recommend a repair only when evidence supports one.
++
++Definitions:
++- BDD dynamic coverage measures successful Given/When/Then step execution. It is NOT
++  JavaScript source branch coverage.
++- Mutation score measures detected source mutations. A surviving mutation is evidence of
++  a gap only when that mutation concerns behavior expected by this test's requirement or
++  BDD scenario. Do not label unrelated products/features as missing coverage.
++- HARNESS_* and TOOL/REPORT availability failures are environment evidence, not proof
++  that generated test logic is incorrect.
++
++Return ONLY valid JSON:
++{
++  "dynamic_quality_label": "STRONG|MODERATE|WEAK|INCONCLUSIVE",
++  "failure_category": "NONE|TEST_LOGIC|ASSERTION_GAP|ENVIRONMENT_OR_HARNESS|MIXED|INCONCLUSIVE",
++  "root_cause": "brief evidence-based explanation",
++  "dynamic_evidence_summary": "brief synthesis",
++  "fault_detection_gaps": ["specific gap"],
++  "relevant_surviving_mutants": ["only mutants relevant to this test"],
++  "prioritized_repairs": ["specific repair"],
++  "should_refine": true
++}
++"""
++    context = (
++        f"Fine-grained requirements:\n{state.get('fine_grained_reqs', '')}\n\n"
++        f"BDD scenario:\n{state.get('excutable_test_test_case', '')}\n\n"
++        f"Generated test code:\n{state.get('executable_test_code', '')}\n\n"
++        f"Deterministic dynamic evidence:\n{json.dumps(dynamic_evidence, ensure_ascii=False, indent=2)}"
++    )
++    try:
++        response = invoke_with_retry(
++            [SystemMessage(content=system_prompt), HumanMessage(content=context)],
++            agent_name="Dynamic Evidence Analyst",
++        )
++        parsed = json.loads(clean_json_output(response))
++        label = str(parsed.get("dynamic_quality_label", "INCONCLUSIVE")).upper()
++        category = str(parsed.get("failure_category", "INCONCLUSIVE")).upper()
++        return {
++            "dynamic_analysis_status": "ANALYZED",
++            "dynamic_quality_label": label if label in {"STRONG", "MODERATE", "WEAK", "INCONCLUSIVE"} else "INCONCLUSIVE",
++            "failure_category": category if category in {
++                "NONE", "TEST_LOGIC", "ASSERTION_GAP", "ENVIRONMENT_OR_HARNESS", "MIXED", "INCONCLUSIVE"
++            } else "INCONCLUSIVE",
++            "root_cause": parsed.get("root_cause", "No root cause returned."),
++            "dynamic_evidence_summary": parsed.get("dynamic_evidence_summary", "No dynamic summary returned."),
++            "fault_detection_gaps": parsed.get("fault_detection_gaps", []),
++            "relevant_surviving_mutants": parsed.get("relevant_surviving_mutants", []),
++            "prioritized_repairs": parsed.get("prioritized_repairs", []),
++            "should_refine": bool(parsed.get("should_refine", False)),
++        }
++    except Exception as exc:
++        return _dynamic_analysis_skip("ANALYSIS_ERROR", f"Dynamic analyst error: {exc}")
++
++
++# ==========================================
++# Agent 7: Critic Agent (static + dynamic reconciliation)
++# ==========================================
++
++def critic_agent(state: dict) -> dict:
++    """Reconcile the specialist outputs without a costly re-evaluation loop."""
++    if not state.get("syntax_passed", True):
+         return {
+             "has_conflict": False,
+             "critic_feedback": "Skipped due to syntax failure.",
++            "critic_score_caveat": "Syntax failure is decisive.",
+             "revision_count": state.get("revision_count", 0),
+         }
+ 
+     current_revision = state.get("revision_count", 0)
+-    evaluation_summary = {
+-        "Requirement evaluation": {
+-            "missing": state.get("missing_requirements", []),
++    evidence = {
++        "requirements": {
++            "covered": state.get("covered_requirements", []),
+             "partial": state.get("partially_covered_requirements", []),
++            "missing": state.get("missing_requirements", []),
+         },
+-        "Assertion evaluation": {
++        "assertions": {
+             "score": state.get("assertion_score", 0),
++            "strong": state.get("strong_assertions", []),
+             "weak": state.get("weak_assertions", []),
+-            "static_assertion_count": state.get("static_assertions_count", 0),
++            "ast_count": state.get("static_assertions_count", 0),
+         },
+-        "Hallucination evaluation": state.get("hallucinations", []),
+-        "Maintainability evaluation": {
++        "hallucinations": state.get("hallucinations", []),
++        "maintainability": {
+             "score": state.get("maintainability_score", 0),
+-            "selector_issues": state.get("hardcoded_selector_issues", []),
+-        },
+-        "Dynamic execution": {
+-            "status": state.get("execution_status", "NOT_RUN"),
+-            "success": state.get("execution_success", False),
+-            "stderr_tail": state.get("execution_stderr_tail", "")[-1500:],
+-        },
+-        "Dynamic BDD coverage": {
+-            "status": state.get("dynamic_coverage_status", "NOT_RUN"),
+-            "score": state.get("dynamic_coverage_score"),
+-            "action_step_coverage": state.get("action_step_coverage"),
+-            "oracle_step_coverage": state.get("oracle_step_coverage"),
++            "issues": state.get("hardcoded_selector_issues", []),
+         },
+-        "Mutation testing": {
+-            "status": state.get("mutation_status", "NOT_RUN"),
+-            "score": state.get("mutation_score"),
++        "tool_evidence": {
++            "execution_status": state.get("execution_status", "NOT_RUN"),
++            "coverage_status": state.get("dynamic_coverage_status", "NOT_RUN"),
++            "coverage_score": state.get("dynamic_coverage_score"),
++            "mutation_status": state.get("mutation_status", "NOT_RUN"),
++            "mutation_score": state.get("mutation_score"),
+             "surviving_mutants": state.get("surviving_mutants", []),
+         },
++        "dynamic_analyst": {
++            "status": state.get("dynamic_analysis_status", "NOT_RUN"),
++            "quality_label": state.get("dynamic_quality_label", "INCONCLUSIVE"),
++            "failure_category": state.get("failure_category", "INCONCLUSIVE"),
++            "summary": state.get("dynamic_evidence_summary", ""),
++            "gaps": state.get("fault_detection_gaps", []),
++        },
+     }
+-
+     system_prompt = """
+-You are the Critic Agent, the chief inspector of a test-quality jury.
+-Review static LLM evaluations and the local dynamic evidence for logical contradictions.
++You are the Critic Agent, chief inspector of a hybrid E2E test-quality jury.
++Check whether static LLM judgements, deterministic tool evidence, and the Dynamic
++Evidence Analyst are logically consistent.
++
++Flag a conflict only when it materially changes evaluation interpretation. Examples:
++- Assertions are called strong but relevant mutants survive.
++- Requirement coverage is called complete but the required BDD behavior fails at runtime.
++- A harness failure is incorrectly blamed on generated test logic.
++- Selector/maintainability issues are duplicated as hallucination penalties.
+ 
+-Examples of meaningful conflicts:
+-- The Assertion Agent calls assertions strong, but a passing baseline has a very low mutation score:
+-  assertions exist but do not detect realistic behavioural faults.
+-- The Requirement Agent says an expected behavior is covered, but a baseline execution fails in the
+-  corresponding BDD step.
+-- A Hallucination claim duplicates a maintainability concern, causing double-penalty risk.
+-- Dynamic coverage is reported as high although the execution status is not PASSED.
+-
+-Important rules:
+-- HARNESS_*, SKIPPED_DISABLED, and INCONCLUSIVE statuses indicate missing tooling or unavailable
+-  evidence; do NOT treat them as proof of poor test quality.
+-- "Dynamic BDD coverage" is successful execution coverage of Given/When/Then steps, NOT JavaScript
+-  source branch coverage.
++Do NOT ask prior agents to re-run: the system intentionally keeps one serial pass to
++respect a 15 RPM API limit. State how Consensus and Refiner should interpret evidence.
+ 
+ Return ONLY valid JSON:
+ {
+   "has_conflict": true,
+-  "critic_feedback": "specific reconciliation guidance"
++  "critic_feedback": "specific reconciliation guidance",
++  "critic_score_caveat": "short scoring caveat or None"
+ }
+ """
+-    messages = [
+-        SystemMessage(content=system_prompt),
+-        HumanMessage(content=f"Current evidence:\n{json.dumps(evaluation_summary, ensure_ascii=False, indent=2)}"),
+-    ]
+     try:
+-        response = invoke_with_retry(messages)
++        response = invoke_with_retry(
++            [
++                SystemMessage(content=system_prompt),
++                HumanMessage(content=f"Evidence:\n{json.dumps(evidence, ensure_ascii=False, indent=2)}"),
++            ],
++            agent_name="Critic Agent",
++        )
+         parsed = json.loads(clean_json_output(response))
+         return {
+-            "has_conflict": parsed.get("has_conflict", False),
+-            "critic_feedback": parsed.get("critic_feedback", "No conflicts detected."),
++            "has_conflict": bool(parsed.get("has_conflict", False)),
++            "critic_feedback": parsed.get("critic_feedback", "No material conflicts detected."),
++            "critic_score_caveat": parsed.get("critic_score_caveat", "None"),
+             "revision_count": current_revision + 1,
+         }
+     except Exception as exc:
+         print(f"[Critic Agent Error]: {exc}")
+         return {
+             "has_conflict": False,
+-            "critic_feedback": "Error analyzing conflict.",
++            "critic_feedback": "Critic unavailable; preserve deterministic evidence.",
++            "critic_score_caveat": f"Critic error: {exc}",
+             "revision_count": current_revision + 1,
+         }
+ 
+ 
+ # ==========================================
+-# Agent 7: Consensus Agent (Hybrid Static-Dynamic)
++# Agent 8: Consensus Agent (deterministic score + LLM evidence narrative)
+ # ==========================================
+ 
+ def consensus_agent(state: dict) -> dict:
+-    """Aggregate static evidence with optional local dynamic evidence.
++    """Score with deterministic gates; use LLM analyses for interpretation, not fabricated metrics.
+ 
+-    Dynamic scores are included only when available. A browser/dependency/harness issue does
+-    not become an artificial zero. A genuine baseline failure or timeout caps the score at 40.
++    Weighting when all dynamic evidence exists:
++      static quality 45%, baseline executability 15%, BDD dynamic coverage 15%,
++      mutation fault detection 25%.
++    Missing *tooling* evidence is omitted and remaining weights are normalized.  A genuine
++    test failure/timeout caps the score at 40; a HARNESS_* issue does not.
+     """
+     if not state.get("syntax_passed", True):
+         return {
+@@ -652,155 +807,164 @@
+             "static_overall_score": 0.0,
+             "overall_score": 0.0,
+             "score_mode": "SYNTAX_FAILED",
+-            "final_reasoning": "Fatal Error: Syntax check failed.",
++            "final_reasoning": "Fatal error: generated code does not parse.",
+         }
+ 
+-    # Calibrated V3.2 static component.
+-    total_reqs = state.get("total_requirements_count", 1)
++    total_reqs = max(int(state.get("total_requirements_count", 1) or 1), 1)
+     covered = len(state.get("covered_requirements", []))
+     partial = len(state.get("partially_covered_requirements", []))
+-    raw_req_coverage_score = ((covered + 0.5 * partial) / max(total_reqs, 1)) * 100
+-    req_coverage_score = max(0.0, min(100.0, raw_req_coverage_score))
++    raw_req_coverage = ((covered + 0.5 * partial) / total_reqs) * 100.0
++    req_coverage = max(0.0, min(100.0, raw_req_coverage))
+ 
+-    assertion_score = float(state.get("assertion_score", 100))
+-    assertion_penalty = round((1 - assertion_score / 100) * 10, 2)
+-    hallucination_penalty = float(state.get("hallucination_count", 0)) * 10
+-    smell_penalty = float(len(state.get("test_smells", []))) * 5
+-    maintainability_score = float(state.get("maintainability_score", 100))
+-    maintainability_penalty = round((1 - maintainability_score / 100) * 15, 2)
+-    static_actions = int(state.get("static_actions_count", 0))
+-    static_assertions = int(state.get("static_assertions_count", 0))
+-    no_assertion_penalty = 10 if static_actions > 0 and static_assertions == 0 else 0
+-
+-    total_penalty = (
+-        assertion_penalty + hallucination_penalty + smell_penalty
+-        + maintainability_penalty + no_assertion_penalty
+-    )
+-    static_score = max(0.0, min(100.0, req_coverage_score - total_penalty))
+-
+-    execution_status = state.get("execution_status", "NOT_RUN")
+-    dynamic_coverage_status = state.get("dynamic_coverage_status", "NOT_RUN")
+-    dynamic_coverage = state.get("dynamic_coverage_score")
+-    mutation_status = state.get("mutation_status", "NOT_RUN")
+-    mutation_score = state.get("mutation_score")
++    assertion_score = max(0.0, min(100.0, float(state.get("assertion_score", 0))))
++    maintainability_score = max(0.0, min(100.0, float(state.get("maintainability_score", 0))))
++    assertion_penalty = round((1 - assertion_score / 100.0) * 10.0, 2)
++    hallucination_penalty = min(30.0, float(state.get("hallucination_count", 0)) * 10.0)
++    smell_penalty = min(20.0, float(len(state.get("test_smells", []))) * 5.0)
++    maintainability_penalty = round((1 - maintainability_score / 100.0) * 15.0, 2)
++    no_assertion_penalty = 10.0 if (
++        int(state.get("static_actions_count", 0)) > 0
++        and int(state.get("static_assertions_count", 0)) == 0
++    ) else 0.0
++    penalties = assertion_penalty + hallucination_penalty + smell_penalty + maintainability_penalty + no_assertion_penalty
++    static_score = max(0.0, min(100.0, req_coverage - penalties))
++
++    execution_status = str(state.get("execution_status", "NOT_RUN"))
++    coverage_status = str(state.get("dynamic_coverage_status", "NOT_RUN"))
++    coverage = state.get("dynamic_coverage_score")
++    mutation_status = str(state.get("mutation_status", "NOT_RUN"))
++    mutation = state.get("mutation_score")
+ 
+     if execution_status == "PASSED":
+-        # Dynamic coverage is BDD successful-step coverage, not source branch coverage.
+         components: list[tuple[float, float, str]] = [
+-            (static_score, 0.50, "static"),
+-            (100.0, 0.20, "execution"),
++            (static_score, 0.45, "STATIC"),
++            (100.0, 0.15, "EXECUTION"),
+         ]
+-        if dynamic_coverage_status == "PASSED" and isinstance(dynamic_coverage, (int, float)):
+-            components.append((float(dynamic_coverage), 0.15, "dynamic_coverage"))
+-        if mutation_status == "PASSED" and isinstance(mutation_score, (int, float)):
+-            components.append((float(mutation_score), 0.15, "mutation"))
+-
+-        weight_sum = sum(weight for _, weight, _ in components)
+-        overall_score = sum(value * weight for value, weight, _ in components) / weight_sum
+-        score_mode = "HYBRID_" + "_".join(name.upper() for _, _, name in components)
++        if coverage_status in {"PASSED", "PARTIAL_BASELINE_FAILURE"} and isinstance(coverage, (int, float)):
++            components.append((max(0.0, min(100.0, float(coverage))), 0.15, "DYNAMIC_COVERAGE"))
++        if mutation_status == "PASSED" and isinstance(mutation, (int, float)):
++            components.append((max(0.0, min(100.0, float(mutation))), 0.25, "MUTATION"))
++        denominator = sum(weight for _, weight, _ in components)
++        overall = sum(value * weight for value, weight, _ in components) / denominator
++        mode = "HYBRID_" + "_".join(name for _, _, name in components)
+     elif execution_status in {"TEST_FAILED", "TIMEOUT"}:
+-        overall_score = min(static_score, 40.0)
+-        score_mode = "EXECUTION_FAILED_CAPPED"
++        overall = min(static_score, 40.0)
++        mode = "EXECUTION_FAILED_CAPPED"
+     else:
+-        # Missing Chrome, Git, Behave, etc. is not evidence of flawed generated logic.
+-        overall_score = static_score
+-        score_mode = "STATIC_ONLY_DYNAMIC_INCONCLUSIVE"
++        overall = static_score
++        mode = "STATIC_ONLY_DYNAMIC_INCONCLUSIVE"
+ 
++    analyst_label = state.get("dynamic_quality_label", "INCONCLUSIVE")
++    analyst_summary = state.get("dynamic_evidence_summary", "No dynamic analyst output.")
++    caveat = state.get("critic_score_caveat", "None")
+     reasoning = (
+-        f"Static score={round(static_score, 2)}: requirement coverage={round(req_coverage_score, 2)} "
+-        f"(raw={round(raw_req_coverage_score, 2)}) minus penalties={round(total_penalty, 2)} "
+-        f"[assertion={assertion_penalty}, hallucination={hallucination_penalty}, smells={smell_penalty}, "
+-        f"maintainability={maintainability_penalty}, no_assertion={no_assertion_penalty}]. "
+-        f"Dynamic evidence: execution={execution_status}; "
+-        f"BDD_dynamic_coverage={dynamic_coverage_status}:{dynamic_coverage}; "
+-        f"mutation={mutation_status}:{mutation_score}. Score mode={score_mode}."
++        f"Static={round(static_score, 2)} from requirement coverage {round(req_coverage, 2)} "
++        f"minus penalties {round(penalties, 2)} "
++        f"(assertion={assertion_penalty}, hallucination={hallucination_penalty}, smells={smell_penalty}, "
++        f"maintainability={maintainability_penalty}, no_assertion={no_assertion_penalty}). "
++        f"Dynamic tools: execution={execution_status}; BDD_coverage={coverage_status}:{coverage}; "
++        f"mutation={mutation_status}:{mutation}. Mode={mode}. "
++        f"Dynamic analyst={analyst_label}: {analyst_summary} Critic caveat={caveat}. "
++        f"Critic feedback={state.get('critic_feedback', 'None')}"
+     )
+     return {
+-        "requirement_coverage": round(req_coverage_score, 2),
++        "requirement_coverage": round(req_coverage, 2),
+         "static_overall_score": round(static_score, 2),
+-        "overall_score": round(max(0.0, min(100.0, overall_score)), 2),
+-        "score_mode": score_mode,
++        "overall_score": round(max(0.0, min(100.0, overall)), 2),
++        "score_mode": mode,
+         "final_reasoning": reasoning,
+     }
+ 
+ 
+ # ==========================================
+-# Agent 8: Refiner Agent (uses dynamic evidence)
++# Agent 9: Refiner Agent (dynamic-evidence driven)
+ # ==========================================
+ 
+ def refiner_agent(state: dict) -> dict:
+-    """Generate a repair proposal informed by static and runtime evidence."""
+-    reqs = state.get("fine_grained_reqs", "")
+-    code = state.get("executable_test_code", "")
+-    original_prompt = state.get("prompt", "")
+-    reasoning = state.get("final_reasoning", "")
+-    syntax_error = state.get("error_message", "")
+-    bdd = state.get("excutable_test_test_case", "")
+-
+-    maintainability_issues = {
+-        "selector_issues": state.get("hardcoded_selector_issues", []),
+-        "duplication_issues": state.get("duplication_issues", []),
+-        "naming_issues": state.get("naming_issues", []),
+-        "readability_issues": state.get("readability_issues", []),
++    """Propose replacement code. Validation is performed later by local tool nodes."""
++    original_code = state.get("executable_test_code", "")
++    if not state.get("enable_refiner", True):
++        return {
++            "improvement_report": "Refiner disabled by configuration.",
++            "fixed_code": original_code,
++            "refiner_status": "SKIPPED_DISABLED",
++        }
++
++    dynamic_evidence = {
++        "execution_status": state.get("execution_status", "NOT_RUN"),
++        "failed_steps": state.get("execution_failed_steps", []),
++        "stderr_tail": str(state.get("execution_stderr_tail", ""))[-1800:],
++        "coverage_status": state.get("dynamic_coverage_status", "NOT_RUN"),
++        "coverage_score": state.get("dynamic_coverage_score"),
++        "mutation_status": state.get("mutation_status", "NOT_RUN"),
++        "mutation_score": state.get("mutation_score"),
++        "mutation_records": state.get("mutation_records", [])[:12],
++        "analyst_status": state.get("dynamic_analysis_status", "NOT_RUN"),
++        "analyst_quality": state.get("dynamic_quality_label", "INCONCLUSIVE"),
++        "analyst_root_cause": state.get("root_cause", ""),
++        "analyst_gaps": state.get("fault_detection_gaps", []),
++        "analyst_repairs": state.get("prioritized_repairs", []),
+     }
+-    static_metrics = {
++    static_evidence = {
+         "actions_count": state.get("static_actions_count", 0),
+         "assertions_count": state.get("static_assertions_count", 0),
+         "stable_selectors": state.get("static_stable_selectors", []),
+         "medium_risk_selectors": state.get("static_medium_risk_selectors", []),
+         "brittle_selectors": state.get("static_brittle_selectors", []),
+         "magic_numbers": state.get("static_magic_numbers", []),
+-    }
+-    dynamic_evidence = {
+-        "execution_status": state.get("execution_status", "NOT_RUN"),
+-        "execution_stderr_tail": state.get("execution_stderr_tail", "")[-2000:],
+-        "dynamic_coverage_status": state.get("dynamic_coverage_status", "NOT_RUN"),
+-        "dynamic_coverage_score": state.get("dynamic_coverage_score"),
+-        "mutation_status": state.get("mutation_status", "NOT_RUN"),
+-        "mutation_score": state.get("mutation_score"),
+-        "surviving_mutants": state.get("surviving_mutants", []),
++        "maintainability_issues": {
++            "selector": state.get("hardcoded_selector_issues", []),
++            "duplication": state.get("duplication_issues", []),
++            "naming": state.get("naming_issues", []),
++            "readability": state.get("readability_issues", []),
++        },
+     }
+ 
+     system_prompt = """
+-You are the Refiner Agent, an elite E2E test engineer.
+-Create: (1) a concise Markdown diagnostic report; and (2) complete replacement Selenium/Behave
+-step code. Use the supplied static and runtime evidence.
+-
+-Rules:
+-- Correct actual execution failures only when they concern the generated test or its setup.
+-- HARNESS_* statuses mean missing environment tooling; report them, but do not invent a code flaw.
+-- Dynamic coverage means successful BDD setup/action/oracle step execution, not JS branch coverage.
+-- For surviving source mutants, add or strengthen assertions that would detect the mutated behavior.
+-- Preserve the test framework style already used by the code; do not switch to Playwright.
+-- Use data-testid selectors when they exist in the original prompt.
++You are the Refiner Agent, an elite Selenium/Behave E2E test engineer.
++Return a concise Markdown diagnostic report and complete replacement step code.
+ 
+-Return ONLY valid JSON:
++Use tool evidence as facts.  Do not claim a code bug from HARNESS_* results.  Do not
++replace Selenium/Behave with Playwright. Preserve the original scenario's behavior and
++existing framework style. Use data-testid/data-test locators when the prompt provides them.
++
++When a relevant mutant survives, add a precise assertion that would detect that mutated
++observable behavior; do not add assertions for unrelated products or requirements.
++When no code change is justified, return the original code unchanged and state why.
++The response must contain only valid JSON:
+ {
+   "improvement_report": "## QA Diagnostic Report\\n...",
+   "fixed_code": "from behave import given\\n..."
+ }
+ """
+     context = (
+-        f"Original prompt/UI specification:\n{original_prompt}\n\n"
+-        f"Requirements:\n{reqs}\n\n"
+-        f"BDD scenario:\n{bdd}\n\n"
+-        f"Original generated code:\n{code}\n\n"
+-        f"Consensus / syntax evidence:\n{reasoning}\n{syntax_error}\n\n"
+-        f"Maintainability issues:\n{json.dumps(maintainability_issues, ensure_ascii=False, indent=2)}\n\n"
+-        f"Static metrics:\n{json.dumps(static_metrics, ensure_ascii=False, indent=2)}\n\n"
++        f"Original UI/app prompt:\n{state.get('prompt', '')}\n\n"
++        f"Fine-grained requirements:\n{state.get('fine_grained_reqs', '')}\n\n"
++        f"BDD scenario:\n{state.get('excutable_test_test_case', '')}\n\n"
++        f"Original step code:\n{original_code}\n\n"
++        f"Consensus:\n{state.get('final_reasoning', '')}\n\n"
++        f"Critic reconciliation guidance:\n{state.get('critic_feedback', '')}\n\n"
++        f"Static evidence:\n{json.dumps(static_evidence, ensure_ascii=False, indent=2)}\n\n"
+         f"Dynamic evidence:\n{json.dumps(dynamic_evidence, ensure_ascii=False, indent=2)}"
+     )
+-    messages = [SystemMessage(content=system_prompt), HumanMessage(content=context)]
+     try:
+-        response = invoke_with_retry(messages)
++        response = invoke_with_retry(
++            [SystemMessage(content=system_prompt), HumanMessage(content=context)],
++            agent_name="Refiner Agent",
++        )
+         parsed = json.loads(clean_json_output(response))
++        fixed = parsed.get("fixed_code", original_code)
++        if not isinstance(fixed, str) or not fixed.strip():
++            fixed = original_code
+         return {
+             "improvement_report": parsed.get("improvement_report", "No report generated."),
+-            "fixed_code": parsed.get("fixed_code", code),
++            "fixed_code": fixed,
++            "refiner_status": "GENERATED",
+         }
+     except Exception as exc:
+         print(f"[Refiner Agent Error]: {exc}")
+         return {
+             "improvement_report": f"Failed to generate report: {exc}",
+-            "fixed_code": code,
++            "fixed_code": original_code,
++            "refiner_status": "ERROR",
+         }

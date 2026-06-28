@@ -1,0 +1,472 @@
+﻿id,req_id,test_id,prompt,requirement_summary,fine_grained_reqs,reference_answer,excutable_test_test_case,excutable_test_step_code,eval_syntax_status,eval_requirement_score,eval_assertion_score,eval_hallucination_count,eval_overall_score,eval_final_summary,eval_has_conflict,eval_improvement_report,eval_fixed_code,static_actions_count,static_assertions_count,static_hardcoded_selectors,static_stable_selectors,static_medium_risk_selectors,static_brittle_selectors,static_magic_numbers,eval_maintainability_score,eval_maintainability_rationale,eval_selector_issues,eval_duplication_issues,eval_naming_issues,eval_readability_issues
+E2ESD_Bench_01,1,1,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The application is a drag-and-drop shopping cart interface where users can drag items from a list and drop them into a designated area to add them to their cart. The application calculates and displays the total cost of the items in the cart."",
+    ""predefined_options"": ""The application uses predefined product titles and prices for each item, which are displayed in a list format."",
+    ""external_resources"": ""Images for each product are used as external resources, sourced from local paths such as 'img/img1.jpg', 'img/img2.jpg', etc."",
+    ""external_js_libraries"": ""No external JavaScript libraries are explicitly mentioned in the provided code.""
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+When the user drags a product item (li element) from the product list, the system should initiate a drag event, capturing the product's title and price for transfer. The product items are represented as 'li' elements with the attribute 'draggable' set to 'true'. Each product item contains an image, a title, and a price, identified by data-testid attributes such as 'product-item-1', 'product-title-1', and 'product-price-1'. The drag event should capture the title and price of the product being dragged. 
+- Requirement 2: 
+The system should allow users to drag and drop product items(data-testid=""product-item-1"", data-testid=""product-item-2"", etc.) into a designated drop area (id=""div1"", data-testid=""drop-area"") to add them to the cart. Upon dropping, the cart display should automatically update: the product title appears in .box2, the unit price in .box3, and the quantity in .box1. The system supports adding both different and repeated products.
+- Requirement 3: 
+""The system calculates the total price by summing the prices of all products in the cart, formatting the total to two decimal places with the appropriate currency symbol (e.g., '$80.00'), and displays the total in the <div id=""allMoney""> element.""
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The application is a drag-and-drop shopping cart interface where users can drag items from a list and drop them into a designated area to add them to their cart. The application calculates and displays the total cost of the items in the cart.', 'predefined_options': 'The application uses predefined product titles and prices for each item, which are displayed in a list format.', 'external_resources': ""Images for each product are used as external resources, sourced from local paths such as 'img/img1.jpg', 'img/img2.jpg', etc."", 'external_js_libraries': 'No external JavaScript libraries are explicitly mentioned in the provided code.'}","When the user drags a product item (li element) from the product list, the system should initiate a drag event, capturing the product's title and price for transfer. The product items are represented as 'li' elements with the attribute 'draggable' set to 'true'. Each product item contains an image, a title, and a price, identified by data-testid attributes such as 'product-item-1', 'product-title-1', and 'product-price-1'. The drag event should capture the title and price of the product being dragged. ",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_01/,"Feature: Drag and Drop Product Item
+  The system should initiate a drag event when a user drags a product item from the product list, capturing the product's title and price for transfer.
+
+
+  Scenario: [Normal] Dragging a product item initiates a drag event
+    Given the webpage is loaded with a product list
+    When the user drags the product item with data-testid ""product-item-1""
+    Then the drag event should be initiated
+    And the product title ""The Essence of JavaScript"" should be captured
+    And the product price ""$40"" should be captured
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+@given('the webpage is loaded with a product list')
+def step_given_webpage_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)  # Allow time for the page to load
+
+@when('the user drags the product item with data-testid ""product-item-1""')
+def step_when_user_drags_product_item(context):
+    product_item = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='product-item-1']""))
+    )
+    context.driver.execute_script(""arguments[0].scrollIntoView();"", product_item)
+    time.sleep(1)  # Allow time for the element to be interactable
+
+    # Simulate drag and drop using JavaScript
+    context.driver.execute_script(""""""
+        const dataTransfer = new DataTransfer();
+        const dragStartEvent = new DragEvent('dragstart', { dataTransfer });
+        arguments[0].dispatchEvent(dragStartEvent);
+    """""", product_item)
+    time.sleep(1)
+
+@then('the drag event should be initiated')
+def step_then_drag_event_initiated(context):
+    # Verify drag event initiation by checking if dataTransfer has data
+    product_item = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='product-item-1']"")
+    drag_data = context.driver.execute_script(""""""
+        const dataTransfer = new DataTransfer();
+        const dragStartEvent = new DragEvent('dragstart', { dataTransfer });
+        arguments[0].dispatchEvent(dragStartEvent);
+        return dataTransfer.types.includes('title') && dataTransfer.types.includes('money');
+    """""", product_item)
+    assert drag_data, ""Drag event was not initiated properly.""
+
+@then('the product title ""The Essence of JavaScript"" should be captured')
+def step_then_product_title_captured(context):
+    product_title = context.driver.execute_script(""""""
+        const dataTransfer = new DataTransfer();
+        const dragStartEvent = new DragEvent('dragstart', { dataTransfer });
+        arguments[0].dispatchEvent(dragStartEvent);
+        return dataTransfer.getData('title');
+    """""", context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='product-item-1']""))
+    assert product_title == ""The Essence of JavaScript"", f""Expected title 'The Essence of JavaScript', but got '{product_title}'""
+
+@then('the product price ""$40"" should be captured')
+def step_then_product_price_captured(context):
+    product_price = context.driver.execute_script(""""""
+        const dataTransfer = new DataTransfer();
+        const dragStartEvent = new DragEvent('dragstart', { dataTransfer });
+        arguments[0].dispatchEvent(dragStartEvent);
+        return dataTransfer.getData('money');
+    """""", context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='product-item-1']""))
+    assert product_price == ""$40"", f""Expected price '$40', but got '{product_price}'""
+
+def after_scenario(context, scenario):
+    context.driver.quit()",PASSED,87.5,2,2,34.45,"Coverage: 87.5/100 (raw=87.5). Total Penalty: -53.05 (Assertion Quality: -9.8 [score=2/100], Hallucinations: -20, Smells: -15, Maintainability: -8.25, No-Assertion Penalty: -0). [Static Metrics] Actions: 3, Assertions: 3. Maintainability Score: 45/100.",False,"## QA Diagnostic Report
+
+### Issues Identified:
+1. **Flaky Synchronization**: Used `time.sleep()` instead of explicit Playwright/Selenium wait mechanisms, leading to non-deterministic test execution.
+2. **Redundant Logic**: The drag-and-drop simulation was re-executed in every assertion step, violating the DRY (Don't Repeat Yourself) principle and causing unnecessary overhead.
+3. **Tight Coupling**: The test logic relied heavily on raw JavaScript injection within Python steps, making the test suite difficult to maintain and debug.
+4. **State Management**: The test failed to capture the state of the `DataTransfer` object once, instead re-triggering events, which is not how a real user interaction behaves.
+
+### Fixes Implemented:
+1. **Refactored to Playwright**: Migrated from Selenium to Playwright for superior auto-waiting and modern API support.
+2. **Centralized Interaction**: Created a helper method to perform the drag-and-drop simulation once, storing the result in the `context` object for subsequent assertions.
+3. **Removed Magic Sleeps**: Replaced `time.sleep()` with Playwright's built-in locator assertions and event handling.
+4. **Improved Assertions**: Consolidated logic to ensure the `DataTransfer` object is inspected correctly without re-triggering the event chain.","from playwright.sync_api import Page, expect
+import pytest
+
+# Constants for test data
+PRODUCT_ID = ""product-item-1""
+EXPECTED_TITLE = ""The Essence of JavaScript""
+EXPECTED_PRICE = ""$40""
+
+class ProductPage:
+    def __init__(self, page: Page):
+        self.page = page
+        self.product = page.locator(f""[data-testid='{PRODUCT_ID}']"")
+
+    def initiate_drag(self):
+        """"""Simulates dragstart and captures DataTransfer state.""""""
+        return self.page.evaluate(f""""""
+            (selector) => {{
+                const el = document.querySelector(`[data-testid=""{PRODUCT_ID}""]`);
+                const dataTransfer = new DataTransfer();
+                const event = new DragEvent('dragstart', {{ dataTransfer }});
+                el.dispatchEvent(event);
+                return {{
+                    title: dataTransfer.getData('title'),
+                    money: dataTransfer.getData('money'),
+                    types: dataTransfer.types
+                }};
+            }}
+        """""")
+
+# BDD Steps
+@given('the webpage is loaded with a product list')
+def step_given_webpage_loaded(context):
+    context.page.goto(""file://index.html"")
+    context.product_page = ProductPage(context.page)
+
+@when('the user drags the product item with data-testid ""product-item-1""')
+def step_when_user_drags_product_item(context):
+    # Capture the drag state once
+    context.drag_state = context.product_page.initiate_drag()
+
+@then('the drag event should be initiated')
+def step_then_drag_event_initiated(context):
+    assert 'title' in context.drag_state['types'], ""Drag event failed to set title in DataTransfer""
+    assert 'money' in context.drag_state['types'], ""Drag event failed to set money in DataTransfer""
+
+@then('the product title ""The Essence of JavaScript"" should be captured')
+def step_then_product_title_captured(context):
+    assert context.drag_state['title'] == EXPECTED_TITLE
+
+@then('the product price ""$40"" should be captured')
+def step_then_product_price_captured(context):
+    assert context.drag_state['money'] == EXPECTED_PRICE",3,3,None,[data-testid='product-item-1'],None,None,None,45,"While the test uses stable data-testid selectors, the implementation suffers from significant structural issues. The primary concern is the heavy duplication of JavaScript logic across multiple steps, which violates the DRY principle and makes maintenance difficult. Furthermore, the reliance on 'time.sleep()' introduces flakiness. The test should be refactored to perform the drag action once, store the resulting state in the 'context' object, and then perform assertions against that stored state.",None,The JavaScript drag-and-drop simulation logic is duplicated across three separate 'then' steps.; The retrieval of the product element using the same CSS selector is repeated in every step.,None,"Use of 'time.sleep()' is a bad practice that leads to flaky tests; explicit waits should be used instead.; The test logic is tightly coupled to raw JavaScript execution within the Python steps, making it difficult to debug.; The 'then' steps perform redundant actions (re-triggering the drag event) rather than asserting state from a single interaction."
+E2ESD_Bench_01,1,2,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The application is a drag-and-drop shopping cart interface where users can drag items from a list and drop them into a designated area to add them to their cart. The application calculates and displays the total cost of the items in the cart."",
+    ""predefined_options"": ""The application uses predefined product titles and prices for each item, which are displayed in a list format."",
+    ""external_resources"": ""Images for each product are used as external resources, sourced from local paths such as 'img/img1.jpg', 'img/img2.jpg', etc."",
+    ""external_js_libraries"": ""No external JavaScript libraries are explicitly mentioned in the provided code.""
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+When the user drags a product item (li element) from the product list, the system should initiate a drag event, capturing the product's title and price for transfer. The product items are represented as 'li' elements with the attribute 'draggable' set to 'true'. Each product item contains an image, a title, and a price, identified by data-testid attributes such as 'product-item-1', 'product-title-1', and 'product-price-1'. The drag event should capture the title and price of the product being dragged. 
+- Requirement 2: 
+The system should allow users to drag and drop product items(data-testid=""product-item-1"", data-testid=""product-item-2"", etc.) into a designated drop area (id=""div1"", data-testid=""drop-area"") to add them to the cart. Upon dropping, the cart display should automatically update: the product title appears in .box2, the unit price in .box3, and the quantity in .box1. The system supports adding both different and repeated products.
+- Requirement 3: 
+""The system calculates the total price by summing the prices of all products in the cart, formatting the total to two decimal places with the appropriate currency symbol (e.g., '$80.00'), and displays the total in the <div id=""allMoney""> element.""
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The application is a drag-and-drop shopping cart interface where users can drag items from a list and drop them into a designated area to add them to their cart. The application calculates and displays the total cost of the items in the cart.', 'predefined_options': 'The application uses predefined product titles and prices for each item, which are displayed in a list format.', 'external_resources': ""Images for each product are used as external resources, sourced from local paths such as 'img/img1.jpg', 'img/img2.jpg', etc."", 'external_js_libraries': 'No external JavaScript libraries are explicitly mentioned in the provided code.'}","When the user drags a product item (li element) from the product list, the system should initiate a drag event, capturing the product's title and price for transfer. The product items are represented as 'li' elements with the attribute 'draggable' set to 'true'. Each product item contains an image, a title, and a price, identified by data-testid attributes such as 'product-item-1', 'product-title-1', and 'product-price-1'. The drag event should capture the title and price of the product being dragged. ",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_01/,"Feature: Drag and Drop Product Item
+  The system should initiate a drag event when a user drags a product item from the product list, capturing the product's title and price for transfer.
+
+
+  Scenario: [Edge] Dragging a product item with the highest price
+    Given the webpage is loaded with a product list
+    When the user drags the product item with data-testid ""product-item-2""
+    Then the drag event should be initiated
+    And the product title ""JavaScript: The Definitive Guide"" should be captured
+    And the product price ""$120"" should be captured
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def setup_driver(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+
+def teardown_driver(context):
+    context.driver.quit()
+
+@given('the webpage is loaded with a product list')
+def step_given_webpage_loaded(context):
+    setup_driver(context)
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='product-item-1']""))
+    )
+    time.sleep(1)
+
+@when('the user drags the product item with data-testid ""product-item-2""')
+def step_when_user_drags_product_item(context):
+    product_item = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='product-item-2']"")
+    WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='product-item-2']""))
+    )
+    # Simulate drag and drop
+    context.driver.execute_script(""""""
+        var dragEvent = new DragEvent('dragstart', {
+            dataTransfer: new DataTransfer()
+        });
+        arguments[0].dispatchEvent(dragEvent);
+    """""", product_item)
+    time.sleep(1)
+
+@then('the drag event should be initiated')
+def step_then_drag_event_initiated(context):
+    # Verify drag event initiation by checking dataTransfer data
+    product_item = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='product-item-2']"")
+    title = product_item.find_element(By.CSS_SELECTOR, ""[data-testid='product-title-2']"").text
+    price = product_item.find_element(By.CSS_SELECTOR, ""[data-testid='product-price-2']"").text
+
+    assert title == ""JavaScript: The Definitive Guide"", f""Expected title 'JavaScript: The Definitive Guide', but got '{title}'""
+    assert price == ""$120"", f""Expected price '$120', but got '{price}'""
+    time.sleep(1)
+
+@then('the product title ""JavaScript: The Definitive Guide"" should be captured')
+def step_then_product_title_captured(context):
+    product_item = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='product-item-2']"")
+    title = product_item.find_element(By.CSS_SELECTOR, ""[data-testid='product-title-2']"").text
+    assert title == ""JavaScript: The Definitive Guide"", f""Expected title 'JavaScript: The Definitive Guide', but got '{title}'""
+    time.sleep(1)
+
+@then('the product price ""$120"" should be captured')
+def step_then_product_price_captured(context):
+    product_item = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='product-item-2']"")
+    price = product_item.find_element(By.CSS_SELECTOR, ""[data-testid='product-price-2']"").text
+    assert price == ""$120"", f""Expected price '$120', but got '{price}'""
+    time.sleep(1)
+
+def after_scenario(context, scenario):
+    teardown_driver(context)",PASSED,87.5,40,2,39.75,"Coverage: 87.5/100 (raw=87.5). Total Penalty: -47.75 (Assertion Quality: -6.0 [score=40/100], Hallucinations: -20, Smells: -15, Maintainability: -6.75, No-Assertion Penalty: -0). [Static Metrics] Actions: 8, Assertions: 4. Maintainability Score: 55/100.",True,"## QA Diagnostic Report
+
+### Issues Identified:
+1. **Anti-pattern Usage**: Excessive use of `time.sleep()` leads to flaky tests and slow execution. Replaced with explicit waits.
+2. **Code Duplication**: Redundant element lookups and assertion logic across multiple steps violated DRY principles.
+3. **Lack of Abstraction**: No Page Object Model (POM) was used, making the test suite difficult to maintain as the UI evolves.
+4. **Brittle Logic**: The test relied on manual `execute_script` for drag-and-drop without verifying the `DataTransfer` object state properly.
+5. **Hardcoded Data**: Test data was scattered across step definitions instead of being centralized.
+
+### Fixes Implemented:
+1. **Page Object Model (POM)**: Introduced `ProductPage` class to encapsulate selectors and interaction methods.
+2. **Explicit Waits**: Replaced `time.sleep()` with `WebDriverWait` and `expected_conditions` for robust synchronization.
+3. **Consolidated Assertions**: Merged redundant steps into a single, clean verification step.
+4. **Improved Selectors**: Standardized on `data-testid` attributes for all interactions.
+5. **Clean Architecture**: Moved configuration and setup to a centralized location.","from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+class ProductPage:
+    def __init__(self, driver):
+        self.driver = driver
+        self.wait = WebDriverWait(driver, 10)
+
+    def get_product_item(self, item_id):
+        return self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f""[data-testid='product-item-{item_id}']"")))
+
+    def get_product_details(self, item_id):
+        title = self.driver.find_element(By.CSS_SELECTOR, f""[data-testid='product-title-{item_id}']"").text
+        price = self.driver.find_element(By.CSS_SELECTOR, f""[data-testid='product-price-{item_id}']"").text
+        return title, price
+
+    def initiate_drag(self, item_id):
+        element = self.get_product_item(item_id)
+        self.driver.execute_script(""""""
+            var dataTransfer = new DataTransfer();
+            var event = new DragEvent('dragstart', { dataTransfer: dataTransfer });
+            arguments[0].dispatchEvent(event);
+        """""", element)
+
+# Behave Step Definitions
+@when('the user drags the product item with data-testid ""product-item-{item_id}""')
+def step_when_user_drags(context, item_id):
+    page = ProductPage(context.driver)
+    page.initiate_drag(item_id)
+
+@then('the drag event should be initiated and capture correct details for ""{item_id}""')
+def step_then_verify_drag(context, item_id):
+    page = ProductPage(context.driver)
+    title, price = page.get_product_details(item_id)
+    
+    expected_data = {
+        ""2"": (""JavaScript: The Definitive Guide"", ""$120"")
+    }
+    
+    exp_title, exp_price = expected_data.get(item_id)
+    assert title == exp_title, f""Expected {exp_title}, got {title}""
+    assert price == exp_price, f""Expected {exp_price}, got {price}""",8,4,None,[data-testid='product-item-2']; [data-testid='product-price-2']; [data-testid='product-title-2'],None,None,None,55,"While the test uses stable data-testid selectors, the code suffers from significant technical debt. The use of 'time.sleep' makes the test brittle and slow. The logic for locating elements is duplicated across every step, violating DRY principles. The test structure would benefit greatly from a Page Object Model to centralize selectors and helper methods for data retrieval, and the removal of hardcoded sleep timers in favor of explicit waits.",[data-testid='product-item-1'],"Repeated retrieval of product_item, title, and price elements across multiple steps.; Redundant assertion logic for title and price in both 'step_then_drag_event_initiated' and the subsequent specific steps.; Hardcoded file path and repeated driver setup/teardown logic.","Step definitions are overly granular, leading to redundant code execution for the same DOM elements.","Excessive use of 'time.sleep(1)' which is an anti-pattern in Selenium testing.; Lack of a Page Object Model (POM) to encapsulate element selectors and interaction logic.; Hardcoded test data ('JavaScript: The Definitive Guide', '$120') repeated across multiple assertions."
+E2ESD_Bench_01,1,3,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The application is a drag-and-drop shopping cart interface where users can drag items from a list and drop them into a designated area to add them to their cart. The application calculates and displays the total cost of the items in the cart."",
+    ""predefined_options"": ""The application uses predefined product titles and prices for each item, which are displayed in a list format."",
+    ""external_resources"": ""Images for each product are used as external resources, sourced from local paths such as 'img/img1.jpg', 'img/img2.jpg', etc."",
+    ""external_js_libraries"": ""No external JavaScript libraries are explicitly mentioned in the provided code.""
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+When the user drags a product item (li element) from the product list, the system should initiate a drag event, capturing the product's title and price for transfer. The product items are represented as 'li' elements with the attribute 'draggable' set to 'true'. Each product item contains an image, a title, and a price, identified by data-testid attributes such as 'product-item-1', 'product-title-1', and 'product-price-1'. The drag event should capture the title and price of the product being dragged. 
+- Requirement 2: 
+The system should allow users to drag and drop product items(data-testid=""product-item-1"", data-testid=""product-item-2"", etc.) into a designated drop area (id=""div1"", data-testid=""drop-area"") to add them to the cart. Upon dropping, the cart display should automatically update: the product title appears in .box2, the unit price in .box3, and the quantity in .box1. The system supports adding both different and repeated products.
+- Requirement 3: 
+""The system calculates the total price by summing the prices of all products in the cart, formatting the total to two decimal places with the appropriate currency symbol (e.g., '$80.00'), and displays the total in the <div id=""allMoney""> element.""
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The application is a drag-and-drop shopping cart interface where users can drag items from a list and drop them into a designated area to add them to their cart. The application calculates and displays the total cost of the items in the cart.', 'predefined_options': 'The application uses predefined product titles and prices for each item, which are displayed in a list format.', 'external_resources': ""Images for each product are used as external resources, sourced from local paths such as 'img/img1.jpg', 'img/img2.jpg', etc."", 'external_js_libraries': 'No external JavaScript libraries are explicitly mentioned in the provided code.'}","When the user drags a product item (li element) from the product list, the system should initiate a drag event, capturing the product's title and price for transfer. The product items are represented as 'li' elements with the attribute 'draggable' set to 'true'. Each product item contains an image, a title, and a price, identified by data-testid attributes such as 'product-item-1', 'product-title-1', and 'product-price-1'. The drag event should capture the title and price of the product being dragged. ",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_01/,"Feature: Drag and Drop Product Item
+  The system should initiate a drag event when a user drags a product item from the product list, capturing the product's title and price for transfer.
+
+
+  Scenario: [Edge] Dragging a product item with the lowest price
+    Given the webpage is loaded with a product list
+    When the user drags the product item with data-testid ""product-item-3""
+    Then the drag event should be initiated
+    And the product title ""Mastering JavaScript"" should be captured
+    And the product price ""$35"" should be captured
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_drag_event_initiated(driver, product_item):
+    # This function checks if the drag event is initiated by checking the dataTransfer object
+    # Since Selenium does not support drag and drop natively, this is a placeholder for actual implementation
+    # In a real-world scenario, you might need to use JavaScript to simulate drag and drop
+    return True
+
+@given('the webpage is loaded with a product list')
+def step_given_webpage_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)  # Allow time for the page to load
+
+@when('the user drags the product item with data-testid ""product-item-3""')
+def step_when_user_drags_product_item(context):
+    product_item = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='product-item-3']""))
+    )
+    # Simulate drag and drop using JavaScript or a library like ActionChains if needed
+    # For now, we assume the drag event is initiated
+    assert is_drag_event_initiated(context.driver, product_item), ""Drag event was not initiated""
+    time.sleep(1)
+
+@then('the drag event should be initiated')
+def step_then_drag_event_initiated(context):
+    # Placeholder for checking if the drag event was initiated
+    # This would typically involve checking the dataTransfer object or similar
+    assert True, ""Drag event was not initiated""
+
+@then('the product title ""Mastering JavaScript"" should be captured')
+def step_then_product_title_captured(context):
+    product_title = context.driver.execute_script(
+        ""return document.querySelector('[data-testid=\""product-title-3\""]').innerText""
+    )
+    expected_title = ""Mastering JavaScript""
+    assert expected_title in product_title, f""Expected title '{expected_title}', but got '{product_title}'""
+    time.sleep(1)
+
+@then('the product price ""$35"" should be captured')
+def step_then_product_price_captured(context):
+    product_price = context.driver.execute_script(
+        ""return document.querySelector('[data-testid=\""product-price-3\""]').innerText""
+    )
+    expected_price = ""$35""
+    assert expected_price in product_price, f""Expected price '{expected_price}', but got '{product_price}'""
+    time.sleep(1)
+
+def after_scenario(context, scenario):
+    context.driver.quit()",PASSED,70.0,2,1,28.45,"Coverage: 70.0/100 (raw=70.0). Total Penalty: -41.55 (Assertion Quality: -9.8 [score=2/100], Hallucinations: -10, Smells: -15, Maintainability: -6.75, No-Assertion Penalty: -0). [Static Metrics] Actions: 0, Assertions: 4. Maintainability Score: 55/100.",True,"## QA Diagnostic Report
+
+### Issues Identified
+1. **Anti-pattern Synchronization**: Used `time.sleep()` instead of explicit `WebDriverWait` conditions, leading to flaky tests and slow execution.
+2. **Tight Coupling**: Test steps were hardcoded to specific IDs (e.g., 'product-item-3'), preventing reuse for other products.
+3. **Abstraction Leakage**: Direct use of `execute_script` for DOM queries bypassed Selenium's robust locator strategies.
+4. **Lack of Robust Assertions**: The 'drag event' verification was a placeholder (`assert True`), failing to validate actual browser behavior.
+5. **Maintainability**: Lack of a Page Object Model (POM) resulted in redundant selector logic and poor readability.
+
+### Fixes Implemented
+1. **Page Object Model (POM)**: Introduced `ProductPage` class to encapsulate selectors and interactions.
+2. **Explicit Waits**: Replaced `time.sleep()` with `WebDriverWait` and `expected_conditions` for reliable synchronization.
+3. **Dynamic Selectors**: Refactored steps to accept parameters, allowing the same test logic to verify any product item.
+4. **Action Chains**: Implemented `ActionChains` to simulate actual drag-and-drop behavior, ensuring the browser's native drag events are triggered.
+5. **Clean Assertions**: Improved assertion messages and logic to verify state changes accurately.","from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+class ProductPage:
+    def __init__(self, driver):
+        self.driver = driver
+        self.wait = WebDriverWait(driver, 10)
+
+    def get_product_item(self, index):
+        return self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f""[data-testid='product-item-{index}']"")))
+
+    def get_product_title(self, index):
+        return self.driver.find_element(By.CSS_SELECTOR, f""[data-testid='product-title-{index}']"").text
+
+    def get_product_price(self, index):
+        return self.driver.find_element(By.CSS_SELECTOR, f""[data-testid='product-price-{index}']"").text
+
+    def drag_product(self, index):
+        item = self.get_product_item(index)
+        drop_area = self.driver.find_element(By.CSS_SELECTOR, ""[data-testid='drop-area']"")
+        ActionChains(self.driver).drag_and_drop(item, drop_area).perform()
+
+# Behave Step Definitions
+@when('the user drags the product item with data-testid ""product-item-{index}""')
+def step_when_user_drags_product(context, index):
+    context.page = ProductPage(context.driver)
+    context.current_index = index
+    context.page.drag_product(index)
+
+@then('the product title ""{expected_title}"" should be captured')
+def step_then_title_captured(context, expected_title):
+    actual_title = context.page.get_product_title(context.current_index)
+    assert actual_title == expected_title, f""Expected {expected_title}, got {actual_title}""
+
+@then('the product price ""{expected_price}"" should be captured')
+def step_then_price_captured(context, expected_price):
+    actual_price = context.page.get_product_price(context.current_index)
+    assert actual_price == expected_price, f""Expected {expected_price}, got {actual_price}""",0,4,None,None,None,None,None,55,"The test suite uses stable data-testid selectors, which is a positive foundation. However, it suffers from significant maintainability issues: reliance on hardcoded sleep timers instead of explicit waits, lack of a Page Object Model (POM) to encapsulate DOM interactions, and high coupling between test steps and specific data points. The code is currently procedural and brittle; if the product structure changes, multiple steps will require manual updates.",None,"Repeated use of time.sleep(1) throughout the test steps, which is an anti-pattern for synchronization.; Redundant logic for fetching elements via execute_script in multiple steps; this should be abstracted into a Page Object or helper method.; Hardcoded index '3' repeated across multiple selectors, violating DRY principles.","Step definitions are overly specific to 'product-item-3', making them non-reusable for other products.","Use of time.sleep() instead of explicit waits leads to flaky tests and poor performance.; Direct use of execute_script for DOM queries bypasses the abstraction layer provided by Selenium/WebDriver.; The test logic is tightly coupled to specific hardcoded data (ID 3, title, price) within the step definitions."

@@ -1,0 +1,168 @@
+﻿id,req_id,test_id,prompt,requirement_summary,fine_grained_reqs,reference_answer,excutable_test_test_case,excutable_test_step_code
+E2ESD_Bench_01,3,2,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The application is a drag-and-drop shopping cart interface where users can drag items from a list and drop them into a designated area to add them to their cart. The application calculates and displays the total cost of the items in the cart."",
+    ""predefined_options"": ""The application uses predefined product titles and prices for each item, which are displayed in a list format."",
+    ""external_resources"": ""Images for each product are used as external resources, sourced from local paths such as 'img/img1.jpg', 'img/img2.jpg', etc."",
+    ""external_js_libraries"": ""No external JavaScript libraries are explicitly mentioned in the provided code.""
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+When the user drags a product item (li element) from the product list, the system should initiate a drag event, capturing the product's title and price for transfer. The product items are represented as 'li' elements with the attribute 'draggable' set to 'true'. Each product item contains an image, a title, and a price, identified by data-testid attributes such as 'product-item-1', 'product-title-1', and 'product-price-1'. The drag event should capture the title and price of the product being dragged. 
+- Requirement 2: 
+The system should allow users to drag and drop product items(data-testid=""product-item-1"", data-testid=""product-item-2"", etc.) into a designated drop area (id=""div1"", data-testid=""drop-area"") to add them to the cart. Upon dropping, the cart display should automatically update: the product title appears in .box2, the unit price in .box3, and the quantity in .box1. The system supports adding both different and repeated products.
+- Requirement 3: 
+""The system calculates the total price by summing the prices of all products in the cart, formatting the total to two decimal places with the appropriate currency symbol (e.g., '$80.00'), and displays the total in the <div id=""allMoney""> element.""
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The application is a drag-and-drop shopping cart interface where users can drag items from a list and drop them into a designated area to add them to their cart. The application calculates and displays the total cost of the items in the cart.', 'predefined_options': 'The application uses predefined product titles and prices for each item, which are displayed in a list format.', 'external_resources': ""Images for each product are used as external resources, sourced from local paths such as 'img/img1.jpg', 'img/img2.jpg', etc."", 'external_js_libraries': 'No external JavaScript libraries are explicitly mentioned in the provided code.'}","The system should allow users to drag and drop product items(data-testid=""product-item-1"", data-testid=""product-item-2"", etc.) into a designated drop area (id=""div1"", data-testid=""drop-area"") to add them to the cart. Upon dropping, the cart display should automatically update: the product title appears in .box2, the unit price in .box3, and the quantity in .box1. The system supports adding both different and repeated products.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_01/,"Feature: Add product to cart display when dropped into the drop area
+  The system should add the product to the cart display, showing the product's title, price, and quantity when a product item is dropped into the drop area.
+
+
+  Scenario: [Normal] Add multiple different products to the cart
+    Given the webpage is loaded
+    And the product items with data-testid ""product-item-1"" and ""product-item-2"" are visible
+    When the user drags the product with data-testid ""product-item-1"" and drops it into the cart container with data-testid ""drop-area""
+    And the user drags the product with data-testid ""product-item-2"" and drops it into the cart container with data-testid ""drop-area""
+    Then the cart display should show a product with title ""The Essence of JavaScript""
+    And the price ""$40""
+    And the quantity ""1""
+    And the cart display should show a product with title ""JavaScript: The Definitive Guide""
+    And the price ""$120""
+    And the quantity ""1""
+
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def drag_and_drop_html5(driver, source, target):
+    driver.execute_script(""""""
+        function triggerDragAndDrop(source, target) {
+            const dataTransfer = new DataTransfer();
+            const dragStartEvent = new DragEvent('dragstart', { dataTransfer });
+            source.dispatchEvent(dragStartEvent);
+
+            const dragEnterEvent = new DragEvent('dragenter', { dataTransfer });
+            target.dispatchEvent(dragEnterEvent);
+
+            const dragOverEvent = new DragEvent('dragover', { dataTransfer });
+            target.dispatchEvent(dragOverEvent);
+
+            const dropEvent = new DragEvent('drop', { dataTransfer });
+            target.dispatchEvent(dropEvent);
+
+            const dragEndEvent = new DragEvent('dragend', { dataTransfer });
+            source.dispatchEvent(dragEndEvent);
+        }
+        triggerDragAndDrop(arguments[0], arguments[1]);
+    """""", source, target)
+
+def is_visible(element):
+    return element.is_displayed()
+
+@given('the webpage is loaded')
+def step_given_webpage_is_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)
+
+@given('the product items with data-testid ""product-item-1"" and ""product-item-2"" are visible')
+def step_given_product_items_visible(context):
+    product_item_1 = WebDriverWait(context.driver, 10).until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, ""[data-testid='product-item-1']""))
+    )
+    product_item_2 = WebDriverWait(context.driver, 10).until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, ""[data-testid='product-item-2']""))
+    )
+    assert is_visible(product_item_1), ""Product item 1 is not visible""
+    assert is_visible(product_item_2), ""Product item 2 is not visible""
+    time.sleep(1)
+
+@when('the user drags the product item with data-testid ""product-item-1""')
+def step_when_drag_product_item_1(context):
+    product_item_1 = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='product-item-1']"")
+    action = webdriver.ActionChains(context.driver)
+    action.click_and_hold(product_item_1).perform()
+    time.sleep(1)
+
+@when('drops it into the drop area with data-testid ""drop-area""')
+def step_when_drop_into_drop_area(context):
+    drop_area = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='drop-area']"")
+    action = webdriver.ActionChains(context.driver)
+    action.move_to_element(drop_area).release().perform()
+    time.sleep(1)
+
+@when('the user drags the product item with data-testid ""product-item-2""')
+def step_when_drag_product_item_2(context):
+    product_item_2 = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='product-item-2']"")
+    action = webdriver.ActionChains(context.driver)
+    action.click_and_hold(product_item_2).perform()
+    time.sleep(1)
+
+@when('the user drags the product with data-testid ""{product_item}"" and drops it into the cart container with data-testid ""{cart_id}""')
+def step_when_drag_and_drop_product(context, product_item, cart_id):
+    product = context.driver.find_element(By.CSS_SELECTOR, f""[data-testid='{product_item}']"")
+    cart = context.driver.find_element(By.CSS_SELECTOR, f""[data-testid='{cart_id}']"")
+    drag_and_drop_html5(context.driver, product, cart)
+    time.sleep(1)
+
+@then('the cart display should show a product with title ""The Essence of JavaScript""')
+def step_then_cart_display_title_1(context):
+    cart_items = context.driver.find_elements(By.CSS_SELECTOR, ""#div1 .box2"")
+    titles = [item.text for item in cart_items]
+    assert ""The Essence of JavaScript"" in titles, ""Title 'The Essence of JavaScript' not found in cart""
+    time.sleep(1)
+
+@then('the price ""$40""')
+def step_then_cart_display_price_1(context):
+    cart_prices = context.driver.find_elements(By.CSS_SELECTOR, ""#div1 .box3"")
+    prices = [item.text for item in cart_prices]
+    assert ""$40"" in prices or ""$40.00"", ""Price '$40' not found in cart""
+    time.sleep(1)
+
+@then('the quantity ""1""')
+def step_then_cart_display_quantity_1(context):
+    cart_quantities = context.driver.find_elements(By.CSS_SELECTOR, ""#div1 .box1"")
+    quantities = [item.text for item in cart_quantities]
+    assert ""1"" in quantities, ""Quantity '1' not found in cart""
+    time.sleep(1)
+
+@then('the cart display should show a product with title ""JavaScript: The Definitive Guide""')
+def step_then_cart_display_title_2(context):
+    cart_items = context.driver.find_elements(By.CSS_SELECTOR, ""#div1 .box2"")
+    titles = [item.text for item in cart_items]
+    assert ""JavaScript: The Definitive Guide"" in titles, ""Title 'JavaScript: The Definitive Guide' not found in cart""
+    time.sleep(1)
+
+@then('the price ""$120""')
+def step_then_cart_display_price_2(context):
+    cart_prices = context.driver.find_elements(By.CSS_SELECTOR, ""#div1 .box3"")
+    prices = [item.text for item in cart_prices]
+    assert ""$120"" in prices or ""$120.00"", ""Price '$120' not found in cart""
+    time.sleep(1)
+
+@then('the quantity ""1"" for the second product')
+def step_then_cart_display_quantity_2(context):
+    cart_quantities = context.driver.find_elements(By.CSS_SELECTOR, ""#div1 .box1"")
+    quantities = [item.text for item in cart_quantities]
+    assert quantities.count(""1"") == 2, ""Quantity '1' not found twice in cart""
+    time.sleep(1)
+
+def after_scenario(context, scenario):
+    context.driver.quit()"

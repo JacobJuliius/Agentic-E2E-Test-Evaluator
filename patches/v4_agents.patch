@@ -1,0 +1,252 @@
+--- /mnt/data/agents.py	2026-06-25 17:31:13.269147333 +0000
++++ /mnt/data/e2e_v4_dynamic/agents.py	2026-06-25 17:35:56.067901906 +0000
+@@ -6,8 +6,8 @@
+ 3. Assertion Quality Agent (Assertion Quality Evaluator)
+ 4. Hallucination & Smell Agent (Noise & Bad Practice Filter)
+ 5. Maintainability Agent (Code Quality Inspector) [NEW]
+-6. Critic Agent (Debate & Conflict Resolution)
+-7. Consensus Agent (Final Score Aggregator) [ENHANCED]
++6. Critic Agent (Static + Dynamic Evidence Reconciliation)
++7. Consensus Agent (Hybrid Static-Dynamic Score Aggregator)
+ 8. Refiner Agent (Self-Healing & Reporting)
+ """
+ 
+@@ -540,11 +540,11 @@
+ 
+ 
+ # ==========================================
+-# Agent 6: Critic Agent
++# Agent 6: Critic Agent (Static + Dynamic Evidence)
+ # ==========================================
+ 
+ def critic_agent(state: dict) -> dict:
+-    """Critic Agent: Reviews the evaluations from the 4 serial evaluators for logical conflicts."""
++    """Check consistency across the serial LLM jury and local dynamic evidence."""
+     if not state.get("syntax_passed", True):
+         return {
+             "has_conflict": False,
+@@ -553,7 +553,6 @@
+         }
+ 
+     current_revision = state.get("revision_count", 0)
+-
+     eval_summary = {
+         "Requirement Evaluation": state.get("missing_requirements", []),
+         "Assertion Evaluation": state.get("weak_assertions", []),
+@@ -562,24 +561,39 @@
+             "score": state.get("maintainability_score", 0),
+             "selector_issues": state.get("hardcoded_selector_issues", []),
+             "rationale": state.get("maintainability_rationale", "")
++        },
++        "Dynamic Evidence": {
++            "execution_status": state.get("execution_status", "NOT_RUN"),
++            "execution_stderr_tail": state.get("execution_stderr_tail", ""),
++            "branch_coverage_status": state.get("branch_coverage_status", "NOT_RUN"),
++            "branch_coverage": state.get("branch_coverage"),
++            "mutation_status": state.get("mutation_status", "NOT_RUN"),
++            "mutation_score": state.get("mutation_score"),
++            "surviving_mutants": state.get("surviving_mutants", [])[:5],
+         }
+     }
+ 
+     system_prompt = """
+-    You are the "Critic Agent", the Chief Inspector of the QA jury.
+-    Review the evaluations from the Requirement, Assertion, Hallucination, and Maintainability agents.
+-    Look for logical contradictions, e.g.:
+-    - Requirement Agent says 'Login is missing', but Hallucination Agent says 'Login is fabricated/hallucinated'.
+-    - Assertion Agent says 'no assertions found', but Maintainability Agent describes assertion readability issues (implying assertions exist).
+-    - Maintainability Agent flags a selector as brittle, but Hallucination Agent also flags the same action as a hallucination (double penalty risk).
++    You are the "Critic Agent", the Chief Inspector of a QA evaluation jury.
++    Review the static evaluations and the local dynamic evidence together. Look for contradictions
++    or invalid interpretations, for example:
++    - Static agents call an assertion strong, but the baseline test does not execute successfully.
++    - Baseline execution passes but a business-critical price/state mutant survives, suggesting the
++      assertion is weak or checks the wrong behaviour.
++    - Dynamic execution reports a browser/dependency harness error: this is INCONCLUSIVE evidence,
++      not proof that the generated test is poor.
++    - Requirement and hallucination agents penalize the same action under incompatible narratives.
++
++    Do not invent dynamic results. If coverage or mutation was skipped because the baseline failed
++    or a tool is unavailable, state that it is unavailable rather than treating it as zero coverage.
+ 
+-    If there is a conflict, set "has_conflict" to true and provide "critic_feedback" detailing what needs to be resolved.
+-    If they are generally consistent, set "has_conflict" to false.
++    If there is a material conflict, set "has_conflict" to true and explain it in "critic_feedback".
++    Otherwise set it to false.
+ 
+     Expected JSON Schema:
+     {
+         "has_conflict": true or false,
+-        "critic_feedback": "<Detailed feedback to resolve conflicts>"
++        "critic_feedback": "<Detailed feedback about consistency and evidence limits>"
+     }
+     """
+ 
+@@ -606,76 +620,98 @@
+ 
+ 
+ # ==========================================
+-# Agent 7: Consensus Agent (ENHANCED)
++# Agent 7: Consensus Agent (Hybrid Static-Dynamic)
+ # ==========================================
+ 
+ def consensus_agent(state: dict) -> dict:
+-    """
+-    Consensus Agent (ENHANCED): Aggregates evaluations from all 4 agents
+-    and calculates the final weighted score, now including Maintainability.
++    """Combine static quality with execution, branch coverage and mutation evidence.
++
++    Dynamic metrics are only included when they are genuinely available. A harness problem
++    (missing Chrome/Node/dependency) is marked inconclusive and does not become a zero score.
++    A real test failure or timeout caps the final score at 40 because a non-executable E2E test
++    cannot be production-ready even when its static form looks good.
+     """
+     if not state.get("syntax_passed", True):
+         return {
+             "requirement_coverage": 0,
++            "static_overall_score": 0,
+             "overall_score": 0,
++            "score_mode": "SYNTAX_FAILED",
+             "final_reasoning": "Fatal Error: Syntax check failed."
+         }
+ 
+-    # --- Requirement Coverage (base score) ---
++    # --- Static component (same calibrated V3.2 score) ---
+     total_reqs = state.get("total_requirements_count", 1)
+     covered = len(state.get("covered_requirements", []))
+     partial = len(state.get("partially_covered_requirements", []))
+-    # LLM-extracted counts can occasionally be inconsistent. Cap the score defensively
+-    # while retaining the raw evidence for diagnosis in the output lists.
+     raw_req_coverage_score = ((covered + 0.5 * partial) / max(total_reqs, 1)) * 100
+     req_coverage_score = max(0.0, min(100.0, raw_req_coverage_score))
+ 
+-    # --- Penalties from LLM agents ---
+-    # assertion_score (0-100 from Assertion Agent) converted to a 0-10 penalty.
+-    # assertion_score=100 → 0 penalty; assertion_score=0 → 10 penalty.
+-    # weak_assertions list is REMOVED to avoid double-counting with assertion_score.
+     assertion_score_val = state.get("assertion_score", 100)
+     assertion_penalty = round((1 - assertion_score_val / 100) * 10, 2)
+     hallucination_penalty = state.get("hallucination_count", 0) * 10
+     test_smell_penalty = len(state.get("test_smells", [])) * 5
+-
+-    # --- NEW: Maintainability penalty (normalized from 0-100 score) ---
+-    # A maintainability score of 100 = 0 penalty, score of 0 = max 15 point penalty
+     maintainability_score = state.get("maintainability_score", 100)
+     maintainability_penalty = round((1 - maintainability_score / 100) * 15, 2)
+-
+-    # --- NEW: Static metric bonuses/penalties ---
+     static_assertions = state.get("static_assertions_count", 0)
+     static_actions = state.get("static_actions_count", 0)
+-    # If no assertions at all detected by AST, apply additional objective penalty
+     static_no_assertion_penalty = 10 if static_assertions == 0 and static_actions > 0 else 0
+ 
+     total_penalty = (
+-        assertion_penalty
+-        + hallucination_penalty
+-        + test_smell_penalty
+-        + maintainability_penalty
+-        + static_no_assertion_penalty
++        assertion_penalty + hallucination_penalty + test_smell_penalty
++        + maintainability_penalty + static_no_assertion_penalty
+     )
++    static_score = max(0.0, min(100.0, req_coverage_score - total_penalty))
+ 
+-    overall_score = max(0, min(100, req_coverage_score - total_penalty))
++    # --- Dynamic component ---
++    execution_status = state.get("execution_status", "NOT_RUN")
++    branch_status = state.get("branch_coverage_status", "NOT_RUN")
++    branch_score = state.get("branch_coverage")
++    mutation_status = state.get("mutation_status", "NOT_RUN")
++    mutation_score = state.get("mutation_score")
++
++    if execution_status == "PASSED":
++        # Weights express evidence importance. Missing tooling does not silently become zero:
++        # available scores are renormalized instead.
++        weighted_metrics = [(static_score, 0.50), (100.0, 0.20)]
++        included = ["static", "execution"]
++        if branch_status == "PASSED" and isinstance(branch_score, (int, float)):
++            weighted_metrics.append((float(branch_score), 0.15))
++            included.append("branch_coverage")
++        if mutation_status == "PASSED" and isinstance(mutation_score, (int, float)):
++            weighted_metrics.append((float(mutation_score), 0.15))
++            included.append("mutation_score")
++
++        weight_sum = sum(weight for _, weight in weighted_metrics)
++        overall_score = sum(value * weight for value, weight in weighted_metrics) / weight_sum
++        score_mode = "HYBRID_" + "_".join(included).upper()
++    elif execution_status in {"TEST_FAILED", "TIMEOUT"}:
++        overall_score = min(static_score, 40.0)
++        score_mode = "EXECUTION_FAILED_CAPPED"
++    else:
++        # HARNESS_* / NOT_RUN / SKIPPED_* do not prove the test logic bad.
++        overall_score = static_score
++        score_mode = "STATIC_ONLY_DYNAMIC_INCONCLUSIVE"
+ 
+     reasoning = (
+-        f"Coverage: {round(req_coverage_score, 2)}/100 (raw={round(raw_req_coverage_score, 2)}). "
+-        f"Total Penalty: -{round(total_penalty, 2)} "
+-        f"(Assertion Quality: -{assertion_penalty} [score={assertion_score_val}/100], "
+-        f"Hallucinations: -{hallucination_penalty}, "
+-        f"Smells: -{test_smell_penalty}, "
+-        f"Maintainability: -{maintainability_penalty}, "
+-        f"No-Assertion Penalty: -{static_no_assertion_penalty}). "
+-        f"[Static Metrics] Actions: {static_actions}, Assertions: {static_assertions}. "
+-        f"Maintainability Score: {maintainability_score}/100."
++        f"Static score: {round(static_score, 2)}/100 from requirement coverage "
++        f"{round(req_coverage_score, 2)} (raw={round(raw_req_coverage_score, 2)}) minus "
++        f"{round(total_penalty, 2)} penalties. "
++        f"[Actions={static_actions}, Assertions={static_assertions}; "
++        f"AssertionPenalty={assertion_penalty}, HallucinationPenalty={hallucination_penalty}, "
++        f"SmellPenalty={test_smell_penalty}, MaintainabilityPenalty={maintainability_penalty}, "
++        f"NoAssertionPenalty={static_no_assertion_penalty}]. "
++        f"Dynamic evidence: execution={execution_status}; "
++        f"branch={branch_status}:{branch_score}; mutation={mutation_status}:{mutation_score}. "
++        f"Scoring mode={score_mode}."
+     )
+ 
+     return {
+         "requirement_coverage": round(req_coverage_score, 2),
+-        "overall_score": round(overall_score, 2),
+-        "final_reasoning": reasoning
++        "static_overall_score": round(static_score, 2),
++        "overall_score": round(max(0.0, min(100.0, overall_score)), 2),
++        "score_mode": score_mode,
++        "final_reasoning": reasoning,
+     }
+ 
+ 
+@@ -705,6 +741,15 @@
+         "brittle_selectors": state.get("static_brittle_selectors", []),
+         "magic_numbers": state.get("static_magic_numbers", []),
+     }
++    dynamic_evidence = {
++        "execution_status": state.get("execution_status", "NOT_RUN"),
++        "execution_stderr_tail": state.get("execution_stderr_tail", ""),
++        "branch_coverage_status": state.get("branch_coverage_status", "NOT_RUN"),
++        "branch_coverage": state.get("branch_coverage"),
++        "mutation_status": state.get("mutation_status", "NOT_RUN"),
++        "mutation_score": state.get("mutation_score"),
++        "surviving_mutants": state.get("surviving_mutants", []),
++    }
+ 
+     system_prompt = """
+     You are the "Refiner Agent", an Elite Test Engineer.
+@@ -717,6 +762,8 @@
+        - Replaces brittle selectors with data-testid or accessible role locators
+        - Eliminates magic numbers (use named constants)
+        - Removes code duplication (extract helpers/Page Objects where appropriate)
++       - Uses dynamic evidence correctly: fix real test failures and surviving mutants, but do not
++         treat HARNESS_* tool errors as defects in generated test logic
+ 
+     Output Constraint: Return ONLY a valid JSON object. Escape all newlines as \\n and double quotes as \\" within strings.
+     Expected JSON Schema:
+@@ -734,7 +781,8 @@
+         f"Original Code:\n{code}\n\n"
+         f"Evaluation Summary/Syntax Error:\n{reasoning}\n{syntax_error}\n\n"
+         f"Maintainability Issues:\n{json.dumps(maintainability_issues, indent=2)}\n\n"
+-        f"Static Metrics (Objective):\n{json.dumps(static_metrics, indent=2)}"
++        f"Static Metrics (Objective):\n{json.dumps(static_metrics, indent=2)}\n\n"
++        f"Dynamic Execution / Coverage / Mutation Evidence:\n{json.dumps(dynamic_evidence, indent=2)}"
+     )
+     
+ 

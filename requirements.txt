@@ -1,0 +1,10 @@
+langgraph>=0.2,<2
+langchain-google-genai>=2,<4
+python-dotenv>=0.20
+pandas>=1.5
+tqdm>=4.66
+behave>=1.2.7
+selenium>=4.11
+coverage>=7.3
+pytest>=7.4
+

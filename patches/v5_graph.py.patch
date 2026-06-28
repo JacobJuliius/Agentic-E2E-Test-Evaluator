@@ -1,0 +1,237 @@
+--- /mnt/data/graph.py	2026-06-26 09:36:24.562648240 +0000
++++ /mnt/data/e2e_v5_complete/graph.py	2026-06-26 09:38:56.516263654 +0000
+@@ -1,5 +1,11 @@
+-"""LangGraph orchestration for the V4 pure-Python hybrid evaluator."""
+-from typing import List, TypedDict
++"""LangGraph orchestration for the V5 hybrid E2E test evaluator.
++
++Model calls remain strictly serial to stay below Gemini's 15 RPM limit.
++Execution, coverage, mutation, and repair validation are local Python tool nodes.
++"""
++from __future__ import annotations
++
++from typing import Any, List, TypedDict
+ 
+ from dotenv import load_dotenv
+ from langgraph.graph import END, StateGraph
+@@ -8,19 +14,28 @@
+     assertion_quality_agent,
+     consensus_agent,
+     critic_agent,
++    dynamic_evidence_analyst_agent,
+     hallucination_smell_agent,
+     maintainability_agent,
+     refiner_agent,
+     requirement_alignment_agent,
+     syntax_linter_agent,
+ )
+-from dynamic_agents import dynamic_coverage_agent, execution_agent, mutation_agent
++from dynamic_agents import (
++    dynamic_coverage_agent,
++    execution_agent,
++    mutation_agent,
++    repair_comparison_agent,
++    validation_coverage_agent,
++    validation_execution_agent,
++    validation_mutation_agent,
++)
+ 
+ load_dotenv()
+ 
+ 
+ class E2EEvalState(TypedDict, total=False):
+-    # Inputs
++    # Inputs / execution configuration
+     fine_grained_reqs: str
+     executable_test_code: str
+     excutable_test_test_case: str
+@@ -31,12 +46,16 @@
+     benchmark_id: str
+     enable_dynamic: bool
+     enable_mutation: bool
++    enable_dynamic_analyst: bool
++    enable_refiner: bool
++    enable_refinement_validation: bool
++    enable_refinement_mutation_validation: bool
+     max_mutants: int
+     execution_timeout_seconds: int
+     mutant_timeout_seconds: int
+     headless: bool
+ 
+-    # Static / LLM evidence
++    # Static deterministic evidence
+     syntax_passed: bool
+     error_message: str
+     static_actions_count: int
+@@ -48,6 +67,8 @@
+     static_magic_numbers: List[float]
+     static_action_methods: List[str]
+     static_assertion_methods: List[str]
++
++    # Static LLM evidence
+     total_requirements_count: int
+     covered_requirements: List[str]
+     partially_covered_requirements: List[str]
+@@ -66,13 +87,15 @@
+     readability_issues: List[str]
+     maintainability_rationale: str
+ 
+-    # Dynamic evidence
++    # Baseline dynamic tool evidence
+     execution_status: str
+     execution_success: bool
+     execution_return_code: int
+     execution_duration_seconds: float
+     execution_stdout_tail: str
+     execution_stderr_tail: str
++    execution_failed_steps: List[dict[str, Any]]
++    execution_report_summary: str
+     execution_artifact_dir: str
+     workspace_dir: str
+     behave_report_path: str
+@@ -100,10 +123,24 @@
+     mutants_inconclusive: int
+     mutation_report_path: str
+     surviving_mutants: List[str]
++    killed_mutants: List[str]
++    mutation_records: List[dict[str, Any]]
+     mutation_detail: str
+ 
++    # Dynamic Evidence Analyst (LLM)
++    dynamic_analysis_status: str
++    dynamic_quality_label: str
++    failure_category: str
++    root_cause: str
++    dynamic_evidence_summary: str
++    fault_detection_gaps: List[str]
++    relevant_surviving_mutants: List[str]
++    prioritized_repairs: List[str]
++    should_refine: bool
++
+     # Critic / consensus / refiner
+     critic_feedback: str
++    critic_score_caveat: str
+     revision_count: int
+     has_conflict: bool
+     requirement_coverage: float
+@@ -113,6 +150,43 @@
+     final_reasoning: str
+     improvement_report: str
+     fixed_code: str
++    refiner_status: str
++
++    # Refiner validation tools and deterministic before/after comparison
++    refined_syntax_passed: bool
++    validation_execution_status: str
++    validation_execution_success: bool
++    validation_execution_return_code: int
++    validation_execution_duration_seconds: float
++    validation_execution_stdout_tail: str
++    validation_execution_stderr_tail: str
++    validation_execution_failed_steps: List[dict[str, Any]]
++    validation_execution_artifact_dir: str
++    validation_workspace_dir: str
++    validation_behave_report_path: str
++    validation_dynamic_coverage_status: str
++    validation_dynamic_coverage_score: float | None
++    validation_step_success_coverage: float | None
++    validation_action_step_coverage: float | None
++    validation_oracle_step_coverage: float | None
++    validation_steps_total: int
++    validation_steps_passed: int
++    validation_steps_failed: int
++    validation_coverage_detail: str
++    validation_mutation_status: str
++    validation_mutation_score: float | None
++    validation_mutants_total: int
++    validation_mutants_killed: int
++    validation_mutants_survived: int
++    validation_mutants_timeout: int
++    validation_mutants_inconclusive: int
++    validation_mutation_report_path: str
++    validation_surviving_mutants: List[str]
++    validation_mutation_detail: str
++    repair_validation_status: str
++    repair_delta_coverage: float | None
++    repair_delta_mutation: float | None
++    repair_comparison_summary: str
+ 
+ 
+ def route_after_syntax(state: E2EEvalState) -> str:
+@@ -120,8 +194,16 @@
+ 
+ 
+ def route_after_execution(state: E2EEvalState) -> str:
+-    # Coverage and mutation are meaningful only after the baseline test passes.
+-    return "dynamic_coverage_node" if state.get("execution_status") == "PASSED" else "critic_node"
++    """Preserve partial Behave evidence for genuine test failures."""
++    if state.get("execution_status") in {"PASSED", "TEST_FAILED"}:
++        return "dynamic_coverage_node"
++    return "dynamic_analyst_node"
++
++
++def route_after_validation_execution(state: E2EEvalState) -> str:
++    if state.get("validation_execution_status") in {"PASSED", "TEST_FAILED"}:
++        return "validation_coverage_node"
++    return "repair_comparison_node"
+ 
+ 
+ workflow = StateGraph(E2EEvalState)
+@@ -130,14 +212,25 @@
+ workflow.add_node("assertion_node", assertion_quality_agent)
+ workflow.add_node("hallucination_node", hallucination_smell_agent)
+ workflow.add_node("maintainability_node", maintainability_agent)
++
++# Local dynamic tool agents (no model/API calls)
+ workflow.add_node("execution_node", execution_agent)
+ workflow.add_node("dynamic_coverage_node", dynamic_coverage_agent)
+ workflow.add_node("mutation_node", mutation_agent)
++
++# Evidence interpretation and final static/dynamic judgement (serial LLM nodes)
++workflow.add_node("dynamic_analyst_node", dynamic_evidence_analyst_agent)
+ workflow.add_node("critic_node", critic_agent)
+ workflow.add_node("consensus_node", consensus_agent)
+ workflow.add_node("refiner_node", refiner_agent)
+-workflow.set_entry_point("syntax_node")
+ 
++# Local validation of Refiner output (no model/API calls)
++workflow.add_node("validation_execution_node", validation_execution_agent)
++workflow.add_node("validation_coverage_node", validation_coverage_agent)
++workflow.add_node("validation_mutation_node", validation_mutation_agent)
++workflow.add_node("repair_comparison_node", repair_comparison_agent)
++
++workflow.set_entry_point("syntax_node")
+ workflow.add_conditional_edges(
+     "syntax_node",
+     route_after_syntax,
+@@ -150,12 +243,27 @@
+ workflow.add_conditional_edges(
+     "execution_node",
+     route_after_execution,
+-    {"dynamic_coverage_node": "dynamic_coverage_node", "critic_node": "critic_node"},
++    {
++        "dynamic_coverage_node": "dynamic_coverage_node",
++        "dynamic_analyst_node": "dynamic_analyst_node",
++    },
+ )
+ workflow.add_edge("dynamic_coverage_node", "mutation_node")
+-workflow.add_edge("mutation_node", "critic_node")
++workflow.add_edge("mutation_node", "dynamic_analyst_node")
++workflow.add_edge("dynamic_analyst_node", "critic_node")
+ workflow.add_edge("critic_node", "consensus_node")
+ workflow.add_edge("consensus_node", "refiner_node")
+-workflow.add_edge("refiner_node", END)
++workflow.add_edge("refiner_node", "validation_execution_node")
++workflow.add_conditional_edges(
++    "validation_execution_node",
++    route_after_validation_execution,
++    {
++        "validation_coverage_node": "validation_coverage_node",
++        "repair_comparison_node": "repair_comparison_node",
++    },
++)
++workflow.add_edge("validation_coverage_node", "validation_mutation_node")
++workflow.add_edge("validation_mutation_node", "repair_comparison_node")
++workflow.add_edge("repair_comparison_node", END)
+ 
+ app = workflow.compile()

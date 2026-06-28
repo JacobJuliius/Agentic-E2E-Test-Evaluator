@@ -1,0 +1,16 @@
+diff --git a/graph_v3_1_backup.py b/graph.py
+index 5d778d9..111a343 100644
+--- a/graph_v3_1_backup.py
++++ b/graph.py
+@@ -34,7 +34,10 @@ class E2EEvalState(TypedDict):
+     # --- AST Static Metrics ---
+     static_actions_count: int
+     static_assertions_count: int
+-    static_hardcoded_selectors: List[str]
++    static_hardcoded_selectors: List[str]  # V3.1 legacy alias for brittle selectors
++    static_stable_selectors: List[str]
++    static_medium_risk_selectors: List[str]
++    static_brittle_selectors: List[str]
+     static_magic_numbers: List[float]
+     static_action_methods: List[str]
+     static_assertion_methods: List[str]
