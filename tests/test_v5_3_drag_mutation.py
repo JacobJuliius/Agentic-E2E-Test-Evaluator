@@ -2,8 +2,10 @@ from pathlib import Path
 import importlib.util
 import sys
 
-MODULE_PATH = Path(__file__).with_name("dynamic_agents.py")
-spec = importlib.util.spec_from_file_location("dynamic_agents", MODULE_PATH)
+MODULE_PATH = Path(__file__).resolve().parents[1] / "dynamic_agents.py"
+spec = importlib.util.spec_from_file_location(
+    "dynamic_agents_v53_test", MODULE_PATH
+)
 dynamic_agents = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
 sys.modules[spec.name] = dynamic_agents

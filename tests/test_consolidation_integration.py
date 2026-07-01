@@ -150,7 +150,7 @@ def test_zero_relevant_valid_mutants_has_null_score():
 
 
 def test_hallucination_agent_receives_scenario_only_literal(monkeypatch):
-    from test_v5_1_scope_logic import load_agents_module
+    from tests.test_v5_1_scope_logic import load_agents_module
 
     agents = load_agents_module()
     scenario_literal = "Seat-Z9"

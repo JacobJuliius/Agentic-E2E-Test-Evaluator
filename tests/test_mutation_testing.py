@@ -390,7 +390,7 @@ def test_graph_runs_mutation_after_coverage():
 
 
 def test_consensus_accepts_general_mutation_metric():
-    from test_v5_1_scope_logic import load_agents_module
+    from tests.test_v5_1_scope_logic import load_agents_module
 
     agents = load_agents_module()
     result = agents.consensus_agent({

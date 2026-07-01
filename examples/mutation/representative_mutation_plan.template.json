@@ -1,5 +1,5 @@
 {
-  "notes": "Fill project_dir, baseline_command, source_file, pattern, and replacement from your local projects. Run mutation_runner.py --dry-run before executing.",
+  "notes": "Fill project_dir, baseline_command, source_file, pattern, and replacement from your local projects. Run python mutation_runner.py --plan examples/mutation/representative_mutation_plan.template.json --dry-run before executing.",
   "cases": [
     {
       "case_id": "bench01_req1_test4",

@@ -62,6 +62,45 @@ Each graph node also contributes a standard envelope under `agent_results`:
 }
 ```
 
+## Project structure
+
+```text
+.
+|-- main.py                    batch entry point
+|-- graph.py                   LangGraph orchestration
+|-- agents.py                  static evaluators and hybrid aggregation
+|-- dynamic_agents.py          backward-compatible dynamic agent adapters
+|-- coverage_agent.py          branch-coverage graph adapter
+|-- mutation_testing.py        deterministic mutation engine
+|-- e2e_eval/                  reusable evaluator package
+|   |-- dynamic/               execution, coverage, and mutation components
+|   |-- reporting/             portable CSV/JSON writers
+|   |-- runtime/               dependency and runtime helpers
+|   |-- schemas/               shared state/result contracts
+|   |-- sources/               reference-source resolution
+|   `-- static/                static evaluator API
+|-- scripts/
+|   |-- analysis/              suite aggregation and result summaries
+|   |-- data_prep/             benchmark subset/data preparation
+|   |-- reproduce_one.py       one-case reproducibility runner
+|   `-- reproduce_selected_cases.py
+|-- tests/                     package-level and integration tests
+|-- data/
+|   |-- e2edev_sample.csv      70-case evaluation input
+|   `-- reference_sources/     portable benchmark source fixtures
+|-- examples/mutation/         legacy mutation-plan template
+|-- docs/                      active architecture/operator documentation
+|   `-- archive/               superseded docs, patches, and historical outputs
+`-- artifacts/
+    |-- reports/               curated final reports and presentation
+    `-- dynamic/               ignored generated runtime evidence
+```
+
+Top-level modules are retained where existing imports and LangGraph wiring rely
+on them. Generated workspaces, caches, local benchmark mirrors, and per-run
+evidence are ignored by Git. `docs/archive/` is historical context only and is
+not part of the active runtime.
+
 ## Installation and activation
 
 Python 3.11 is the configured environment:
@@ -270,8 +309,8 @@ assessment. `UNCERTAIN` mutants remain visible but do not assert relevance;
 one scenario's requirement score. A missing relevant denominator is exported as
 unavailable, not zero.
 
-See [MUTATION_ARCHITECTURE.md](MUTATION_ARCHITECTURE.md) and
-[MUTATION_OPERATORS.md](MUTATION_OPERATORS.md).
+See [Mutation architecture](docs/MUTATION_ARCHITECTURE.md) and
+[mutation operators](docs/MUTATION_OPERATORS.md).
 
 ## Latest full-run summary
 

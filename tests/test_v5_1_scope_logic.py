@@ -6,7 +6,7 @@ import sys
 import types
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_agents_module():

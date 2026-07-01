@@ -32,7 +32,14 @@ Thumbs.db
 artifacts/runtime/
 artifacts/dynamic/workspaces/
 artifacts/dynamic/results/
+artifacts/reference_cache/
+artifacts/reproducibility/*/
+artifacts/bench_samples/
 workspace/
+
+# Optional local benchmark mirror. The tracked portable fixtures live under
+# data/reference_sources/ and are used as the fallback on a fresh clone.
+/E2E_data/
 
 # Keep reports allowlisted rather than ignoring all artifacts.
 artifacts/reports/*

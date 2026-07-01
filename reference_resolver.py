@@ -47,6 +47,9 @@ ARCHIVE_SUFFIXES = (
 )
 REPOSITORY_ROOT = Path(__file__).resolve().parent
 LOCAL_BENCHMARK_ROOT = REPOSITORY_ROOT / "E2E_data"
+PACKAGED_BENCHMARK_ROOT = (
+    REPOSITORY_ROOT / "data" / "reference_sources" / "E2EDev_data"
+)
 ANONYMOUS_BENCHMARK_HOST = "anonymous.4open.science"
 BENCHMARK_NAME_RE = re.compile(r"^E2ESD_Bench_[0-9]+$")
 
@@ -472,34 +475,45 @@ def resolve_reference_source(
         (parsed.hostname or "").lower() == ANONYMOUS_BENCHMARK_HOST
     )
     if benchmark_name:
-        local_benchmark = (LOCAL_BENCHMARK_ROOT / benchmark_name).resolve()
-        validation = validate_source_directory(
-            local_benchmark, expected_patterns
+        benchmark_roots = (
+            LOCAL_BENCHMARK_ROOT,
+            PACKAGED_BENCHMARK_ROOT,
         )
-        if validation["valid"]:
-            logger.info(
-                "[reference] Using local benchmark source: %s",
-                local_benchmark,
+        attempted: list[Path] = []
+        validation: dict[str, Any] = {}
+        for benchmark_root in benchmark_roots:
+            local_benchmark = (benchmark_root / benchmark_name).resolve()
+            if local_benchmark in attempted:
+                continue
+            attempted.append(local_benchmark)
+            validation = validate_source_directory(
+                local_benchmark, expected_patterns
             )
-            return _result(
-                status="success",
-                source_url=source_url,
-                project_identifier=project_identifier,
-                local_path=str(local_benchmark),
-                cache_hit=False,
-                retrieval_method="local_benchmark_directory",
-                validation_result=validation,
-            )
+            if validation["valid"]:
+                logger.info(
+                    "[reference] Using local benchmark source: %s",
+                    local_benchmark,
+                )
+                return _result(
+                    status="success",
+                    source_url=source_url,
+                    project_identifier=project_identifier,
+                    local_path=str(local_benchmark),
+                    cache_hit=False,
+                    retrieval_method="local_benchmark_directory",
+                    validation_result=validation,
+                )
+        expected_locations = ", ".join(str(path) for path in attempted)
         return _result(
             status="failed",
             source_url=source_url,
             project_identifier=project_identifier,
-            local_path=str(local_benchmark),
+            local_path=str(attempted[0]),
             retrieval_method="local_benchmark_directory",
             validation_result=validation,
             failure_reason=(
                 f"Local benchmark source is required for {source_url}. "
-                f"Expected a usable project at: {local_benchmark}. "
+                f"Expected a usable project at one of: {expected_locations}. "
                 f"{validation['message']} Network and git retrieval are not "
                 f"attempted for {ANONYMOUS_BENCHMARK_HOST} URLs."
             ),
@@ -513,7 +527,8 @@ def resolve_reference_source(
             failure_reason=(
                 f"Cannot identify an E2ESD_Bench_<number> folder in "
                 f"{source_url}. Expected a matching local project below: "
-                f"{LOCAL_BENCHMARK_ROOT.resolve()}. Network and git retrieval "
+                f"{LOCAL_BENCHMARK_ROOT.resolve()} or "
+                f"{PACKAGED_BENCHMARK_ROOT.resolve()}. Network and git retrieval "
                 f"are not attempted for {ANONYMOUS_BENCHMARK_HOST} URLs."
             ),
         )

@@ -104,7 +104,7 @@ def test_commands_and_logs_redact_embedded_absolute_paths():
 def test_csv_and_json_writer_sanitize_nested_and_json_string_cells(
     tmp_path: Path,
 ):
-    root = Path(__file__).resolve().parent
+    root = Path(__file__).resolve().parents[1]
     internal = root / "artifacts" / "dynamic" / "workspaces" / "case"
     outside = tmp_path / "external" / "report.json"
     nested = {

@@ -1,14 +1,19 @@
 """Attach portable local source-project paths to selected benchmark rows."""
 from pathlib import Path
+import sys
 
 import pandas as pd
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from e2e_eval.utils.paths import sanitize_dataframe_for_export
 
 
 INPUT = Path("artifacts/reports/selected_cases.csv")
 OUTPUT = Path("artifacts/reports/selected_cases_with_sources.csv")
-SOURCE_ROOT = Path("E2E_data")
+SOURCE_ROOT = Path("data/reference_sources/E2EDev_data")
 
 
 df = pd.read_csv(INPUT)

@@ -75,6 +75,11 @@ def test_missing_anonymous_benchmark_reports_expected_path_without_git(
     benchmark_root = tmp_path / "E2E_data"
     monkeypatch.setattr(module, "LOCAL_BENCHMARK_ROOT", benchmark_root)
     monkeypatch.setattr(
+        module,
+        "PACKAGED_BENCHMARK_ROOT",
+        tmp_path / "packaged-reference-sources",
+    )
+    monkeypatch.setattr(
         module.urllib.request,
         "urlopen",
         lambda *args, **kwargs: (_ for _ in ()).throw(
@@ -101,6 +106,30 @@ def test_missing_anonymous_benchmark_reports_expected_path_without_git(
     assert result["retrieval_method"] == "local_benchmark_directory"
     assert str(expected) in result["failure_reason"]
     assert "Network and git retrieval are not attempted" in result["failure_reason"]
+
+
+def test_anonymous_benchmark_falls_back_to_packaged_reference_sources(
+    monkeypatch, tmp_path: Path
+):
+    monkeypatch.setattr(
+        module, "LOCAL_BENCHMARK_ROOT", tmp_path / "missing-E2E_data"
+    )
+    packaged_root = tmp_path / "packaged"
+    packaged_benchmark = packaged_root / "E2ESD_Bench_03"
+    _write_source(packaged_benchmark)
+    monkeypatch.setattr(
+        module, "PACKAGED_BENCHMARK_ROOT", packaged_root
+    )
+
+    result = module.resolve_reference_source(
+        "https://anonymous.4open.science/r/E2EDev/"
+        "E2EDev_data/E2ESD_Bench_03/",
+        tmp_path / "artifacts",
+        allow_network=False,
+    )
+
+    assert result["resolution_status"] == "success"
+    assert Path(result["local_path"]) == packaged_benchmark.resolve()
 
 
 def test_cached_remote_reference_is_reused_without_network(

@@ -1,7 +1,7 @@
 """No-browser smoke tests for V5 local dynamic helpers.
 
 Run:
-    pytest -q test_v5_local_tools.py
+    pytest -q tests/test_v5_local_tools.py
 """
 from dynamic_agents import (
     _normalise_fixed_code,
