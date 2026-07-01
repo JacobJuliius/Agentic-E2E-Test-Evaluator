@@ -4,12 +4,16 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import pandas as pd
+from e2e_eval.utils.paths import sanitize_dataframe_for_export
 
 
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--input", required=True, help="mutation_details_*.csv")
-    p.add_argument("--output", default="mutation_summary.csv")
+    p.add_argument(
+        "--output",
+        default="artifacts/reports/mutation_summary.csv",
+    )
     args = p.parse_args()
 
     df = pd.read_csv(args.input)
@@ -30,7 +34,9 @@ def main() -> None:
     denom = out.killed + out.survived
     out["mutation_score"] = (out.killed / denom.where(denom > 0)).round(4)
     out["mutation_score_pct"] = (100 * out["mutation_score"]).round(1)
-    out.to_csv(args.output, index=False, encoding="utf-8-sig")
+    sanitize_dataframe_for_export(out).to_csv(
+        args.output, index=False, encoding="utf-8-sig"
+    )
     print(out.to_string(index=False))
     print(f"\nWrote summary: {Path(args.output).resolve()}")
 

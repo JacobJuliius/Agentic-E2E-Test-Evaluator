@@ -28,6 +28,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from e2e_eval.utils.paths import sanitize_export_payload
+from e2e_eval.dynamic.mutation_runner import (
+    run_single_mutant,
+    verdict_for_status,
+)
+
+__all__ = ["run_single_mutant", "verdict_for_status"]
+
 
 @dataclass
 class RunResult:
@@ -127,8 +135,12 @@ def validate_plan(plan: dict[str, Any]) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--plan", required=True, help="JSON mutation plan")
-    parser.add_argument("--output-dir", default="mutation_output")
-    parser.add_argument("--workspace-dir", default="mutation_workspaces")
+    parser.add_argument(
+        "--output-dir", default="artifacts/mutation_cli/results"
+    )
+    parser.add_argument(
+        "--workspace-dir", default="artifacts/mutation_cli/workspaces"
+    )
     parser.add_argument("--dry-run", action="store_true", help="Validate copy + mutation matching, but do not execute tests")
     parser.add_argument("--keep-workspaces", action="store_true")
     parser.add_argument("--case", action="append", help="Only run a case_id; repeatable")
@@ -191,12 +203,15 @@ def main() -> None:
                     elif raw_status == "PASS":
                         status = "SURVIVED"
                     else:
-                        status = raw_status  # TIMEOUT / ERROR; excluded later
+                        status = (
+                            "TIMEOUT" if raw_status == "TIMEOUT"
+                            else "EXECUTION_ERROR"
+                        )
                 print(f"  {mutant_id:<6} {mutation['operator']:<28} -> {status} ({dur:.1f}s)")
                 results.append(RunResult(case["case_id"], case["label"], "mutant", mutant_id, mutation["operator"], mutation["source_file"], status, rc, dur, tail(out), tail(err), detail))
             except Exception as exc:
                 print(f"  {mutant_id:<6} {mutation['operator']:<28} -> ERROR ({exc})")
-                results.append(RunResult(case["case_id"], case["label"], "mutant", mutant_id, mutation["operator"], mutation["source_file"], "ERROR", None, 0.0, "", repr(exc), ""))
+                results.append(RunResult(case["case_id"], case["label"], "mutant", mutant_id, mutation["operator"], mutation["source_file"], "INVALID", None, 0.0, "", repr(exc), ""))
             finally:
                 if not args.keep_workspaces and workspace.exists():
                     shutil.rmtree(workspace, ignore_errors=True)
@@ -204,11 +219,17 @@ def main() -> None:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     json_path = out_dir / f"mutation_details_{stamp}.json"
     csv_path = out_dir / f"mutation_details_{stamp}.csv"
-    json_path.write_text(json.dumps([asdict(x) for x in results], indent=2, ensure_ascii=False), encoding="utf-8")
+    portable_results = sanitize_export_payload(
+        [asdict(result) for result in results]
+    )
+    json_path.write_text(
+        json.dumps(portable_results, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
     with csv_path.open("w", newline="", encoding="utf-8-sig") as f:
         writer = csv.DictWriter(f, fieldnames=list(asdict(results[0]).keys()) if results else list(RunResult.__dataclass_fields__.keys()))
         writer.writeheader()
-        writer.writerows(asdict(x) for x in results)
+        writer.writerows(portable_results)
 
     print(f"\nDetailed CSV: {csv_path}")
     print(f"Detailed JSON: {json_path}")

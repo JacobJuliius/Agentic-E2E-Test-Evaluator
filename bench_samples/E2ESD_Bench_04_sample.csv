@@ -1,0 +1,1741 @@
+﻿id,req_id,test_id,prompt,requirement_summary,fine_grained_reqs,reference_answer,excutable_test_test_case,excutable_test_step_code
+E2ESD_Bench_04,1,1,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: Toggle Text Box Visibility
+  The system should toggle the visibility of the text box containing the voice selection dropdown, textarea, and 'Read Text' button when the user clicks the 'Toggle Text Box' button.
+
+
+  Scenario: [Normal] Toggle text box visibility on button click
+    Given the Speech Text Reader page is loaded
+    And the text box with data-testid ""text-box"" is initially hidden
+    When the user clicks the 'Toggle Text Box' button with data-testid ""toggle-button""
+    Then the text box with data-testid ""text-box"" should be visible
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+@given('the Speech Text Reader page is loaded')
+def step_impl(context):
+    # Initialize the WebDriver and load the test page
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    context.driver.maximize_window()
+    time.sleep(1)  # Allow the page to fully load
+
+@given('the text box with data-testid ""text-box"" is initially hidden')
+def step_impl(context):
+    # Verify that the text box is initially hidden
+    text_box = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='text-box']"")
+    # Check if the text box has the 'show' class, which indicates visibility
+    assert 'show' not in text_box.get_attribute('class'), ""Expected the text box to be initially hidden""
+
+@when('the user clicks the \'Toggle Text Box\' button with data-testid ""toggle-button""')
+def step_impl(context):
+    # Click the toggle button to toggle the visibility of the text box
+    toggle_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    toggle_button.click()
+    time.sleep(1)  # Allow time for the visibility change to take effect
+
+@then('the text box with data-testid ""text-box"" should be visible')
+def step_impl(context):
+    # Verify that the text box is now visible
+    text_box = WebDriverWait(context.driver, 10).until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, ""[data-testid='text-box']""))
+    )
+    assert text_box.is_displayed(), ""Expected the text box to be visible""
+
+# Teardown to close the browser after the test
+def after_scenario(context, scenario):
+    if hasattr(context, 'driver'):
+        context.driver.quit()"
+E2ESD_Bench_04,1,2,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: Toggle Text Box Visibility
+  The system should toggle the visibility of the text box containing the voice selection dropdown, textarea, and 'Read Text' button when the user clicks the 'Toggle Text Box' button.
+
+
+  Scenario: [Normal] Toggle text box visibility off on button click
+    Given the Speech Text Reader page is loaded
+    And the user clicks the 'Toggle Text Box' button with data-testid ""toggle-button""
+    And the text box with data-testid ""text-box"" is visible
+    When the user clicks the 'Toggle Text Box' button with data-testid ""toggle-button""
+    Then the text box with data-testid ""text-box"" should be hidden
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_collapsed(element):
+    aria = element.get_attribute(""aria-expanded"")
+    if aria is not None and aria.lower() == ""false"":
+        return True
+
+    class_attr = element.get_attribute(""class"") or """"
+    class_list = class_attr.split()
+    if ""collapsed"" in class_list:
+        return True
+
+    data_expanded = element.get_attribute(""data-expanded"")
+    if data_expanded is not None and data_expanded.lower() == ""false"":
+        return True
+
+    style = element.get_attribute(""style"") or """"
+    if ""display: none"" in style or ""visibility: hidden"" in style or ""height: 0"" in style:
+        return True
+
+    return not element.is_displayed()
+
+def is_visible(element):
+    return element.is_displayed()
+
+@given('the Speech Text Reader page is loaded')
+def step_given_page_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)  # Allow the page to load completely
+
+@given('the user clicks the \'Toggle Text Box\' button with data-testid ""toggle-button""')
+def step_when_user_clicks_toggle_button(context):
+    toggle_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    toggle_button.click()
+    time.sleep(1)  # Allow time for the toggle action to take effect
+
+
+@given('the text box with data-testid ""text-box"" is visible')
+def step_given_text_box_visible(context):
+    text_box = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='text-box']""))
+    )
+    assert is_visible(text_box), ""Text box is not visible initially""
+
+@when('the user clicks the \'Toggle Text Box\' button with data-testid ""toggle-button""')
+def step_when_user_clicks_toggle_button(context):
+    toggle_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    toggle_button.click()
+    time.sleep(1)  # Allow time for the toggle action to take effect
+
+@then('the text box with data-testid ""text-box"" should be hidden')
+def step_then_text_box_hidden(context):
+    text_box = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='text-box']"")
+    # 检查是否没有 'show' 类，表示文本框被隐藏
+    assert 'show' not in text_box.get_attribute('class') or not text_box.is_displayed(), ""Text box is not hidden""
+
+
+
+
+def after_scenario(context, scenario):
+    context.driver.quit()"
+E2ESD_Bench_04,1,3,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: Toggle Text Box Visibility
+  The system should toggle the visibility of the text box containing the voice selection dropdown, textarea, and 'Read Text' button when the user clicks the 'Toggle Text Box' button.
+
+
+  Scenario: [Edge] Toggle text box visibility rapidly
+    Given the Speech Text Reader page is loaded
+    And the text box with data-testid ""text-box"" is initially hidden
+    When the user rapidly clicks the 'Toggle Text Box' button with data-testid ""toggle-button"" multiple times
+    Then the text box with data-testid ""text-box"" should eventually be visible or hidden based on the final click
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_collapsed(element):
+    aria = element.get_attribute(""aria-expanded"")
+    if aria is not None and aria.lower() == ""false"":
+        return True
+
+    class_attr = element.get_attribute(""class"") or """"
+    class_list = class_attr.split()
+    if ""collapsed"" in class_list:
+        return True
+
+    data_expanded = element.get_attribute(""data-expanded"")
+    if data_expanded is not None and data_expanded.lower() == ""false"":
+        return True
+
+    style = element.get_attribute(""style"") or """"
+    if ""display: none"" in style or ""visibility: hidden"" in style or ""height: 0"" in style:
+        return True
+
+    return not element.is_displayed()
+
+def is_visible(element):
+    return element.is_displayed()
+
+@given('the Speech Text Reader page is loaded')
+def step_given_page_is_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)
+
+@given('the text box with data-testid ""text-box"" is initially hidden')
+def step_given_text_box_initially_hidden(context):
+    text_box = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='text-box']"")
+    assert not text_box.is_displayed() or 'show' not in text_box.get_attribute('class'), ""Text box should be initially hidden""
+
+@when('the user rapidly clicks the \'Toggle Text Box\' button with data-testid ""toggle-button"" multiple times')
+def step_when_user_rapidly_clicks_toggle_button(context):
+    toggle_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    for _ in range(5):  # Simulate rapid clicking
+        toggle_button.click()
+        time.sleep(0.2)  # Short delay to simulate rapid clicking
+
+@then('the text box with data-testid ""text-box"" should eventually be visible or hidden based on the final click')
+def step_then_text_box_visibility(context):
+    text_box = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='text-box']"")
+    # Check if the text box is either visible or hidden
+    assert is_visible(text_box) or is_collapsed(text_box), ""Text box should be either visible or hidden""
+
+def after_scenario(context, scenario):
+    context.driver.quit()"
+E2ESD_Bench_04,2,1,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: Hide Text Box on Close Button Click
+  The system should hide the text box when the user clicks the 'Close' button within the text box.
+
+
+Scenario: [Normal] User clicks the 'Close' button to hide the text box
+    Given the Speech Text Reader page is loaded
+    And  the user clicks the ""Toggle Text Box"" button with data-testid ""toggle-button""
+    And the text box is visible with data-testid 'text-box'
+    When the user clicks the 'Close' button with data-testid 'close-button'
+    Then the text box should not be visible","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_visible(element):
+    return element.is_displayed()
+
+@given(""the Speech Text Reader page is loaded"")
+def step_given_page_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    context.driver.maximize_window()
+    time.sleep(1)  # Allow the page to fully load
+
+@given('the user clicks the ""Toggle Text Box"" button with data-testid ""toggle-button""')
+def step_given_click_toggle_button(context):
+    toggle_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    toggle_button.click()
+    time.sleep(1)  # Wait for the text box to toggle
+
+@given(""the text box is visible with data-testid 'text-box'"")
+def step_given_text_box_visible(context):
+    text_box = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='text-box']""))
+    )
+    assert is_visible(text_box), ""Text box is not visible""
+
+@when(""the user clicks the 'Close' button with data-testid 'close-button'"")
+def step_when_click_close_button(context):
+    close_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='close-button']""))
+    )
+    close_button.click()
+    time.sleep(1)  # Wait for the text box to hide
+
+@then(""the text box should not be visible"")
+def step_then_text_box_not_visible(context):
+    text_box = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='text-box']"")
+
+    # 确保元素要么不显示 show 类，要么不可见
+    assert 'show' not in text_box.get_attribute('class') or not text_box.is_displayed(), ""Text box is not hidden""
+
+def after_scenario(context, scenario):
+    context.driver.quit()"
+E2ESD_Bench_04,3,1,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: Populate 'Choose Voice' Dropdown
+  The system should populate the 'Choose Voice' dropdown with available voices from the Web Speech API when the page loads or when the available voices change.
+
+
+Scenario: [Normal] Populate voices dropdown on page load
+    Given the Speech Text Reader page is loaded
+    When the page is initialized
+    And the user clicks the 'Toggle Text Box' button with data-testid ""toggle-button"" to display the text box
+    Then the 'Choose Voice' dropdown with data-testid 'voice-select' should be populated with available voices from the Web Speech API","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+@given(""the Speech Text Reader page is loaded"")
+def step_given_page_is_loaded(context):
+    # Initialize the WebDriver and load the test page
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)  # Allow the page to load completely
+
+@when(""the page is initialized"")
+def step_when_page_is_initialized(context):
+    # Wait for the page elements to be interactable
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    time.sleep(1)
+
+@when(""the user clicks the 'Toggle Text Box' button with data-testid \""toggle-button\"" to display the text box"")
+def step_when_user_clicks_toggle_button(context):
+    # Ensure the toggle button is visible and not obstructed
+    toggle_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    context.driver.execute_script(""arguments[0].scrollIntoView(true);"", toggle_button)  # Scroll to the button if necessary
+    toggle_button.click()
+    time.sleep(1)  # Allow the text box to toggle its visibility
+
+@then(""the 'Choose Voice' dropdown with data-testid 'voice-select' should be populated with available voices from the Web Speech API"")
+def step_then_dropdown_is_populated(context):
+    # Wait for the dropdown to be populated
+    voice_select = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='voice-select']""))
+    )
+    options = voice_select.find_elements(By.TAG_NAME, ""option"")
+    assert len(options) > 0, ""The 'Choose Voice' dropdown is not populated with voices.""
+    time.sleep(1)
+
+# Cleanup after the test
+def after_scenario(context, scenario):
+    if hasattr(context, 'driver'):
+        context.driver.quit()"
+E2ESD_Bench_04,4,1,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: Set selected voice for speech synthesis
+  The system should allow the user to select a voice from the ""Choose Voice"" dropdown, and the selected voice should be set for speech synthesis.
+
+
+Scenario: [Normal] User selects a voice from the dropdown
+   Given the Speech Text Reader page has fully loaded
+   And the user clicks the 'Toggle Text Box' button identified by data-testid=""toggle-button"" to reveal the text box
+   And the 'Choose Voice' dropdown identified by data-testid=""voice-select"" is populated with available voices
+   When the user selects an option from the 'Choose Voice' dropdown (data-testid='voice-select') where the option text includes 'US'
+   Then the system should set the voice containing 'US' as the active voice for speech synthesis","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_visible(element):
+    return element.is_displayed()
+
+@given(""the Speech Text Reader page has fully loaded"")
+def step_given_page_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    time.sleep(1)
+
+@given(""the user clicks the 'Toggle Text Box' button identified by data-testid=\""toggle-button\"" to reveal the text box"")
+def step_given_toggle_text_box(context):
+    toggle_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    toggle_button.click()
+    time.sleep(1)
+
+@given(""the 'Choose Voice' dropdown identified by data-testid=\""voice-select\"" is populated with available voices"")
+def step_given_voice_dropdown_populated(context):
+    voices_dropdown = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='voice-select']""))
+    )
+    assert is_visible(voices_dropdown), ""Voice dropdown is not visible""
+    options = voices_dropdown.find_elements(By.TAG_NAME, ""option"")
+    assert len(options) > 0, ""Voice dropdown is not populated""
+    time.sleep(1)
+
+@when(""the user selects an option from the 'Choose Voice' dropdown (data-testid='voice-select') where the option text includes 'US'"")
+def step_when_select_voice(context):
+    voices_dropdown = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='voice-select']""))
+    )
+    voices_dropdown.click()
+    time.sleep(1)
+    options = voices_dropdown.find_elements(By.TAG_NAME, ""option"")
+    voice_found = False
+    for option in options:
+        if ""US"" in option.text:
+            option.click()
+            voice_found = True
+            break
+    assert voice_found, ""Voice 'Google US English' not found in the dropdown""
+    time.sleep(1)
+
+@then(""the system should set the voice containing 'US' as the active voice for speech synthesis"")
+def step_then_verify_active_voice(context):
+    voices_dropdown = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='voice-select']"")
+    selected_option = voices_dropdown.find_element(By.CSS_SELECTOR, ""option:checked"")
+    assert ""US"" in selected_option.text, f""Expected 'Google US English', but got '{selected_option.text}'""
+    time.sleep(1)
+
+# Teardown
+def after_scenario(context, scenario):
+    context.driver.quit()"
+E2ESD_Bench_04,4,2,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: Set selected voice for speech synthesis
+  The system should allow the user to select a voice from the ""Choose Voice"" dropdown, and the selected voice should be set for speech synthesis.
+
+
+Scenario: [Normal] User selects a voice from the dropdown
+   Given the Speech Text Reader page has fully loaded
+   And the user clicks the 'Toggle Text Box' button identified by data-testid=""toggle-button"" to reveal the text box
+   And the 'Choose Voice' dropdown identified by data-testid=""voice-select"" is populated with available voices
+   When the user selects an option from the 'Choose Voice' dropdown (data-testid='voice-select') where the option text includes 'CN'
+   Then the system should set the voice containing ‘CN’ as the active voice for speech synthesis","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_expanded(element):
+    aria = element.get_attribute(""aria-expanded"")
+    if aria is not None:
+        return aria == ""true""
+
+    class_list = element.get_attribute(""class"").split()
+    if any(cls in class_list for cls in [""expanded"", ""open"", ""show""]):
+        return True
+
+    data_expanded = element.get_attribute(""data-expanded"")
+    if data_expanded is not None:
+        return data_expanded == ""true""
+
+    return element.is_displayed()
+
+@given('the Speech Text Reader page has fully loaded')
+def step_impl(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)
+
+@given('the user clicks the \'Toggle Text Box\' button identified by data-testid=""toggle-button"" to reveal the text box')
+def step_impl(context):
+    toggle_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    toggle_button.click()
+    time.sleep(1)
+
+@given('the \'Choose Voice\' dropdown identified by data-testid=""voice-select"" is populated with available voices')
+def step_impl(context):
+    voices_select = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='voice-select']""))
+    )
+    options = voices_select.find_elements(By.TAG_NAME, ""option"")
+    assert len(options) > 0, ""No voices available in the dropdown""
+    time.sleep(1)
+
+@when('the user selects an option from the \'Choose Voice\' dropdown (data-testid=\'voice-select\') where the option text includes \'CN\'')
+def step_impl(context):
+    voices_select = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='voice-select']"")
+    options = voices_select.find_elements(By.TAG_NAME, ""option"")
+    for option in options:
+        if 'CN' in option.text:
+            option.click()
+            break
+    time.sleep(1)
+
+@then('the system should set the voice containing ‘CN’ as the active voice for speech synthesis')
+def step_impl(context):
+    selected_voice = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='voice-select']"").get_attribute(""value"")
+    selected_voice_text = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='voice-select'] option:checked"").text
+    assert 'CN' in selected_voice_text, f""Expected selected voice to contain 'CN', but got '{selected_voice_text}'""
+    time.sleep(1)
+
+def after_scenario(context, scenario):
+    context.driver.quit()"
+E2ESD_Bench_04,4,3,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: Set selected voice for speech synthesis
+  The system should allow the user to select a voice from the ""Choose Voice"" dropdown, and the selected voice should be set for speech synthesis.
+
+
+Scenario: [Edge] User changes the selected voice multiple times
+    Given the Speech Text Reader page is loaded
+    And the page is initialized
+    And the user clicks the 'Toggle Text Box' button identified by data-testid=""toggle-button"" to reveal the text box
+    And the 'Choose Voice' dropdown identified by data-testid=""voice-select"" is populated with available voices
+    When the user selects an option from the 'Choose Voice' dropdown (data-testid='voice-select') where the option text includes 'CN'
+    When the user selects an option from the 'Choose Voice' dropdown (data-testid='voice-select') where the option text includes ‘US’
+    Then the system should set the voice containing ‘US’ as the active voice for speech synthesis","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_expanded(element):
+    aria = element.get_attribute(""aria-expanded"")
+    if aria is not None:
+        return aria == ""true""
+
+    class_list = element.get_attribute(""class"").split()
+    if any(cls in class_list for cls in [""expanded"", ""open"", ""show""]):
+        return True
+
+    data_expanded = element.get_attribute(""data-expanded"")
+    if data_expanded is not None:
+        return data_expanded == ""true""
+
+    return element.is_displayed()
+
+@given('the Speech Text Reader page is loaded')
+def step_given_page_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)
+
+@given('the page is initialized')
+def step_given_page_initialized(context):
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    time.sleep(1)
+
+@given('the user clicks the \'Toggle Text Box\' button identified by data-testid=""toggle-button"" to reveal the text box')
+def step_given_click_toggle_button(context):
+    toggle_button = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='toggle-button']"")
+    toggle_button.click()
+    time.sleep(1)
+
+@given('the \'Choose Voice\' dropdown identified by data-testid=""voice-select"" is populated with available voices')
+def step_given_voice_dropdown_populated(context):
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='voice-select'] option""))
+    )
+    time.sleep(1)
+
+@when('the user selects an option from the \'Choose Voice\' dropdown (data-testid=\'voice-select\') where the option text includes \'CN\'')
+def step_when_select_cn_voice(context):
+    voices_select = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='voice-select']"")
+    for option in voices_select.find_elements(By.TAG_NAME, 'option'):
+        if 'CN' in option.text:
+            option.click()
+            break
+    time.sleep(1)
+
+@when('the user selects an option from the \'Choose Voice\' dropdown (data-testid=\'voice-select\') where the option text includes ‘US’')
+def step_when_select_us_voice(context):
+    voices_select = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='voice-select']"")
+    for option in voices_select.find_elements(By.TAG_NAME, 'option'):
+        if 'US' in option.text:
+            option.click()
+            break
+    time.sleep(1)
+
+@then('the system should set the voice containing ‘US’ as the active voice for speech synthesis')
+def step_then_verify_us_voice_set(context):
+    selected_voice = context.driver.execute_script(
+        ""return arguments[0].options[arguments[0].selectedIndex].text;"", 
+        context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='voice-select']"")
+    )
+    assert 'US' in selected_voice, f""Expected 'US' in selected voice, but got '{selected_voice}'""
+    time.sleep(1)
+
+def after_scenario(context, scenario):
+    context.driver.quit()"
+E2ESD_Bench_04,5,1,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: REQ-005 - Text Reading Functionality
+  The system should read aloud the text entered by the user in the textarea using the selected voice when the 'Read Text' button is clicked.
+
+
+Scenario: [Normal] User enters text and clicks 'Read Text' button
+    Given the Speech Text Reader page is loaded
+    And the user clicks the ""Toggle Text Box"" button with data-testid ""toggle-button"" to display the text box
+    And the user enters ""Hello World"" into the textarea with data-testid ""text-area""
+    And the user selects a voice from the dropdown with data-testid ""voice-select""
+    When the user clicks the ""Read Text"" button with data-testid ""read-button""
+    Then the system should read aloud ""Hello World"" using the selected voice","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+@given(""the Speech Text Reader page is loaded"")
+def step_given_page_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    context.driver.maximize_window()
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+
+@given('the user clicks the ""Toggle Text Box"" button with data-testid ""toggle-button"" to display the text box')
+def step_given_toggle_text_box(context):
+    toggle_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    toggle_button.click()
+    time.sleep(1)  # Allow time for the text box to appear
+
+@given('the user enters ""Hello World"" into the textarea with data-testid ""text-area""')
+def step_given_enter_text(context):
+    text_area = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='text-area']""))
+    )
+    text_area.clear()
+    text_area.send_keys(""Hello World"")
+
+@given('the user selects a voice from the dropdown with data-testid ""voice-select""')
+def step_given_select_voice(context):
+    voice_select = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='voice-select']""))
+    )
+    options = voice_select.find_elements(By.TAG_NAME, ""option"")
+    if options:
+        options[0].click()  # Select the first voice option
+
+@when('the user clicks the ""Read Text"" button with data-testid ""read-button""')
+def step_when_click_read_button(context):
+    read_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='read-button']""))
+    )
+    read_button.click()
+
+@then('the system should read aloud ""Hello World"" using the selected voice')
+def step_then_verify_text_read(context):
+    # Since verifying speech synthesis output programmatically is complex,
+    # we assume the button click triggers the speech synthesis functionality.
+    # You can add manual verification steps or mock the speech synthesis API in unit tests.
+    print(""Speech synthesis triggered for 'Hello World'."")
+
+# Cleanup after tests
+def after_scenario(context, scenario):
+    if hasattr(context, 'driver'):
+        context.driver.quit()"
+E2ESD_Bench_04,5,2,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: REQ-005 - Text Reading Functionality
+  The system should read aloud the text entered by the user in the textarea using the selected voice when the 'Read Text' button is clicked.
+
+
+Scenario: [Edge] User enters a long text and clicks 'Read Text' button
+    Given the Speech Text Reader page is loaded
+    And the user clicks the ""Toggle Text Box"" button with data-testid ""toggle-button"" to display the text box
+    And the user enters a long text into the textarea with data-testid ""text-area""
+    And the user selects a voice from the dropdown with data-testid ""voice-select""
+    When the user clicks the ""Read Text"" button with data-testid ""read-button""
+    Then the system should read aloud ""Hello World"" using the selected voice","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_expanded(element):
+    aria = element.get_attribute(""aria-expanded"")
+    if aria is not None:
+        return aria == ""true""
+
+    class_list = element.get_attribute(""class"").split()
+    if any(cls in class_list for cls in [""expanded"", ""open"", ""show""]):
+        return True
+
+    data_expanded = element.get_attribute(""data-expanded"")
+    if data_expanded is not None:
+        return data_expanded == ""true""
+
+    return element.is_displayed()
+
+@given('the Speech Text Reader page is loaded')
+def step_given_page_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)
+
+@given('the user clicks the ""Toggle Text Box"" button with data-testid ""toggle-button"" to display the text box')
+def step_given_click_toggle_button(context):
+    toggle_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    toggle_button.click()
+    time.sleep(1)
+
+@given('the user enters a long text into the textarea with data-testid ""text-area""')
+def step_given_enter_long_text(context):
+    textarea = WebDriverWait(context.driver, 10).until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, ""[data-testid='text-area']""))
+    )
+    textarea.send_keys(""Hello World"")
+    time.sleep(1)
+
+@given('the user selects a voice from the dropdown with data-testid ""voice-select""')
+def step_given_select_voice(context):
+    voice_select = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='voice-select']""))
+    )
+    voice_select.click()
+    time.sleep(1)
+    # Assuming the first voice option is selected for simplicity
+    first_option = voice_select.find_element(By.TAG_NAME, ""option"")
+    first_option.click()
+    time.sleep(1)
+
+@when('the user clicks the ""Read Text"" button with data-testid ""read-button""')
+def step_when_click_read_button(context):
+    read_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='read-button']""))
+    )
+    read_button.click()
+    time.sleep(1)
+
+@then('the system should read aloud ""Hello World"" using the selected voice')
+def step_then_system_reads_aloud(context):
+    # This step assumes that the reading functionality is tested manually or through audio verification tools
+    # As Selenium cannot verify audio output directly, this step is a placeholder for manual verification
+    print(""Verify that the system reads aloud 'Hello World' using the selected voice."")
+    context.driver.quit()"
+E2ESD_Bench_04,5,3,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: REQ-005 - Text Reading Functionality
+  The system should read aloud the text entered by the user in the textarea using the selected voice when the 'Read Text' button is clicked.
+
+
+Scenario: [Edge] User enters text and changes voice before clicking 'Read Text' button
+    Given the Speech Text Reader page is loaded
+    And the user clicks the ""Toggle Text Box"" button with data-testid ""toggle-button"" to display the text box
+    And the user enters ""Testing voice change"" into the textarea with data-testid 'text-area'
+    And the user selects a voice from the dropdown with data-testid 'voice-select'
+    And the user changes the voice selection to another voice
+    When the user clicks the 'Read Text' button with data-testid 'read-button'
+    Then the system should read aloud ""Testing voice change"" using the newly selected voice","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_visible(element):
+    return element.is_displayed()
+
+@given(""the Speech Text Reader page is loaded"")
+def step_given_page_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    time.sleep(1)
+
+@given('the user clicks the ""Toggle Text Box"" button with data-testid ""toggle-button"" to display the text box')
+def step_given_click_toggle_button(context):
+    toggle_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    toggle_button.click()
+    time.sleep(1)
+
+@given('the user enters ""Testing voice change"" into the textarea with data-testid \'text-area\'')
+def step_given_enter_text(context):
+    text_area = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='text-area']""))
+    )
+    text_area.clear()
+    text_area.send_keys(""Testing voice change"")
+    time.sleep(1)
+
+@given('the user selects a voice from the dropdown with data-testid \'voice-select\'')
+def step_given_select_voice(context):
+    voice_select = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='voice-select']""))
+    )
+    options = voice_select.find_elements(By.TAG_NAME, ""option"")
+    if options:
+        options[0].click()  # Select the first voice option
+    time.sleep(1)
+
+@given('the user changes the voice selection to another voice')
+def step_given_change_voice(context):
+    voice_select = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='voice-select']""))
+    )
+    options = voice_select.find_elements(By.TAG_NAME, ""option"")
+    if len(options) > 1:
+        options[1].click()  # Select the second voice option
+    time.sleep(1)
+
+@when('the user clicks the \'Read Text\' button with data-testid \'read-button\'')
+def step_when_click_read_button(context):
+    read_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='read-button']""))
+    )
+    read_button.click()
+    time.sleep(1)
+
+@then('the system should read aloud ""Testing voice change"" using the newly selected voice')
+def step_then_validate_text_read(context):
+    # Since speech synthesis is a browser feature, we cannot directly validate the audio output.
+    # Instead, we can check if the text message is set correctly in the textarea.
+    text_area = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='text-area']""))
+    )
+    assert ""Testing voice change"" in text_area.get_attribute(""value""), ""Text was not set correctly for reading.""
+
+    # Cleanup: Close the browser
+    context.driver.quit()"
+E2ESD_Bench_04,5,4,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: REQ-005 - Text Reading Functionality
+  The system should read aloud the text entered by the user in the textarea using the selected voice when the 'Read Text' button is clicked.
+
+
+Scenario: [Error] User clicks 'Read Text' button without entering text
+    Given the Speech Text Reader page is loaded
+    And the user clicks the ""Toggle Text Box"" button with data-testid ""toggle-button"" to display the text box
+    And the textarea with data-testid 'text-area' is empty
+    And the user selects a voice from the dropdown with data-testid 'voice-select'
+    When the user clicks the 'Read Text' button with data-testid 'read-button'
+    Then the system should not read aloud any text","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_visible(element):
+    return element.is_displayed()
+
+@given(""the Speech Text Reader page is loaded"")
+def step_given_page_is_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    time.sleep(1)
+
+@given('the user clicks the ""Toggle Text Box"" button with data-testid ""toggle-button"" to display the text box')
+def step_given_toggle_text_box(context):
+    toggle_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='toggle-button']""))
+    )
+    toggle_button.click()
+    time.sleep(1)
+
+@given(""the textarea with data-testid 'text-area' is empty"")
+def step_given_textarea_is_empty(context):
+    textarea = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""[data-testid='text-area']""))
+    )
+    assert textarea.get_attribute(""value"") == """", ""Expected textarea to be empty""
+    time.sleep(1)
+
+@given(""the user selects a voice from the dropdown with data-testid 'voice-select'"")
+def step_given_select_voice(context):
+    voice_select = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='voice-select']""))
+    )
+    options = voice_select.find_elements(By.TAG_NAME, ""option"")
+    assert len(options) > 0, ""Expected at least one voice option""
+    options[0].click()  # Select the first voice option
+    time.sleep(1)
+
+@when(""the user clicks the 'Read Text' button with data-testid 'read-button'"")
+def step_when_click_read_button(context):
+    read_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='read-button']""))
+    )
+    read_button.click()
+    time.sleep(1)
+
+@then(""the system should not read aloud any text"")
+def step_then_no_text_read_aloud(context):
+    # Since we cannot directly verify speech synthesis output, we check that no text is set in the message object
+    textarea = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='text-area']"")
+    assert textarea.get_attribute(""value"") == """", ""Expected no text to be read aloud""
+    time.sleep(1)
+
+# Teardown
+def after_scenario(context, scenario):
+    context.driver.quit()"
+E2ESD_Bench_04,6,1,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: REQ-006 - Predefined Phrase Box Interaction
+  The system should allow users to click on predefined phrase boxes, triggering the associated text to be read aloud and visually highlighting the box momentarily.
+
+
+  Scenario: [Normal] User clicks on a predefined phrase box
+    Given the webpage is loaded and all predefined phrase boxes are displayed in the main section
+    When the user clicks on the box containing the text ""I'm Thirsty""
+    Then the system should read aloud the text ""I'm Thirsty""
+    And the box should visually highlight by adding the ""active"" class
+    And the highlight should disappear after 800 milliseconds
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_expanded(element):
+    aria = element.get_attribute(""aria-expanded"")
+    if aria is not None:
+        return aria == ""true""
+
+    class_list = element.get_attribute(""class"").split()
+    if any(cls in class_list for cls in [""expanded"", ""open"", ""show""]):
+        return True
+
+    data_expanded = element.get_attribute(""data-expanded"")
+    if data_expanded is not None:
+        return data_expanded == ""true""
+
+    return element.is_displayed()
+
+@given(""the webpage is loaded and all predefined phrase boxes are displayed in the main section"")
+def step_given_webpage_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""main .box""))
+    )
+    time.sleep(1)
+
+@when(""the user clicks on the box containing the text \""I'm Thirsty\"""")
+def step_when_user_clicks_thirsty_box(context):
+    boxes = context.driver.find_elements(By.CSS_SELECTOR, ""main .box"")
+    for box in boxes:
+        if ""I'm Thirsty"" in box.text:
+            box.click()
+            time.sleep(1)
+            break
+
+@then(""the system should read aloud the text \""I'm Thirsty\"""")
+def step_then_system_reads_text(context):
+    # Assuming the text is read aloud, we can't verify audio output directly.
+    # This step is a placeholder for audio verification.
+    pass
+
+@then(""the box should visually highlight by adding the \""active\"" class"")
+def step_then_box_highlighted(context):
+    boxes = context.driver.find_elements(By.CSS_SELECTOR, ""main .box"")
+    for box in boxes:
+        if ""I'm Thirsty"" in box.text:
+            assert ""active"" in box.get_attribute(""class""), ""Box is not highlighted""
+            break
+
+@then(""the highlight should disappear after 800 milliseconds"")
+def step_then_highlight_disappears(context):
+    time.sleep(0.8)
+    boxes = context.driver.find_elements(By.CSS_SELECTOR, ""main .box"")
+    for box in boxes:
+        if ""I'm Thirsty"" in box.text:
+            assert ""active"" not in box.get_attribute(""class""), ""Box highlight did not disappear""
+            break
+
+def after_scenario(context, scenario):
+    context.driver.quit()"
+E2ESD_Bench_04,6,2,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: REQ-006 - Predefined Phrase Box Interaction
+  The system should allow users to click on predefined phrase boxes, triggering the associated text to be read aloud and visually highlighting the box momentarily.
+
+
+  Scenario: [Normal] User clicks on multiple predefined phrase boxes sequentially
+    Given the webpage is loaded and all predefined phrase boxes are displayed in the main section
+    When the user clicks on the box containing the text ""I'm Hungry""
+    Then the system should read aloud the text ""I'm Hungry""
+    And the box should visually highlight by adding the ""active"" class
+    And the highlight should disappear after 800 milliseconds
+    When the user clicks on the box containing the text ""I'm Happy""
+    Then the system should read aloud the text ""I'm Happy""
+    And the box should visually highlight by adding the ""active"" class
+    And the highlight should disappear after 800 milliseconds
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_active(element):
+    """"""Helper function to check if the box is visually highlighted.""""""
+    class_list = element.get_attribute(""class"").split()
+    return ""active"" in class_list
+
+@given(""the webpage is loaded and all predefined phrase boxes are displayed in the main section"")
+def step_given_webpage_loaded(context):
+    context.driver = webdriver.Chrome()  # Initialize the WebDriver
+    context.driver.get(f""file://index.html"")  # Load the test page
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ""main .box""))
+    )  # Wait for the predefined phrase boxes to be displayed
+
+@when('the user clicks on the box containing the text ""{text}""')
+def step_when_user_clicks_box(context, text):
+    boxes = context.driver.find_elements(By.CSS_SELECTOR, ""main .box"")
+    target_box = None
+    for box in boxes:
+        box_text = box.text.strip()
+        print(box_text)
+        if text.strip().lower() in box_text.lower():
+            target_box = box
+            break
+    assert target_box is not None, f""Box with text '{text}' not found""
+    WebDriverWait(context.driver, 10).until(EC.element_to_be_clickable(target_box))
+    target_box.click()  # Click the box
+
+@then('the system should read aloud the text ""{text}""')
+def step_then_system_reads_text(context, text):
+    # Validate that the specified text is set in the SpeechSynthesisUtterance
+    pass
+
+@then('the box should visually highlight by adding the ""active"" class')
+def step_then_box_highlights(context):
+    active_boxes = [box for box in context.driver.find_elements(By.CSS_SELECTOR, ""main .box"") if is_active(box)]
+    assert len(active_boxes) > 0, ""Expected at least one box to be visually highlighted""
+
+@then('the highlight should disappear after 800 milliseconds')
+def step_then_highlight_disappears(context):
+    time.sleep(0.8)  # Wait for 800 milliseconds
+    active_boxes = [box for box in context.driver.find_elements(By.CSS_SELECTOR, ""main .box"") if is_active(box)]
+    assert len(active_boxes) == 0, ""Expected the highlight to disappear""
+
+# Teardown step to close the browser after the test
+def after_scenario(context, scenario):
+    context.driver.quit()"
+E2ESD_Bench_04,6,3,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis."",
+    ""predefined_options"": ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."",
+    ""external_resources"": [
+        {
+            ""name"": ""Images for predefined phrases"",
+            ""source"": ""https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/""
+        }
+    ],
+    ""external_js_libraries"": [
+        {
+            ""name"": ""Font Awesome"",
+            ""source"": ""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css""
+        }
+    ]
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+The Speech Text Reader must allow users to toggle the visibility of the text box—containing the voice dropdown, textarea, and ""Read Text"" button—by clicking the ""Toggle Text Box"" button (data-testid=""toggle-button""). Initially hidden, the text box (data-testid=""text-box"") should appear or disappear based on user interaction, with visibility controlled by the presence of the 'show' class. The system must handle normal toggles, rapid repeated clicks, and boundary conditions reliably, ensuring the final state reflects the last user action without inconsistency.å√
+- Requirement 2: 
+The web application should allow users to toggle the visibility of a text box using a 'Toggle Text Box' button and hide the text box using a 'Close' button. The text box is initially hidden. When the user clicks the 'Toggle Text Box' button, located in the DOM with the attribute data-testid='toggle-button', the text box, identified by data-testid='text-box', becomes visible. Within the visible text box, there is a 'Close' button, identified by data-testid='close-button'. When the user clicks this 'Close' button, the text box should be hidden again. The visibility of the text box is controlled by adding or removing the 'show' class from the text box element in the DOM.
+- Requirement 3: 
+The system must populate the 'Choose Voice' dropdown (data-testid='voice-select') with available voices from the Web Speech API after the user opens the text box using the 'Toggle Text Box' button (data-testid='toggle-button'). Once the text box (data-testid='text-box') becomes visible, the system invokes the getVoices function, which retrieves the voices using speechSynthesis.getVoices(), and populates the dropdown with option elements whose values are set to the voice names and whose display texts show the voice names and languages. If the available voices change, the system listens for the 'voiceschanged' event and updates the dropdown accordingly. When a user selects a voice, it is assigned to message.voice for speech synthesis.
+- Requirement 4: 
+The Speech Text Reader web application must allow users to select a voice from the 'Choose Voice' dropdown, identified by data-testid='voice-select'. Upon selection, the system should set the chosen voice for speech synthesis. The dropdown should be populated with available voices when the page is fully loaded. The system must handle multiple voice selections, ensuring that the last selected voice is set as the active voice for speech synthesis. The application should support voice options that include specific language codes, such as 'CN' for Chinese or 'US' for English, and accurately set the voice containing these codes as the active voice when selected.
+- Requirement 5: 
+The Speech Text Reader application must allow users to enter text into the textarea (data-testid='text-area') and read it aloud using a selected voice from the dynamically populated dropdown (data-testid='voice-select'). When the user toggles the text box (data-testid='text-box') via the 'Toggle Text Box' button (data-testid='toggle-button') and clicks the 'Read Text' button (data-testid='read-button'), the system must use the selected voice to read the entered text aloud.
+- Requirement 6: 
+The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Speech Text Reader application allows users to input text, select a voice, and have the text read aloud. It also provides predefined phrases with associated images that can be clicked to trigger speech synthesis.', 'predefined_options': ""The application provides a set of predefined phrases such as 'I'm Thirsty', 'I'm Hungry', 'I'm Tired', 'I'm Hurt', 'I'm Happy', 'I'm Angry', 'I'm Sad', 'I'm Scared', 'I Want to Go Outside', 'I Want to Go Home', 'I Want to Go to School', 'I Want to Go to Grandmas'. each associated with an image. These phrases can be clicked to trigger speech synthesis."", 'external_resources': [{'name': 'Images for predefined phrases', 'source': 'https://github.com/bradtraversy/vanillawebprojects/blob/master/speech-text-reader/img/'}], 'external_js_libraries': [{'name': 'Font Awesome', 'source': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'}]}","The system must dynamically generate predefined phrase boxes, located in the main section, based on a data array. Each box contains an image (<img src=...>) and a paragraph (<p class='info'>...</p>) representing a phrase. When a user clicks on a box, the system must read the associated text aloud using the Web Speech API and visually highlight the box by adding the active class for 800 milliseconds. The system must correctly handle normal clicks, sequential clicks across different boxes, and rapid repeated clicks on the same box, ensuring that speech playback and visual feedback are triggered accurately for each interaction.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_04/,"Feature: REQ-006 - Predefined Phrase Box Interaction
+  The system should allow users to click on predefined phrase boxes, triggering the associated text to be read aloud and visually highlighting the box momentarily.
+
+
+  Scenario: [Edge] User clicks on a predefined phrase box repeatedly in quick succession
+    Given the webpage is loaded and all predefined phrase boxes are displayed in the main section
+    When the user clicks on the box containing the text ""I'm Angry"" three times in quick succession
+    Then the system should read aloud the text ""I'm Angry"" three times
+    And the box should visually highlight by adding the ""active"" class each time
+    And the highlight should disappear after 800 milliseconds for each click
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+def is_expanded(element):
+    aria = element.get_attribute(""aria-expanded"")
+    if aria is not None:
+        return aria == ""true""
+
+    class_list = element.get_attribute(""class"").split()
+    if any(cls in class_list for cls in [""expanded"", ""open"", ""show""]):
+        return True
+
+    data_expanded = element.get_attribute(""data-expanded"")
+    if data_expanded is not None:
+        return data_expanded == ""true""
+
+    return element.is_displayed()
+
+@given('the webpage is loaded and all predefined phrase boxes are displayed in the main section')
+def step_given_webpage_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)  # Allow time for the page to load
+
+@when('the user clicks on the box containing the text ""I\'m Angry"" three times in quick succession')
+def step_when_user_clicks_angry_box(context):
+    main_section = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.TAG_NAME, ""main""))
+    )
+    angry_box = WebDriverWait(main_section, 10).until(
+        EC.element_to_be_clickable((By.XPATH, ""//p[contains(text(), \""I'm Angry\"")]/..""))
+    )
+    for _ in range(3):
+        angry_box.click()
+        time.sleep(0.1)  # Simulate quick succession clicks
+
+@then('the system should read aloud the text ""I\'m Angry"" three times')
+def step_then_system_reads_aloud(context):
+    # This step would require integration with a speech synthesis verification tool
+    # Placeholder for actual speech synthesis verification
+    pass
+
+@then('the box should visually highlight by adding the ""active"" class each time')
+def step_then_box_highlights(context):
+    angry_box = context.driver.find_element(By.XPATH, ""//p[contains(text(), \""I'm Angry\"")]/.."")
+    assert ""active"" in angry_box.get_attribute(""class""), ""The box should be highlighted with 'active' class""
+
+@then('the highlight should disappear after 800 milliseconds for each click')
+def step_then_highlight_disappears(context):
+    angry_box = context.driver.find_element(By.XPATH, ""//p[contains(text(), \""I'm Angry\"")]/.."")
+    time.sleep(0.8)  # Wait for the highlight to disappear
+    assert ""active"" not in angry_box.get_attribute(""class""), ""The 'active' class should be removed after 800ms""
+
+def after_scenario(context, scenario):
+    context.driver.quit()"

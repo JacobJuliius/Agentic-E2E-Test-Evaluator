@@ -55,16 +55,40 @@ def test_real_execution_failure_caps_score():
     assert result["score_mode"] == "EXECUTION_FAILED_CAPPED"
 
 
+def test_available_branch_coverage_is_a_hybrid_score_component():
+    consensus = _load_consensus_agent()
+    result = consensus({
+        **_clean_static_state(),
+        "execution_status": "PASSED",
+        "branch_coverage_score": 50.0,
+    })
+    assert result["overall_score"] == 91.67
+    assert result["score_mode"] == "HYBRID_STATIC_EXECUTION_BRANCH_COVERAGE"
+    assert result["branch_coverage_included_in_scoring"] is True
+
+
 def test_harness_error_stays_inconclusive_not_zero():
     consensus = _load_consensus_agent()
     result = consensus({**_clean_static_state(), "execution_status": "HARNESS_BROWSER_ERROR"})
     assert result["overall_score"] == 100.0
     assert result["score_mode"] == "STATIC_ONLY_DYNAMIC_INCONCLUSIVE"
+    assert result["branch_coverage_included_in_scoring"] is False
 
 
 def test_graph_has_dynamic_execution_coverage_mutation_path():
     graph = Path("graph.py").read_text(encoding="utf-8")
     assert 'workflow.add_edge("maintainability_node", "execution_node")' in graph
     assert 'workflow.add_edge("dynamic_coverage_node", "coverage_node")' in graph
-    assert 'workflow.add_edge("coverage_node", "mutation_node")' in graph
+    assert (
+        'workflow.add_edge("coverage_node", '
+        '"branch_coverage_analysis_node")' in graph
+    )
+    assert (
+        'workflow.add_edge("branch_coverage_analysis_node", '
+        '"mutation_planning_node")' in graph
+    )
+    assert (
+        'workflow.add_edge("mutation_planning_node", "mutation_node")'
+        in graph
+    )
     assert '"mutation_node",' in graph

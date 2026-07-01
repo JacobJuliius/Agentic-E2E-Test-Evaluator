@@ -6,7 +6,10 @@ from pathlib import Path
 import pandas as pd
 
 from e2e_eval.config import EvaluationConfig
-from e2e_eval.reporting import write_evaluation_reports
+from e2e_eval.reporting import (
+    summarize_proposal_lifecycle,
+    write_evaluation_reports,
+)
 from e2e_eval.schemas import standardized_agent
 
 
@@ -74,6 +77,15 @@ def test_report_writer_creates_csv_json_and_manifest(tmp_path: Path):
     assert Path(paths["config"]).is_file()
     payload = json.loads(Path(paths["json"]).read_text(encoding="utf-8"))
     assert payload[0]["score"] == 80.0
+
+
+def test_proposal_lifecycle_summary_counts_statuses_and_ignores_noise():
+    assert summarize_proposal_lifecycle([
+        {"status": "EXECUTED"},
+        {"status": "EXECUTED"},
+        {"status": "REJECTED"},
+        "not-a-record",
+    ]) == {"EXECUTED": 2, "REJECTED": 1}
 
 
 def test_package_tree_exposes_expected_boundaries():

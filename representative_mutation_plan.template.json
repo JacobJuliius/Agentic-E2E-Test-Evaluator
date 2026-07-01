@@ -4,7 +4,7 @@
     {
       "case_id": "bench01_req1_test4",
       "label": "Weak drag-and-drop shopping-cart test",
-      "project_dir": "C:/PATH/TO/E2ESD_Bench_01/source_project",
+      "project_dir": "E2E_data/E2ESD_Bench_01/source_projcet",
       "baseline_command": "pytest -q tests/test_req1_test4.py",
       "timeout_seconds": 180,
       "mutations": [
@@ -41,7 +41,7 @@
     {
       "case_id": "bench02_req4_test1",
       "label": "Notes delete plus localStorage persistence",
-      "project_dir": "C:/PATH/TO/E2ESD_Bench_02/source_project",
+      "project_dir": "E2E_data/E2ESD_Bench_02/source_projcet",
       "baseline_command": "pytest -q tests/test_req4_test1.py",
       "timeout_seconds": 180,
       "mutations": [
@@ -77,7 +77,7 @@
     {
       "case_id": "bench03_req4_test1",
       "label": "Movie booking: positive multi-step state update",
-      "project_dir": "C:/PATH/TO/E2ESD_Bench_03/source_project",
+      "project_dir": "E2E_data/E2ESD_Bench_03/source_projcet",
       "baseline_command": "pytest -q tests/test_req4_test1.py",
       "timeout_seconds": 180,
       "mutations": [
@@ -89,7 +89,7 @@
     {
       "case_id": "bench03_req4_test4",
       "label": "Movie booking: occupied-seat negative boundary",
-      "project_dir": "C:/PATH/TO/E2ESD_Bench_03/source_project",
+      "project_dir": "E2E_data/E2ESD_Bench_03/source_projcet",
       "baseline_command": "pytest -q tests/test_req4_test4.py",
       "timeout_seconds": 180,
       "mutations": [
@@ -101,7 +101,7 @@
     {
       "case_id": "bench05_req4_test1",
       "label": "Dictionary reset: high-quality reset flow",
-      "project_dir": "C:/PATH/TO/E2ESD_Bench_05/source_project",
+      "project_dir": "E2E_data/E2ESD_Bench_05/source_projcet",
       "baseline_command": "pytest -q tests/test_req4_test1.py",
       "timeout_seconds": 180,
       "mutations": [

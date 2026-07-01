@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import pandas as pd
+from e2e_eval.utils.paths import sanitize_dataframe_for_export
 
 CASES = [
     ("E2ESD_Bench_01", 1, 4, "weak_drag_cart"),
@@ -23,7 +24,10 @@ CASES = [
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True, help="Full evaluation_results_v3.csv")
-    parser.add_argument("--output", default="representative_5_tests.csv")
+    parser.add_argument(
+        "--output",
+        default="artifacts/reports/representative_5_tests.csv",
+    )
     args = parser.parse_args()
 
     df = pd.read_csv(args.input)
@@ -43,7 +47,9 @@ def main() -> None:
         selected.append(rows)
 
     out = pd.concat(selected, ignore_index=True)
-    out.to_csv(args.output, index=False, encoding="utf-8-sig")
+    sanitize_dataframe_for_export(out).to_csv(
+        args.output, index=False, encoding="utf-8-sig"
+    )
     print(f"Wrote {len(out)} representative rows to: {Path(args.output).resolve()}")
     print(out[["representative_label", "id", "req_id", "test_id"]].to_string(index=False))
 

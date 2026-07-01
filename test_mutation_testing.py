@@ -126,8 +126,8 @@ def test_apply_mutation_changes_only_the_selected_span(tmp_path: Path):
 def test_verdict_logic():
     assert verdict_for_execution("PASSED") == "SURVIVED"
     assert verdict_for_execution("TEST_FAILED") == "KILLED"
-    assert verdict_for_execution("TIMEOUT") == "INVALID"
-    assert verdict_for_execution("HARNESS_BROWSER_ERROR") == "INVALID"
+    assert verdict_for_execution("TIMEOUT") == "TIMEOUT"
+    assert verdict_for_execution("HARNESS_BROWSER_ERROR") == "EXECUTION_ERROR"
 
 
 def _record(verdict: str, operator: str = "OP") -> dict:
@@ -313,7 +313,7 @@ def test_small_fixture_killed_mutant_and_score(tmp_path: Path):
     assert Path(result["mutation_report_path"]).is_file()
 
 
-def test_mocked_mutant_timeout_is_invalid_and_not_scored(tmp_path: Path):
+def test_mocked_mutant_timeout_is_separate_and_not_scored(tmp_path: Path):
     project = _fixture_project(tmp_path)
     cleanup_root, create, write, run = _fixture_callbacks(
         tmp_path, "TIMEOUT"
@@ -329,7 +329,8 @@ def test_mocked_mutant_timeout_is_invalid_and_not_scored(tmp_path: Path):
         run_namespace="fixture-timeout",
         cleanup_root=cleanup_root,
     )
-    assert result["invalid_mutants"] == 1
+    assert result["invalid_mutants"] == 0
+    assert result["timeout_mutants"] == 1
     assert result["valid_mutants"] == 0
     assert result["mutation_score"] is None
 
@@ -373,7 +374,19 @@ def test_dynamic_agent_delegates_to_general_engine(monkeypatch):
 
 def test_graph_runs_mutation_after_coverage():
     graph_source = Path("graph.py").read_text(encoding="utf-8")
-    assert 'workflow.add_edge("coverage_node", "mutation_node")' in graph_source
+    assert (
+        'workflow.add_edge("coverage_node", '
+        '"branch_coverage_analysis_node")' in graph_source
+    )
+    assert (
+        'workflow.add_edge("branch_coverage_analysis_node", '
+        '"mutation_planning_node")'
+        in graph_source
+    )
+    assert (
+        'workflow.add_edge("mutation_planning_node", "mutation_node")'
+        in graph_source
+    )
 
 
 def test_consensus_accepts_general_mutation_metric():

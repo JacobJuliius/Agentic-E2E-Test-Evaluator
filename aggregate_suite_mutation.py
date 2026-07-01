@@ -1,10 +1,11 @@
 import json
 from pathlib import Path
 import pandas as pd
+from e2e_eval.utils.paths import sanitize_dataframe_for_export
 
 
 INPUT_CSV = "data/evaluation_results_v4_pure_python.csv"
-OUTPUT_CSV = "data/requirement_suite_mutation_summary.csv"
+OUTPUT_CSV = "artifacts/reports/requirement_suite_mutation_summary.csv"
 
 
 def parse_mutation_report(report_path: str):
@@ -142,7 +143,9 @@ if __name__ == "__main__":
     summary_df = build_suite_mutation_summary(df)
 
     Path(OUTPUT_CSV).parent.mkdir(parents=True, exist_ok=True)
-    summary_df.to_csv(OUTPUT_CSV, index=False, encoding="utf-8-sig")
+    sanitize_dataframe_for_export(summary_df).to_csv(
+        OUTPUT_CSV, index=False, encoding="utf-8-sig"
+    )
 
     print("\nRequirement-suite mutation summary:")
     print(

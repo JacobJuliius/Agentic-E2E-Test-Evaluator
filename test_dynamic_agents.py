@@ -3,6 +3,7 @@ from pathlib import Path
 
 from dynamic_agents import (
     _apply_mutant,
+    _chrome_harness_shim,
     _classify_result,
     _discover_mutants,
     _summarize_behave_report,
@@ -14,6 +15,13 @@ from dynamic_agents import (
 
 def test_classify_passed():
     assert _classify_result(0, "1 scenario passed", "") == "PASSED"
+
+
+def test_browser_shim_routes_loopback_entrypoint_to_isolated_app():
+    shim = _chrome_harness_shim()
+    assert '"localhost", "127.0.0.1", "::1"' in shim
+    assert '_parsed.path.rstrip("/") in {"", "/index.html"}' in shim
+    assert "E2E_APP_INDEX_URI" in shim
 
 
 def test_missing_inputs_is_harness_error_not_test_failure():

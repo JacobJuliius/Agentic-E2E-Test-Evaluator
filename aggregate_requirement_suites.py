@@ -33,6 +33,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from e2e_eval.utils.paths import sanitize_dataframe_for_export
 
 
 DEFAULT_INPUT = "data/evaluation_results_v4_pure_python.csv"
@@ -280,9 +281,15 @@ def main() -> None:
     mutant_path = output_dir / "requirement_suite_mutant_details.csv"
     membership_path = output_dir / "requirement_suite_membership.csv"
 
-    suite_df.to_csv(suite_path, index=False, encoding="utf-8-sig")
-    mutant_df.to_csv(mutant_path, index=False, encoding="utf-8-sig")
-    membership_df.to_csv(membership_path, index=False, encoding="utf-8-sig")
+    sanitize_dataframe_for_export(suite_df).to_csv(
+        suite_path, index=False, encoding="utf-8-sig"
+    )
+    sanitize_dataframe_for_export(mutant_df).to_csv(
+        mutant_path, index=False, encoding="utf-8-sig"
+    )
+    sanitize_dataframe_for_export(membership_df).to_csv(
+        membership_path, index=False, encoding="utf-8-sig"
+    )
 
     display_columns = [
         col for col in [

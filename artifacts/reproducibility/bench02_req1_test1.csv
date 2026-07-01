@@ -1,0 +1,82 @@
+﻿id,req_id,test_id,prompt,requirement_summary,fine_grained_reqs,reference_answer,excutable_test_test_case,excutable_test_step_code
+E2ESD_Bench_02,1,1,"
+    You are tasked with implementing a complete web application using HTML, JavaScript, and CSS. Your implementation must strictly follow the specifications described below.
+    SUMMARY:
+    {
+    ""overview"": ""The Notes App allows users to create, edit, and delete notes. Users can add new notes, edit existing ones using a toggle between a textarea and a display mode, and delete notes. The application uses localStorage to persist notes across sessions."",
+    ""predefined_options"": ""The application does not have predefined options for note content; users start with an empty note or edit existing ones."",
+    ""external_resources"": ""Font Awesome icons for buttons (plus, edit, delete) sourced from a CDN."",
+    ""external_js_libraries"": ""Marked.js for Markdown rendering, sourced from a CDN.""
+}
+    ## Functional Requirements
+    Implement the following features as described. For each requirement, make sure the HTML structure, JavaScript behavior, and CSS styles match the specifications exactly.
+    REQUIREMENTS:
+    - Requirement 1: 
+When the user clicks the ""Add note"" button (id=""add"", class=""add"", data-testid=""add-note-button""), a new note is created and appended to the document body as a <div> element with the class ""note"". Inside each note, there is a visible, empty <textarea> (data-testid=""note-textarea"") for user input. The application supports multiple rapid clicks on the ""Add note"" button, with each click creating a separate note, each containing its own textarea.
+- Requirement 2: 
+The Notes App must allow users to edit notes with Markdown rendering support. When editing a note, the user interacts with a textarea (data-testid=""note-textarea"") where they can input or modify Markdown content. As the user types Markdown (e.g., # Heading, **bold**, _italic_, [link](...)), the content is dynamically rendered in the main display area (data-testid=""note-main"") in real-time, with proper HTML formatting (e.g., **Bold** becomes <strong>Bold</strong>). The app should handle complex Markdown syntax, ensuring that even invalid Markdown (e.g., unmatched **) does not cause crashes or errors, and instead displays the raw input when the user exits the edit mode by clicking the ""Edit"" button (data-testid=""edit-note-button""). All changes should be reflected immediately in local storage to persist the current state of the note.
+- Requirement 3: 
+The Notes App must allow users to create and manage notes with seamless view and edit functionality. When the app page loads, users can create a new note by clicking the ""Add note"" button (data-testid=""add-note-button""). Upon creation, the note should immediately enter edit mode: the textarea (data-testid=""note-textarea"") is visible for user input, while the main content area (data-testid=""note-main"") remains hidden. Users can switch between edit and view modes by clicking the ""Edit"" button (data-testid=""edit-note-button""). In view mode, the main content area becomes visible to display the formatted content, and the textarea is hidden; in edit mode, this behavior is reversed. All changes typed into the textarea should be automatically saved to local storage, preserving the note’s state across sessions.
+- Requirement 4: 
+When the user interacts with the Notes App, they should be able to delete a note by clicking the ""Delete"" button associated with that note (data-testid=""delete-note-button""). Upon clicking this button, the targeted note must be immediately removed from the DOM so it no longer appears on the page, and the corresponding entry must also be removed from localStorage to ensure it is no longer part of the stored notes array.
+- Requirement 5: 
+When the Notes App webpage loads, it must retrieve all saved notes from localStorage and display them accordingly. For each stored note, the app should dynamically create a div element with the class note, which includes a div with the class tools containing an ""Edit"" button (data-testid=""edit-note-button"") and a ""Delete"" button (data-testid=""delete-note-button""). Each note must also include a div with the class main (data-testid=""note-main"") to show the note content, and a textarea (data-testid=""note-textarea"") for editing. Notes retrieved from localStorage should be rendered with their content displayed in the main div, with the textarea hidden by default. For notes that have no content, the application should instead show the textarea and hide the main div, allowing immediate editing. If localStorage is empty, no notes should be shown. Internally, the notes variable is used to store the array of note content, retrieved using JSON.parse(localStorage.getItem('notes')).
+
+    
+    ## Output Format
+    Provide a clean and complete implementation including:
+    1. HTML structure (including necessary `data-testid`, `id`, and `class` values).
+    2. JavaScript functionality that matches the behavior described.
+    3. CSS for styling according to BEM and required class names.
+    4. Ensure that the text content in the components is exactly as specified in the requirements.
+    Do not include any extra components or libraries not listed above. Keep your code concise, semantic, and standards-compliant.
+    ","{'overview': 'The Notes App allows users to create, edit, and delete notes. Users can add new notes, edit existing ones using a toggle between a textarea and a display mode, and delete notes. The application uses localStorage to persist notes across sessions.', 'predefined_options': 'The application does not have predefined options for note content; users start with an empty note or edit existing ones.', 'external_resources': 'Font Awesome icons for buttons (plus, edit, delete) sourced from a CDN.', 'external_js_libraries': 'Marked.js for Markdown rendering, sourced from a CDN.'}","When the user clicks the ""Add note"" button (id=""add"", class=""add"", data-testid=""add-note-button""), a new note is created and appended to the document body as a <div> element with the class ""note"". Inside each note, there is a visible, empty <textarea> (data-testid=""note-textarea"") for user input. The application supports multiple rapid clicks on the ""Add note"" button, with each click creating a separate note, each containing its own textarea.",https://anonymous.4open.science/r/E2EDev/E2EDev_data/E2ESD_Bench_02/,"Feature: Note Creation
+  The user can create a new note by clicking the 'Add note' button, which displays a new note with an empty textarea for input.
+
+
+  Scenario: [Normal] User clicks 'Add note' button to create a new note
+    Given the Notes App page is loaded
+    When the user clicks the 'Add note' button with data-testid 'add-note-button'
+    Then a new note is displayed on the page
+    And the new note contains an empty textarea with data-testid 'note-textarea'
+    And the textarea is visible
+","from behave import given, when, then
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+file_path = ""index.html""
+
+@given(""the Notes App page is loaded"")
+def step_given_notes_app_page_loaded(context):
+    context.driver = webdriver.Chrome()
+    context.driver.get(f""file://index.html"")
+    time.sleep(1)  # Allow time for the page to load
+
+@when(""the user clicks the 'Add note' button with data-testid 'add-note-button'"")
+def step_when_user_clicks_add_note_button(context):
+    add_note_button = WebDriverWait(context.driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ""[data-testid='add-note-button']""))
+    )
+    add_note_button.click()
+    time.sleep(1)  # Allow time for the note to be added
+
+@then(""a new note is displayed on the page"")
+def step_then_new_note_displayed(context):
+    notes = context.driver.find_elements(By.CSS_SELECTOR, "".note"")
+    assert len(notes) > 0, ""No new note was displayed on the page""
+
+@then(""the new note contains an empty textarea with data-testid 'note-textarea'"")
+def step_then_note_contains_empty_textarea(context):
+    textarea = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='note-textarea']"")
+    assert textarea.get_attribute(""value"") == """", ""The textarea is not empty""
+
+@then(""the textarea is visible"")
+def step_then_textarea_is_visible(context):
+    textarea = context.driver.find_element(By.CSS_SELECTOR, ""[data-testid='note-textarea']"")
+    assert textarea.is_displayed(), ""The textarea is not visible""
+
+def after_scenario(context, scenario):
+    context.driver.quit()"

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import io
+import logging
 import subprocess
 import zipfile
 from pathlib import Path
@@ -26,6 +27,80 @@ def test_local_directory_resolution(tmp_path: Path):
     assert result["retrieval_method"] == "local_directory"
     assert result["cache_hit"] is False
     assert result["validation_result"]["valid"] is True
+
+
+def test_anonymous_benchmark_url_prefers_local_e2e_data_without_network(
+    monkeypatch, tmp_path: Path, caplog
+):
+    benchmark_root = tmp_path / "E2E_data"
+    bench_02 = benchmark_root / "E2ESD_Bench_02"
+    _write_source(bench_02)
+    monkeypatch.setattr(module, "LOCAL_BENCHMARK_ROOT", benchmark_root)
+    monkeypatch.setattr(
+        module.urllib.request,
+        "urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("HTTP must not run")
+        ),
+    )
+    monkeypatch.setattr(
+        module.subprocess,
+        "run",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("Git must not run")
+        ),
+    )
+    url = (
+        "https://anonymous.4open.science/r/E2EDev/"
+        "E2EDev_data/E2ESD_Bench_02/"
+    )
+
+    with caplog.at_level(logging.INFO):
+        result = module.resolve_project_source(
+            reference_url=url,
+            workspace_root=tmp_path / "artifacts",
+            allow_network=True,
+        )
+
+    assert result["resolution_status"] == "success"
+    assert result["retrieval_method"] == "local_benchmark_directory"
+    assert result["source_origin"] == "LOCAL_BENCHMARK_SOURCE"
+    assert Path(result["resolved_source_project_dir"]) == bench_02.resolve()
+    assert "[reference] Using local benchmark source:" in caplog.text
+
+
+def test_missing_anonymous_benchmark_reports_expected_path_without_git(
+    monkeypatch, tmp_path: Path
+):
+    benchmark_root = tmp_path / "E2E_data"
+    monkeypatch.setattr(module, "LOCAL_BENCHMARK_ROOT", benchmark_root)
+    monkeypatch.setattr(
+        module.urllib.request,
+        "urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("HTTP must not run")
+        ),
+    )
+    monkeypatch.setattr(
+        module.subprocess,
+        "run",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("Git must not run")
+        ),
+    )
+
+    result = module.resolve_reference_source(
+        "https://anonymous.4open.science/r/E2EDev/"
+        "E2EDev_data/E2ESD_Bench_05/",
+        tmp_path / "artifacts",
+        allow_network=True,
+    )
+
+    expected = (benchmark_root / "E2ESD_Bench_05").resolve()
+    assert result["resolution_status"] == "failed"
+    assert result["retrieval_method"] == "local_benchmark_directory"
+    assert str(expected) in result["failure_reason"]
+    assert "Network and git retrieval are not attempted" in result["failure_reason"]
 
 
 def test_cached_remote_reference_is_reused_without_network(
