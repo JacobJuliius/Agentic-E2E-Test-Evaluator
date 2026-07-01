@@ -17,6 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from e2e_eval.config import EvaluationConfig
 from e2e_eval.runtime.dependencies import check_dependencies
 from e2e_eval.runtime.utils import safe_name
+from e2e_eval.utils.paths import sanitize_export_payload
 from reference_resolver import resolve_reference_source
 
 
@@ -57,7 +58,7 @@ def _write_single_row(
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerow(row)
+        writer.writerow(sanitize_export_payload(row))
 
 
 def _install_dependencies(requirements: Path) -> dict[str, Any]:
@@ -152,10 +153,18 @@ def main() -> int:
     }
     preflight_path = output_dir / "preflight.json"
     preflight_path.write_text(
-        json.dumps(preflight, ensure_ascii=False, indent=2),
+        json.dumps(
+            sanitize_export_payload(preflight),
+            ensure_ascii=False,
+            indent=2,
+        ),
         encoding="utf-8",
     )
-    print(json.dumps(preflight, ensure_ascii=False, indent=2))
+    print(json.dumps(
+        sanitize_export_payload(preflight),
+        ensure_ascii=False,
+        indent=2,
+    ))
 
     if args.check_only:
         return 0 if resolution["resolution_status"] == "success" else 2

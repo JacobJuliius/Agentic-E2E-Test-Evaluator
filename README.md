@@ -1,345 +1,323 @@
 # Agentic E2E Test Evaluator
 
-This project evaluates generated end-to-end test scripts. It does not generate
-tests as its primary task. The framework combines deterministic static analysis,
-independent LLM evaluators, isolated browser execution, Python source coverage,
-and general mutation testing.
+This repository evaluates the quality of generated end-to-end test scripts. It
+does not generate E2E tests as its primary task.
 
-The main evaluation protocol is a hybrid evaluator: independent static LLM
-judges are followed by isolated Selenium/Behave execution, a BDD
-step-execution diagnostic, and deterministic scope-aware mutation testing.
-The optional dynamic analyst explains surviving-mutant evidence but is not a
-primary scoring component.
+The evaluator combines independent static LLM judges with deterministic,
+isolated execution, source branch coverage when an adapter applies, and
+mutation testing. Dynamic failures return structured evidence and do not abort
+the complete batch.
 
-## Architecture
+## Final architecture
+
+```text
+Syntax/Linter Gatekeeper
+-> Static LLM Evaluators
+-> Executable Validation
+-> Branch Coverage Agent (when supported)
+-> Mutation Planning / Generation / Execution / Analysis
+-> Hybrid Evidence Aggregator
+```
+
+LangGraph remains the orchestrator. Static LLM evaluators are independent from
+the deterministic dynamic evaluators. The main modules remain at the repository
+root for compatibility; reusable implementation is organized under:
 
 ```text
 e2e_eval/
-├── config.py                 central typed configuration
-├── orchestration/            LangGraph public API
-├── static/                   static evaluator public API
-├── dynamic/                  execution, coverage, mutation APIs
-├── sources/                  validated reference-source resolution
-├── runtime/                  shared utilities and dependency preflight
-├── schemas/                  standardized agent result envelopes
-└── reporting/                CSV, JSON, and run-manifest writers
+|-- config.py          typed run configuration
+|-- dynamic/           execution, branch coverage, and mutation utilities
+|-- reporting/         portable CSV/JSON writers
+|-- runtime/           dependency and runtime helpers
+|-- schemas/           shared result/state contracts
+|-- sources/           reference-source resolution
+`-- static/            static evaluator API
 ```
 
-The root modules (`main.py`, `graph.py`, `agents.py`, `dynamic_agents.py`,
-`coverage_agent.py`, `mutation_testing.py`, and `reference_resolver.py`) remain
-available for backward compatibility. New integrations should prefer the
-`e2e_eval` package.
+All workspaces and generated reports are written below `artifacts/`. Reference
+projects are copied into isolated workspaces; mutation testing applies one
+mutation to one fresh copy and never changes the original project.
 
-Every graph node retains its historical state fields and also contributes a
-standard envelope under `agent_results`:
+### Evidence ownership
+
+- LLMs interpret requirements, propose bounded mutation targets, assess
+  relevance, and explain evidence.
+- Tools determine process status, timeouts, coverage counters, and mutation
+  verdicts.
+- LLMs cannot invent coverage values or override deterministic `KILLED`,
+  `SURVIVED`, `INVALID`, `TIMEOUT`, or `EXECUTION_ERROR` verdicts.
+- Without model credentials, planning/analysis is explicitly
+  `ANALYSIS_UNAVAILABLE`; seeded deterministic fallback remains active.
+
+Each graph node also contributes a standard envelope under `agent_results`:
 
 ```json
 {
   "status": "PASSED",
   "score": 82.5,
-  "rationale": "Summary of the result",
+  "rationale": "Summary",
   "artifacts": {"report_path": "artifacts/.../report.json"},
   "evidence": {},
   "failure_reason": ""
 }
 ```
 
-## Pipeline order
+## Installation and activation
 
-```text
-Syntax/AST gate
-→ Requirement alignment (LLM)
-→ Assertion quality (LLM)
-→ Hallucination and smell analysis (LLM)
-→ Maintainability (LLM)
-→ Isolated Behave/Selenium execution
-→ BDD step-execution diagnostic
-→ Python coverage.py analysis
-→ General source mutation testing
-→ Conditional dynamic analyst and critic
-→ Deterministic consensus
-→ Conditional step-code refiner
-→ Optional refined-code execution/coverage/mutation validation
-→ Repair safety gate and comparison
-```
-
-Static LLM evaluators remain independent from deterministic dynamic tools.
-Dynamic failures return structured evidence and do not terminate the batch.
-
-## Installation
-
-Python 3.11 is recommended.
+Python 3.11 is the configured environment:
 
 ```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+conda activate e2e_eval311
+python -m pip install -r requirements.txt
+python -c "from selenium import webdriver; d=webdriver.Chrome(); d.quit()"
 ```
 
-Set `GOOGLE_API_KEY` in `.env` for the Gemini-backed static agents.
+Chrome or Chromium is required for the current Behave/Selenium adapter. Recent
+Selenium versions use Selenium Manager for the driver. Set `GOOGLE_API_KEY` or
+`GEMINI_API_KEY` in `.env` for Gemini-backed stages.
 
-### Browser setup
+## Run commands
 
-The current E2EDev harness executes Behave/Selenium tests with Chrome:
-
-```powershell
-.\.venv\Scripts\python.exe -c "from selenium import webdriver; d=webdriver.Chrome(); d.quit()"
-```
-
-Recent Selenium releases use Selenium Manager to obtain a compatible driver.
-Install Chrome or Chromium before dynamic evaluation.
-
-Playwright is optional for repositories containing Playwright-generated tests:
+Run one case:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -e ".[playwright]"
-.\.venv\Scripts\python.exe -m playwright install chromium
-```
-
-The bundled E2EDev runner currently targets Behave/Selenium; adding a Playwright
-runtime adapter is separate from installing the browser.
-
-## Run the evaluator
-
-The historical entry point remains valid:
-
-```powershell
-python main.py
-```
-
-Defaults:
-
-- input: `data/e2edev_sample.csv`
-- CSV report: `artifacts/reports/evaluation_results.csv`
-- JSON report: `artifacts/reports/evaluation_results.json`
-- configuration manifest: `artifacts/reports/evaluation_results.config.json`
-
-Run a single benchmark row reproducibly:
-
-```powershell
+conda activate e2e_eval311
+$env:E2E_ENABLE_DYNAMIC = "1"
+$env:E2E_REFERENCE_NETWORK_ENABLED = "0"
 python scripts/reproduce_one.py `
   --input data/e2edev_sample.csv `
-  --benchmark-id E2ESD_Bench_01 `
+  --benchmark-id E2ESD_Bench_02 `
   --req-id 1 `
   --test-id 1
 ```
 
-Preflight source resolution and dependencies without invoking LangGraph or an LLM:
+Enable executable branch coverage:
 
 ```powershell
-python scripts/reproduce_one.py --row-index 0 --check-only
-```
-
-Use `--install-missing` to run the bounded `pip install -r requirements.txt`
-step. Network source retrieval is still controlled separately.
-
-### Input CSV schema
-
-The evaluator accepts:
-
-```text
-id, req_id, test_id, reference_answer, fine_grained_reqs,
-excutable_test_test_case, excutable_test_step_code,
-source_project_dir (optional)
-```
-
-When `source_project_dir` is present, it takes priority over cache/network
-resolution. The directory may have any name—including the dataset's literal
-`source_projcet` spelling. The evaluator recursively locates `index.html`, uses
-its parent as the project root, and copies it into each isolated workspace as
-`source_project/`.
-
-## Central configuration
-
-`e2e_eval.config.EvaluationConfig` is the canonical configuration object.
-Environment variables are read once by `EvaluationConfig.from_env()` and saved
-with every report.
-
-Important options:
-
-```powershell
-$env:E2E_MAX_CASES = "1"
 $env:E2E_ENABLE_DYNAMIC = "1"
-$env:E2E_HEADLESS = "1"
-$env:E2E_EXECUTION_TIMEOUT_SECONDS = "90"
-
-$env:E2E_REFERENCE_WORKSPACE_ROOT = "artifacts"
-$env:E2E_REFERENCE_NETWORK_ENABLED = "0"
-$env:E2E_REFERENCE_TIMEOUT_SECONDS = "90"
-```
-
-Remote source retrieval is disabled by default. The resolver accepts validated
-local directories, explicit ZIP/TAR endpoints, and Git repositories. It never
-scrapes arbitrary HTML pages.
-
-Source provenance is exported as `LOCAL_SOURCE_OVERRIDE`, `REFERENCE_CACHE`, or
-`NETWORK_REFERENCE`, together with the input path, resolved project path, and
-resolved entrypoint.
-
-Run a selected-case CSV entirely offline:
-
-```powershell
-python scripts/reproduce_selected_cases.py `
-  artifacts/reports/selected_cases_with_sources.csv `
-  --output artifacts/reports/selected_cases_local_baseline_final.csv `
-  --local-dynamic-only
-```
-
-Add a bounded mutation smoke test:
-
-```powershell
-python scripts/reproduce_selected_cases.py `
-  artifacts/reports/selected_cases_with_sources.csv `
-  --output artifacts/reports/selected_cases_local_mutation_final.csv `
-  --local-dynamic-only --mutation --max-mutants 3
-```
-
-`--local-dynamic-only` runs the real syntax, Selenium/Behave, BDD diagnostic,
-and mutation tools but deliberately skips external LLM calls.
-
-## Reproduce the final local-source experiments
-
-The final experiments use explicit `source_project_dir` values and disable
-reference-network access. This avoids benchmark-host availability affecting
-results. `artifacts/reports/selected_cases_with_sources.csv` uses
-repository-relative paths into the tracked lightweight fixtures under
-`data/reference_sources/`, so the commands do not depend on the ignored legacy
-`workspace/` directory.
-
-### 1. Baseline evaluation
-
-```powershell
-$env:E2E_REFERENCE_NETWORK_ENABLED = "0"
-$env:E2E_ENABLE_DYNAMIC = "1"
-$env:E2E_ENABLE_MUTATION = "0"
-$env:E2E_ENABLE_COVERAGE = "0"
-$env:E2E_HEADLESS = "1"
-
-python scripts/reproduce_selected_cases.py `
-  artifacts/reports/selected_cases_with_sources.csv `
-  --output artifacts/reports/selected_cases_local_baseline_final.csv `
-  --local-dynamic-only
-```
-
-### 2. Scope-aware mutation evaluation
-
-```powershell
-$env:E2E_REFERENCE_NETWORK_ENABLED = "0"
-$env:E2E_ENABLE_DYNAMIC = "1"
-$env:E2E_ENABLE_MUTATION = "1"
-$env:E2E_ENABLE_COVERAGE = "0"
-$env:E2E_HEADLESS = "1"
-
-python scripts/reproduce_selected_cases.py `
-  artifacts/reports/selected_cases_with_sources.csv `
-  --output artifacts/reports/selected_cases_local_mutation_10_final.csv `
-  --local-dynamic-only --mutation --max-mutants 10
-```
-
-### 3. Test suite
-
-```powershell
-python -m pytest -p no:cacheprovider -q
-```
-
-## Interpretation limitations
-
-- The BDD step-execution diagnostic is not source branch coverage.
-- Current `coverage.py` instrumentation measures Python code; it does not
-  measure HTML/JavaScript branches in the E2EDev applications.
-- Relevant mutation score is meaningful only when
-  `relevant_mutants_total > 0`; otherwise it is reported as unavailable.
-- Mutation results are sampled evidence, bounded by the configured mutant
-  limit, not full application-level coverage.
-- The dynamic analyst is an optional explanatory layer and does not replace
-  deterministic mutation scoring or the independent static judges.
-
-## Final results and presentation
-
-- [Final results summary](artifacts/reports/final_results_summary.md)
-- [Final results CSV](artifacts/reports/final_results_summary.csv)
-- [Baseline evaluation](artifacts/reports/final_full_pipeline_baseline.csv)
-- [10-mutant selected evaluation](artifacts/reports/selected_cases_local_mutation_10_final.csv)
-- [Dynamic analyst evidence](artifacts/reports/dynamic_analyst_bench05.csv)
-- [Presentation](artifacts/reports/final_e2e_test_evaluator_presentation.pptx)
-- [Figures](artifacts/reports/figures/)
-
-## Coverage
-
-Enable Python coverage:
-
-```powershell
 $env:E2E_ENABLE_COVERAGE = "1"
+$env:E2E_ENABLE_BRANCH_COVERAGE_ANALYSIS = "1"
 $env:E2E_COVERAGE_BRANCH_ENABLED = "1"
 $env:E2E_COVERAGE_TIMEOUT_SECONDS = "120"
-$env:E2E_COVERAGE_INCLUDE_PATTERNS = "**/*.py"
 ```
 
-`total_line_coverage` and `total_branch_coverage` come from `coverage.py`.
-Branch coverage is:
-
-```text
-covered Python branches / measured Python branches × 100
-```
-
-This is not JavaScript branch coverage. HTML/JavaScript-only reference projects
-return structured unavailable/no-data evidence rather than a fabricated zero.
-The BDD step diagnostic is also separate: it reports which Given/When/Then steps
-ran successfully, not source-code coverage.
-
-## Mutation testing
-
-Enable mutation testing:
+Enable mutation testing and set the campaign budget:
 
 ```powershell
+$env:E2E_ENABLE_DYNAMIC = "1"
 $env:E2E_ENABLE_MUTATION = "1"
-$env:E2E_MAX_MUTANTS = "20"
+$env:E2E_ENABLE_MUTATION_PLANNING = "1"
+$env:E2E_ENABLE_MUTATION_ANALYSIS = "1"
+$env:E2E_MAX_MUTANTS = "5"
 $env:E2E_MUTATION_MAX_PER_FILE = "5"
 $env:E2E_MUTATION_SEED = "1337"
-$env:E2E_MUTATION_INCLUDE_PATTERNS = "**/*.py,**/*.js,**/*.html"
 ```
 
-The original test must pass before mutants run. Every mutant is applied to a
-separate source copy. Verdicts:
+Run the configured input as a batch (all rows when `E2E_MAX_CASES=0`):
 
-- `KILLED`: the generated test fails on a valid mutant.
-- `SURVIVED`: the generated test still passes.
-- `INVALID`: the mutant cannot be validated or executed defensibly.
+```powershell
+conda activate e2e_eval311
+$env:E2E_INPUT_FILE = "data/e2edev_sample.csv"
+$env:E2E_OUTPUT_FILE = "artifacts/reports/evaluation_results.csv"
+$env:E2E_MAX_CASES = "0"
+python main.py
+```
+
+The bundled `data/e2edev_sample.csv` is the 70-case full-evaluation input. To
+run the full dynamic campaign explicitly:
+
+```powershell
+$env:E2E_ENABLE_DYNAMIC = "1"
+$env:E2E_ENABLE_COVERAGE = "1"
+$env:E2E_ENABLE_MUTATION = "1"
+$env:E2E_INPUT_FILE = "data/e2edev_sample.csv"
+$env:E2E_OUTPUT_FILE = "artifacts/reports/full_evaluation.csv"
+$env:E2E_MAX_CASES = "0"
+python main.py
+```
+
+Run tracked selected cases without external LLM calls:
+
+```powershell
+python scripts/reproduce_selected_cases.py `
+  artifacts/reports/selected_cases_with_sources.csv `
+  --output artifacts/reports/selected_cases_local_mutation.csv `
+  --local-dynamic-only --mutation --max-mutants 5
+```
+
+The primary outputs for `E2E_OUTPUT_FILE=artifacts/reports/evaluation_results.csv`
+are:
+
+- `artifacts/reports/evaluation_results.csv`
+- `artifacts/reports/evaluation_results.json`
+- `artifacts/reports/evaluation_results.config.json`
+- per-case evidence under `artifacts/dynamic/results/`
+- isolated workspaces under `artifacts/dynamic/workspaces/`
+
+CSV and JSON serialization converts repository paths to project-relative POSIX
+paths. External absolute paths are redacted as `<external>/filename`.
+
+Locate the primary and per-case artifacts:
+
+```powershell
+Get-Item artifacts/reports/evaluation_results.csv
+Get-Item artifacts/reports/evaluation_results.json
+Get-Item artifacts/reports/evaluation_results.config.json
+Get-ChildItem artifacts/dynamic/results -Recurse -File
+```
+
+## Environment variables
+
+Boolean values accept `1`, `true`, `yes`, or `on` (case-insensitive). Pattern
+lists are comma-separated.
+
+| Variable | Default | Purpose |
+|---|---:|---|
+| `GOOGLE_API_KEY` | unset | Gemini credential used by LLM stages. |
+| `GEMINI_API_KEY` | unset | Alternative Gemini credential. |
+| `GOOGLE_APPLICATION_CREDENTIALS` | unset | Google application credential file. |
+| `E2E_LLM_RPD_SOFT_LIMIT` | `470` | Soft daily LLM request guard. |
+| `E2E_INPUT_FILE` | `data/e2edev_sample.csv` | Batch input CSV. |
+| `E2E_OUTPUT_FILE` | `artifacts/reports/evaluation_results.csv` | Primary report path. |
+| `E2E_MAX_CASES` | `0` | Maximum rows; `0` means all. |
+| `E2E_CASE_SLEEP_SECONDS` | `5` | Delay between batch rows. |
+| `E2E_ENABLE_DYNAMIC` | `0` | Enable executable validation. |
+| `E2E_ENABLE_COVERAGE` | `0` | Enable source coverage collection. |
+| `E2E_ENABLE_BRANCH_COVERAGE_ANALYSIS` | `1` | Enable semantic analysis of tool-supplied uncovered branches. |
+| `E2E_ENABLE_MUTATION` | `0` | Enable mutation testing. |
+| `E2E_ENABLE_MUTATION_PLANNING` | `1` | Enable LLM mutation planning when credentials exist. |
+| `E2E_ENABLE_MUTATION_ANALYSIS` | `1` | Enable survivor interpretation when credentials exist. |
+| `E2E_ENABLE_DYNAMIC_ANALYST` | value of `E2E_ENABLE_DYNAMIC` | Enable the explanatory dynamic analyst. |
+| `E2E_ENABLE_CRITIC` | `1` | Enable critic stage. |
+| `E2E_ENABLE_REFINER` | `1` | Enable conditional step-code refinement. |
+| `E2E_ENABLE_REFINEMENT_VALIDATION` | `0` | Execute refined code before acceptance. |
+| `E2E_ENABLE_REFINEMENT_MUTATION_VALIDATION` | `0` | Mutation-check refined code. |
+| `E2E_DYNAMIC_ARTIFACT_ROOT` | `artifacts/dynamic` | Dynamic workspace/result root. |
+| `E2E_REFERENCE_CACHE` | `artifacts/reference_cache` | Validated source cache. |
+| `E2E_REFERENCE_WORKSPACE_ROOT` | parent of reference cache | Source-resolution workspace. |
+| `E2E_REFERENCE_NETWORK_ENABLED` | `0` | Permit bounded archive/Git retrieval. |
+| `E2E_REFERENCE_TIMEOUT_SECONDS` | `90` | Source retrieval timeout. |
+| `E2E_REFERENCE_EXPECTED_PATTERNS` | empty | Required files/globs for source validation. |
+| `E2E_COVERAGE_SOURCE_DIR` | empty | Explicit source project fallback. |
+| `E2E_COVERAGE_TIMEOUT_SECONDS` | `120` | Instrumentation/execution timeout. |
+| `E2E_COVERAGE_INCLUDE_PATTERNS` | empty | Coverage file include patterns. |
+| `E2E_COVERAGE_EXCLUDE_PATTERNS` | empty | Coverage file exclude patterns. |
+| `E2E_COVERAGE_BRANCH_ENABLED` | `1` | Collect branch counters. |
+| `E2E_COVERAGE_INCLUDE_TESTS` | `0` | Include test files in Python coverage. |
+| `E2E_MAX_MUTANTS` | `5` | Total mutation budget per case. |
+| `E2E_MUTATION_MAX_PER_FILE` | `5` | Per-file mutation budget. |
+| `E2E_MUTATION_SEED` | `1337` | Stable candidate-selection seed. |
+| `E2E_MUTATION_INCLUDE_PATTERNS` | empty | Mutation include patterns. |
+| `E2E_MUTATION_EXCLUDE_PATTERNS` | built-in exclusions | Mutation exclude patterns. |
+| `E2E_MUTATION_PROJECT_VALIDATION_COMMAND` | empty | Optional build/syntax validation command. |
+| `E2E_MUTATION_KEEP_WORKSPACES` | `0` | Retain per-mutant workspaces. |
+| `E2E_EXECUTION_TIMEOUT_SECONDS` | `90` | Baseline subprocess timeout. |
+| `E2E_MUTANT_TIMEOUT_SECONDS` | `45` | Per-mutant subprocess timeout. |
+| `E2E_RELEVANT_MUTATION_REFINE_THRESHOLD` | `80` | Relevant-score threshold considered by refinement. |
+| `E2E_HEADLESS` | `1` | Run Chrome headlessly. |
+
+`E2E_APP_INDEX_URI` and `E2E_JS_COVERAGE_PATH` are internal variables injected
+into isolated subprocesses by the harness; users should not set them.
+
+## Branch coverage
+
+The coverage agent chooses an adapter from the resolved source project:
+
+- `selenium_istanbul` instruments supported external JavaScript and reads
+  browser-side Istanbul counters.
+- `python_coverage_py` measures supported in-process Python applications.
+- unsupported layouts return explicit unavailable evidence, never a fabricated
+  zero.
+
+JavaScript coverage is adapter- and project-structure-dependent. In the latest
+70-case benchmark it succeeded for Bench 02 and Bench 03 and was unavailable
+for Bench 01, 04, and 05. That status describes adapter applicability, not
+missing test coverage; this project does not claim universal JavaScript
+coverage support.
+
+Reports export `coverage_adapter`, `coverage_source_language`,
+`coverage_instrumentation_status`, `coverage_failure_reason`, and
+`branch_coverage_included_in_scoring`. Branch coverage enters hybrid scoring
+only when the baseline passes and the tool produces a numeric branch result.
 
 ```text
-mutation score = killed / (killed + survived) × 100
+branch coverage = covered branches / measured branches * 100
 ```
 
-Invalid mutants are always excluded from the denominator. See
-`MUTATION_OPERATORS.md` for the documented, general operator taxonomy.
+BDD step diagnostics are separate: they report which Given/When/Then steps ran,
+not source-code branch coverage.
 
-The report retains two distinct mutation views:
+## Mutation testing and metrics
 
-- raw mutation score over every valid selected mutant;
-- relevant mutation score over valid mutants deterministically linked to the
-  active scenario target or literal.
+The baseline must pass before mutation begins. Planning proposals contain only
+validated target metadata; deterministic operators create patches. Each report
+records the candidate source (`llm_proposal` or `deterministic_fallback`), full
+proposal lifecycle, execution verdict, scope relation, score inclusion flags,
+and exclusion reason.
 
-If no relevant valid mutant exists, the relevant score is null and
-`mutation_scope_status=NO_RELEVANT_MUTANTS`. Out-of-scope mutants remain in the
-raw suite report but are not evidence that one scenario is weak.
+```text
+raw mutation score = killed / (killed + survived) * 100
+```
 
-## Optional reference acquisition
+`INVALID`, `TIMEOUT`, and `EXECUTION_ERROR` are reported separately and are not
+in the denominator. Valid unfavorable survivors remain visible in raw records
+and statistics.
 
-Offline local overrides and validated caches are preferred. When
-`E2E_REFERENCE_NETWORK_ENABLED=1`, explicit ZIP/TAR URLs may be safely extracted
-and actual Git URLs may be shallow-cloned with a timeout. Directory-style
-`anonymous.4open.science` URLs are not scraped to guess download links; provide a
-local source directory or pre-populated cache when no stable archive endpoint is
-available. Automated refresh/fetch-mode policies remain optional future work.
+The requirement-relevant mutation score uses only valid mutants classified
+`RELEVANT`. Infrastructure/cosmetic mutants are excluded from requirement-level
+assessment. `UNCERTAIN` mutants remain visible but do not assert relevance;
+`OUT_OF_SCOPE` mutants remain useful for suite-level evidence but do not lower
+one scenario's requirement score. A missing relevant denominator is exported as
+unavailable, not zero.
+
+See [MUTATION_ARCHITECTURE.md](MUTATION_ARCHITECTURE.md) and
+[MUTATION_OPERATORS.md](MUTATION_OPERATORS.md).
+
+## Latest full-run summary
+
+The latest full evaluation contained 70 cases:
+
+- 67 executable baselines passed;
+- 2 returned `HARNESS_DEPENDENCY_ERROR`;
+- 1 returned `TEST_FAILED`;
+- 335 mutants were generated: 319 valid, 85 killed, 234 survived, 16 invalid;
+- 0 mutation timeouts and 0 mutation execution errors;
+- raw mutation score: approximately 26.6%;
+- requirement-relevant mutation score: approximately 30.2%.
+
+## Known limitations
+
+- Executable validation is focused on Behave/Selenium.
+- JavaScript coverage applicability varies with source-project structure.
+- JavaScript/TypeScript mutation parsing is deliberately conservative.
+- Equivalent mutants can survive without representing a real test gap.
+- LLM planning and explanation require credentials; deterministic fallback is
+  explicit and reproducible.
+- Mutation campaigns are bounded samples, not exhaustive application mutation.
 
 ## Validation
 
 ```powershell
+conda activate e2e_eval311
+python -m pytest -p no:cacheprovider -q
 python scripts/lint.py
-python -m pytest -p no:cacheprovider -q `
-  test_mutation_testing.py test_reference_resolver.py test_coverage_agent.py `
-  tests/test_framework_integration.py
+python -m compileall -q -x "artifacts|data|workspace|patches" .
+git diff --check
 ```
 
-All generated workspaces, evidence, reports, and reproducibility inputs are
-written below `artifacts/`. Reference projects are copied before mutation.
+## Presentation update outline
+
+- **Architecture:** show the six-stage final architecture above and label the
+  LangGraph control flow, isolated workspaces, and hybrid aggregator.
+- **Branch coverage:** distinguish executable source-branch evidence from BDD
+  step diagnostics; report Bench 02/03 support and explicit unavailability for
+  Bench 01/04/05.
+- **Mutation testing:** show deterministic verdict ownership, seeded bounded
+  operators, fresh workspaces, and separate raw versus requirement-relevant
+  scores.
+- **Final results:** present 70 cases, 67 passing baselines, 335 generated
+  mutants, 319 valid, 85 killed, 234 survived, 16 invalid, 26.6% raw score,
+  and 30.2% requirement-relevant score.
+- **Limitations/future work:** broaden execution and coverage adapters, improve
+  conservative JS/TS parsing and equivalent-mutant handling, and retain the
+  credential-free deterministic fallback.

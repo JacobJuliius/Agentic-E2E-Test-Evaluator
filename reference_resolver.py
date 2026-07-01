@@ -28,6 +28,8 @@ import zipfile
 from pathlib import Path
 from typing import Any, Iterable
 
+from e2e_eval.utils.paths import sanitize_export_payload
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT_SECONDS = 90
@@ -43,6 +45,10 @@ IGNORED_PARTS = {
 ARCHIVE_SUFFIXES = (
     ".zip", ".tar.gz", ".tgz", ".tar", ".tar.bz2", ".tbz2", ".tar.xz", ".txz",
 )
+REPOSITORY_ROOT = Path(__file__).resolve().parent
+LOCAL_BENCHMARK_ROOT = REPOSITORY_ROOT / "E2E_data"
+ANONYMOUS_BENCHMARK_HOST = "anonymous.4open.science"
+BENCHMARK_NAME_RE = re.compile(r"^E2ESD_Bench_[0-9]+$")
 
 
 def _safe_slug(value: str) -> str:
@@ -69,6 +75,21 @@ def _legacy_identifier(source_url: str) -> str:
     """Return the historical basename cache key for backward compatibility."""
     parsed = urllib.parse.urlparse(str(source_url).strip().rstrip("/"))
     return _safe_slug(Path(parsed.path or str(source_url)).name)
+
+
+def _anonymous_benchmark_name(source_url: str) -> str | None:
+    """Extract a safe E2E benchmark directory name from a known host URL."""
+    parsed = urllib.parse.urlparse(str(source_url).strip())
+    if (parsed.hostname or "").lower() != ANONYMOUS_BENCHMARK_HOST:
+        return None
+    for part in reversed([
+        urllib.parse.unquote(item)
+        for item in parsed.path.split("/")
+        if item
+    ]):
+        if BENCHMARK_NAME_RE.fullmatch(part):
+            return part
+    return None
 
 
 def _patterns(value: Iterable[str] | None) -> list[str]:
@@ -232,7 +253,8 @@ def resolve_project_source(
             resolved_entrypoint = str(entrypoint)
             resolution["local_path"] = resolved_dir
 
-    network_method = resolution.get("retrieval_method") in {
+    retrieval_method = resolution.get("retrieval_method")
+    network_method = retrieval_method in {
         "archive_download", "git_clone"
     } and not resolution.get("cache_hit", False)
     if (
@@ -251,7 +273,13 @@ def resolve_project_source(
     return {
         **resolution,
         "source_origin": (
-            "NETWORK_REFERENCE" if network_method else "REFERENCE_CACHE"
+            "NETWORK_REFERENCE"
+            if network_method
+            else (
+                "LOCAL_BENCHMARK_SOURCE"
+                if retrieval_method == "local_benchmark_directory"
+                else "REFERENCE_CACHE"
+            )
         ),
         "input_source_project_dir": input_dir,
         "resolved_source_project_dir": resolved_dir,
@@ -405,7 +433,11 @@ def _write_cache_metadata(target: Path, result: dict[str, Any]) -> None:
         "validation_result": result["validation_result"],
     }
     (target / ".reference-resolution.json").write_text(
-        json.dumps(metadata, ensure_ascii=False, indent=2),
+        json.dumps(
+            sanitize_export_payload(metadata),
+            ensure_ascii=False,
+            indent=2,
+        ),
         encoding="utf-8",
     )
 
@@ -435,6 +467,57 @@ def resolve_reference_source(
     cache_root = workspace / "reference_cache"
 
     parsed = urllib.parse.urlparse(source_url)
+    benchmark_name = _anonymous_benchmark_name(source_url)
+    is_anonymous_benchmark_host = (
+        (parsed.hostname or "").lower() == ANONYMOUS_BENCHMARK_HOST
+    )
+    if benchmark_name:
+        local_benchmark = (LOCAL_BENCHMARK_ROOT / benchmark_name).resolve()
+        validation = validate_source_directory(
+            local_benchmark, expected_patterns
+        )
+        if validation["valid"]:
+            logger.info(
+                "[reference] Using local benchmark source: %s",
+                local_benchmark,
+            )
+            return _result(
+                status="success",
+                source_url=source_url,
+                project_identifier=project_identifier,
+                local_path=str(local_benchmark),
+                cache_hit=False,
+                retrieval_method="local_benchmark_directory",
+                validation_result=validation,
+            )
+        return _result(
+            status="failed",
+            source_url=source_url,
+            project_identifier=project_identifier,
+            local_path=str(local_benchmark),
+            retrieval_method="local_benchmark_directory",
+            validation_result=validation,
+            failure_reason=(
+                f"Local benchmark source is required for {source_url}. "
+                f"Expected a usable project at: {local_benchmark}. "
+                f"{validation['message']} Network and git retrieval are not "
+                f"attempted for {ANONYMOUS_BENCHMARK_HOST} URLs."
+            ),
+        )
+    if is_anonymous_benchmark_host:
+        return _result(
+            status="failed",
+            source_url=source_url,
+            project_identifier=project_identifier,
+            retrieval_method="local_benchmark_directory",
+            failure_reason=(
+                f"Cannot identify an E2ESD_Bench_<number> folder in "
+                f"{source_url}. Expected a matching local project below: "
+                f"{LOCAL_BENCHMARK_ROOT.resolve()}. Network and git retrieval "
+                f"are not attempted for {ANONYMOUS_BENCHMARK_HOST} URLs."
+            ),
+        )
+
     windows_path = bool(re.match(r"^[A-Za-z]:[\\/]", source_url))
     scp_git_url = bool(re.match(r"^[^@\s]+@[^:\s]+:.+", source_url))
     if windows_path:

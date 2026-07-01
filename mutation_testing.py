@@ -25,6 +25,8 @@ from io import StringIO
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Iterable, Protocol, Sequence
 
+from e2e_eval.utils.paths import sanitize_export_payload
+
 logger = logging.getLogger(__name__)
 
 
@@ -45,6 +47,11 @@ DEFAULT_EXCLUDE_PATTERNS = (
     "**/tests/**",
 )
 MAX_SOURCE_BYTES = 1_000_000
+INFRASTRUCTURE_ATTRIBUTES = {"integrity", "crossorigin", "referrerpolicy"}
+EXTERNAL_RESOURCE_RE = re.compile(
+    r"^(?:https?:)?//|(?:^|[./_-])(?:cdn|cdnjs|unpkg|jsdelivr)(?:[./_-]|$)",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -56,6 +63,8 @@ class MutationCandidate:
     original_code: str
     replacement_code: str
     mutation_description: str
+    proposal_id: str = ""
+    candidate_source: str = "deterministic_fallback"
 
 
 @dataclass
@@ -79,6 +88,17 @@ class MutationRecord:
     scope_relation: str = "UNCERTAIN"
     scope_reason: str = ""
     source_scope: dict[str, Any] = field(default_factory=dict)
+    exit_code: int | None = None
+    timed_out: bool = False
+    stdout_path: str = ""
+    stderr_path: str = ""
+    execution_result_path: str = ""
+    patch_path: str = ""
+    proposal_id: str = ""
+    candidate_source: str = "deterministic_fallback"
+    included_in_raw_score: bool = True
+    included_in_relevant_score: bool = False
+    exclusion_reason: str = ""
 
 
 class MutationOperator(Protocol):
@@ -597,6 +617,78 @@ def _iter_source_files(
         yield path
 
 
+def nonfunctional_exclusion_reason(
+    candidate: MutationCandidate | dict[str, Any],
+    source: str,
+) -> str:
+    """Return the default policy reason for non-functional infrastructure."""
+    if isinstance(candidate, dict):
+        location = candidate.get("location", {})
+        original = str(candidate.get("original_code", ""))
+        source_file = str(candidate.get("source_file", ""))
+    else:
+        location = candidate.location
+        original = candidate.original_code
+        source_file = candidate.source_file
+    suffix = Path(source_file).suffix.lower()
+    if suffix == ".css":
+        return "Purely cosmetic CSS mutations are excluded by default."
+    if suffix not in {".html", ".htm"}:
+        return ""
+    start = int(location.get("start_offset", 0))
+    tag_start = source.rfind("<", 0, start + 1)
+    tag_end = source.find(">", max(0, start))
+    if tag_start < 0 or tag_end < 0:
+        return ""
+    tag = source[tag_start:tag_end + 1]
+    tag_name_match = re.match(r"<\s*([A-Za-z][\w:-]*)", tag)
+    tag_name = (
+        tag_name_match.group(1).lower() if tag_name_match else ""
+    )
+    lower_tag = tag.lower()
+    if tag_name == "meta":
+        return "Metadata elements are non-functional infrastructure."
+    if tag_name == "link" and re.search(
+        r"\brel\s*=\s*[\"'][^\"']*(?:stylesheet|icon|favicon)[^\"']*[\"']",
+        lower_tag,
+    ):
+        return "Stylesheet, favicon, and icon links are excluded infrastructure."
+    for attribute in INFRASTRUCTURE_ATTRIBUTES:
+        match = re.search(
+            rf"\b{attribute}\s*=\s*([\"'])(?P<value>.*?)(?:\1)",
+            tag,
+            re.IGNORECASE | re.DOTALL,
+        )
+        if match:
+            value_start = tag_start + match.start("value")
+            value_end = tag_start + match.end("value")
+            if value_start <= start <= value_end:
+                return f"DOM attribute {attribute!r} is infrastructure metadata."
+    style_match = re.search(
+        r"\bstyle\s*=\s*([\"'])(?P<value>.*?)(?:\1)",
+        tag,
+        re.IGNORECASE | re.DOTALL,
+    )
+    if style_match:
+        value_start = tag_start + style_match.start("value")
+        value_end = tag_start + style_match.end("value")
+        if value_start <= start <= value_end:
+            return "Inline style mutations are purely cosmetic by default."
+    if tag_name in {"link", "script", "img", "source"}:
+        url_match = re.search(
+            r"\b(?:href|src)\s*=\s*([\"'])(?P<value>.*?)(?:\1)",
+            tag,
+            re.IGNORECASE | re.DOTALL,
+        )
+        if url_match and EXTERNAL_RESOURCE_RE.search(
+            url_match.group("value").strip()
+        ):
+            return "Unrelated external resource URLs are excluded infrastructure."
+    if EXTERNAL_RESOURCE_RE.search(original.strip("\"' ")):
+        return "Unrelated external resource URLs are excluded infrastructure."
+    return ""
+
+
 def discover_mutations(
     source_dir: Path,
     *,
@@ -629,6 +721,7 @@ def discover_mutations(
                 if (
                     key in seen
                     or candidate.original_code == candidate.replacement_code
+                    or nonfunctional_exclusion_reason(candidate, source)
                 ):
                     continue
                 seen.add(key)
@@ -649,6 +742,88 @@ def discover_mutations(
     )
     rng.shuffle(selected)
     selected = selected[: max(0, max_total_mutants)]
+    return [
+        replace(candidate, mutant_id=f"M{index:04d}")
+        for index, candidate in enumerate(selected, start=1)
+    ]
+
+
+def discover_business_mutations(
+    source_dir: Path,
+    *,
+    test_scope: dict[str, Any],
+    include_patterns: Sequence[str],
+    exclude_patterns: Sequence[str],
+    max_mutants_per_file: int,
+    max_total_mutants: int,
+    seed: int,
+    excluded_keys: set[tuple[str, int, int, str]] | None = None,
+) -> list[MutationCandidate]:
+    """Prefer distinct requirement-linked candidates from a broad stable pool."""
+    from e2e_eval.dynamic.mutation_operators import default_operator_registry
+
+    if max_total_mutants <= 0:
+        return []
+    pool = discover_mutations(
+        source_dir,
+        operators=default_operator_registry().for_families(),
+        include_patterns=include_patterns,
+        exclude_patterns=exclude_patterns,
+        max_mutants_per_file=max(
+            max_mutants_per_file, max_total_mutants * 8
+        ),
+        max_total_mutants=max_total_mutants * 20,
+        seed=seed,
+    )
+    excluded = excluded_keys or set()
+    source_cache: dict[str, str] = {}
+    ranked: list[tuple[int, float, MutationCandidate]] = []
+    rng = random.Random(seed)
+    for candidate in pool:
+        key = (
+            candidate.source_file,
+            candidate.location["start_offset"],
+            candidate.location["end_offset"],
+            candidate.operator,
+        )
+        if key in excluded:
+            continue
+        if candidate.source_file not in source_cache:
+            source_cache[candidate.source_file] = (
+                source_dir / candidate.source_file
+            ).read_text(encoding="utf-8", errors="replace")
+        relevance = classify_mutant_relevance(
+            candidate,
+            source_cache[candidate.source_file],
+            test_scope,
+        )
+        priority = {
+            "RELEVANT": 0,
+            "UNCERTAIN": 1,
+            "OUT_OF_SCOPE": 2,
+        }.get(relevance["scope_relation"], 3)
+        ranked.append((priority, rng.random(), candidate))
+    ranked.sort(key=lambda item: (
+        item[0],
+        item[2].source_file,
+        item[2].location["line"],
+        item[1],
+    ))
+
+    selected: list[MutationCandidate] = []
+    seen_operators: set[str] = set()
+    for prefer_distinct in (True, False):
+        for _, _, candidate in ranked:
+            if candidate in selected:
+                continue
+            if prefer_distinct and candidate.operator in seen_operators:
+                continue
+            selected.append(candidate)
+            seen_operators.add(candidate.operator)
+            if len(selected) >= max_total_mutants:
+                break
+        if len(selected) >= max_total_mutants:
+            break
     return [
         replace(candidate, mutant_id=f"M{index:04d}")
         for index, candidate in enumerate(selected, start=1)
@@ -762,23 +937,38 @@ def validate_mutated_project(
 
 
 def verdict_for_execution(execution_status: str) -> str:
-    if execution_status == "PASSED":
-        return "SURVIVED"
-    if execution_status == "TEST_FAILED":
-        return "KILLED"
-    return "INVALID"
+    from e2e_eval.dynamic.mutation_runner import verdict_for_status
+
+    return verdict_for_status(execution_status)
 
 
 def calculate_mutation_metrics(
     records: Sequence[MutationRecord | dict[str, Any]],
 ) -> dict[str, Any]:
-    def value(record: MutationRecord | dict[str, Any], key: str) -> Any:
-        return record.get(key) if isinstance(record, dict) else getattr(record, key)
+    def value(
+        record: MutationRecord | dict[str, Any],
+        key: str,
+        default: Any = None,
+    ) -> Any:
+        return (
+            record.get(key, default)
+            if isinstance(record, dict)
+            else getattr(record, key, default)
+        )
 
     generated = len(records)
-    killed = sum(value(item, "execution_verdict") == "KILLED" for item in records)
-    survived = sum(value(item, "execution_verdict") == "SURVIVED" for item in records)
+    included = [
+        item for item in records
+        if bool(value(item, "included_in_raw_score", True))
+    ]
+    killed = sum(value(item, "execution_verdict") == "KILLED" for item in included)
+    survived = sum(value(item, "execution_verdict") == "SURVIVED" for item in included)
     invalid = sum(value(item, "execution_verdict") == "INVALID" for item in records)
+    timeout = sum(value(item, "execution_verdict") == "TIMEOUT" for item in records)
+    execution_error = sum(
+        value(item, "execution_verdict") == "EXECUTION_ERROR"
+        for item in records
+    )
     valid = killed + survived
     score = round(100.0 * killed / valid, 2) if valid else None
     per_operator: dict[str, dict[str, Any]] = {}
@@ -793,18 +983,28 @@ def calculate_mutation_metrics(
                 "killed_mutants": 0,
                 "survived_mutants": 0,
                 "invalid_mutants": 0,
+                "timeout_mutants": 0,
+                "execution_error_mutants": 0,
+                "excluded_from_score": 0,
                 "mutation_score": None,
             },
         )
         bucket["total_mutants_generated"] += 1
-        if verdict == "KILLED":
+        score_included = bool(value(record, "included_in_raw_score", True))
+        if verdict in {"KILLED", "SURVIVED"} and not score_included:
+            bucket["excluded_from_score"] += 1
+        elif verdict == "KILLED":
             bucket["killed_mutants"] += 1
             bucket["valid_mutants"] += 1
         elif verdict == "SURVIVED":
             bucket["survived_mutants"] += 1
             bucket["valid_mutants"] += 1
-        else:
+        elif verdict == "INVALID":
             bucket["invalid_mutants"] += 1
+        elif verdict == "TIMEOUT":
+            bucket["timeout_mutants"] += 1
+        else:
+            bucket["execution_error_mutants"] += 1
     for bucket in per_operator.values():
         denominator = bucket["valid_mutants"]
         bucket["mutation_score"] = (
@@ -817,8 +1017,18 @@ def calculate_mutation_metrics(
         "killed_mutants": killed,
         "survived_mutants": survived,
         "invalid_mutants": invalid,
+        "timeout_mutants": timeout,
+        "execution_error_mutants": execution_error,
         "mutation_score": score,
         "per_operator_breakdown": per_operator,
+        # Additive agentic-pipeline schema; historical names above remain stable.
+        "total_mutants": generated,
+        "killed": killed,
+        "survived": survived,
+        "invalid": invalid,
+        "timeout": timeout,
+        "execution_error": execution_error,
+        "operator_stats": per_operator,
     }
 
 
@@ -883,6 +1093,19 @@ def classify_mutant_relevance(
         location = mutant.location
         original = mutant.original_code
         source_file = mutant.source_file
+    infrastructure_reason = nonfunctional_exclusion_reason(mutant, source)
+    if infrastructure_reason:
+        return {
+            "scope_relation": "OUT_OF_SCOPE",
+            "scope_reason": infrastructure_reason,
+            "source_scope": {
+                "data_testids": [],
+                "indexed_identifiers": [],
+                "nearby_literals": [],
+                "excerpt": "",
+            },
+            "exclusion_reason": infrastructure_reason,
+        }
     start = int(location.get("start_offset", 0))
     end = int(location.get("end_offset", start))
     context = source[max(0, start - 240): min(len(source), end + 240)]
@@ -917,6 +1140,9 @@ def classify_mutant_relevance(
             "scope_relation": "UNCERTAIN",
             "scope_reason": "The scenario exposes no concrete target or literal.",
             "source_scope": source_scope,
+            "exclusion_reason": (
+                "Requirement relevance could not be established deterministically."
+            ),
         }
 
     target_ids = set(test_scope.get("data_testids", []))
@@ -928,6 +1154,7 @@ def classify_mutant_relevance(
             "scope_relation": "RELEVANT",
             "scope_reason": "Nearby source identifiers match the active scenario target.",
             "source_scope": source_scope,
+            "exclusion_reason": "",
         }
 
     target_families = {
@@ -947,6 +1174,9 @@ def classify_mutant_relevance(
                 "scenario-targeted identifier family."
             ),
             "source_scope": source_scope,
+            "exclusion_reason": (
+                "Different indexed member from the active scenario target."
+            ),
         }
 
     normalized_original = re.sub(
@@ -965,6 +1195,7 @@ def classify_mutant_relevance(
             "scope_relation": "RELEVANT",
             "scope_reason": "The mutated literal is explicitly used by the scenario.",
             "source_scope": source_scope,
+            "exclusion_reason": "",
         }
 
     if (target_ids or target_indexed) and (source_ids or source_index_set):
@@ -972,28 +1203,78 @@ def classify_mutant_relevance(
             "scope_relation": "OUT_OF_SCOPE",
             "scope_reason": "Nearby source identifiers do not match the scenario target.",
             "source_scope": source_scope,
+            "exclusion_reason": (
+                "Nearby source identifiers do not match the active scenario."
+            ),
         }
     return {
         "scope_relation": "UNCERTAIN",
         "scope_reason": "No reliable target-level link or exclusion was found.",
         "source_scope": source_scope,
+        "exclusion_reason": (
+            "Requirement relevance could not be established deterministically."
+        ),
     }
 
 
 def calculate_relevant_mutation_metrics(
     records: Sequence[MutationRecord | dict[str, Any]],
 ) -> dict[str, Any]:
-    def value(record: MutationRecord | dict[str, Any], key: str) -> Any:
-        return record.get(key) if isinstance(record, dict) else getattr(record, key)
+    def value(
+        record: MutationRecord | dict[str, Any],
+        key: str,
+        default: Any = None,
+    ) -> Any:
+        return (
+            record.get(key, default)
+            if isinstance(record, dict)
+            else getattr(record, key, default)
+        )
 
     relevant = [
         record for record in records
-        if value(record, "scope_relation") == "RELEVANT"
+        if bool(
+            value(
+                record,
+                "included_in_relevant_score",
+                value(record, "scope_relation") == "RELEVANT",
+            )
+        )
     ]
     killed = sum(value(item, "execution_verdict") == "KILLED" for item in relevant)
     survived = sum(value(item, "execution_verdict") == "SURVIVED" for item in relevant)
     invalid = sum(value(item, "execution_verdict") == "INVALID" for item in relevant)
     valid = killed + survived
+    relevance_stats: dict[str, dict[str, int]] = {}
+    for relation in ("RELEVANT", "OUT_OF_SCOPE", "UNCERTAIN"):
+        matching = [
+            item for item in records
+            if value(item, "scope_relation") == relation
+        ]
+        relevance_stats[relation] = {
+            verdict.lower(): sum(
+                value(item, "execution_verdict") == verdict
+                for item in matching
+            )
+            for verdict in (
+                "KILLED", "SURVIVED", "INVALID", "TIMEOUT", "EXECUTION_ERROR"
+            )
+        }
+        relevance_stats[relation]["total"] = len(matching)
+        relevance_stats[relation]["included_in_raw_score"] = sum(
+            bool(value(item, "included_in_raw_score", True))
+            for item in matching
+        )
+        relevance_stats[relation]["included_in_relevant_score"] = sum(
+            bool(
+                value(
+                    item,
+                    "included_in_relevant_score",
+                    value(item, "scope_relation") == "RELEVANT",
+                )
+            )
+            for item in matching
+        )
     return {
         "mutation_scope_status": (
             "SCOPE_AWARE" if valid else "NO_RELEVANT_MUTANTS"
@@ -1023,6 +1304,7 @@ def calculate_relevant_mutation_metrics(
             and value(item, "execution_verdict") == "SURVIVED"
             for item in records
         ),
+        "requirement_relevance_breakdown": relevance_stats,
     }
 
 
@@ -1068,14 +1350,81 @@ def run_mutation_campaign(
     )
     keep_workspaces = bool(state.get("mutation_keep_workspaces", False))
 
-    candidates = discover_mutations(
+    proposals = state.get("mutation_proposals") or []
+    planning_status = str(
+        state.get("mutation_planning_status", "NOT_RUN")
+    )
+    test_scope = extract_test_scope(
+        str(state.get("excutable_test_test_case", "")), test_code
+    )
+    proposal_lifecycle: list[dict[str, Any]] = []
+    candidates: list[MutationCandidate] = []
+    if planning_status == "PLANNED" and proposals:
+        from e2e_eval.dynamic.mutation_operators import (
+            select_proposed_candidates_with_lifecycle,
+        )
+
+        candidates, proposal_lifecycle = (
+            select_proposed_candidates_with_lifecycle(
+            reference_dir,
+            proposals,
+            max_total_mutants=total_limit,
+        ))
+    selected_keys = {
+        (
+            candidate.source_file,
+            candidate.location["start_offset"],
+            candidate.location["end_offset"],
+            candidate.operator,
+        )
+        for candidate in candidates
+    }
+    fallback = discover_business_mutations(
         reference_dir,
+        test_scope=test_scope,
         include_patterns=include_patterns,
         exclude_patterns=exclude_patterns,
         max_mutants_per_file=per_file_limit,
-        max_total_mutants=total_limit,
+        max_total_mutants=max(0, total_limit - len(candidates)),
         seed=seed,
+        excluded_keys=selected_keys,
     )
+    from e2e_eval.dynamic.mutation_operators import default_operator_registry
+
+    fallback_registry = default_operator_registry()
+    for index, candidate in enumerate(fallback, start=1):
+        proposal_id = f"F{index:04d}"
+        candidates.append(replace(
+            candidate,
+            proposal_id=proposal_id,
+            candidate_source="deterministic_fallback",
+        ))
+        proposal_lifecycle.append({
+            "proposal_id": proposal_id,
+            "origin": "deterministic_fallback",
+            "mutation_target": candidate.mutation_description,
+            "source_file": candidate.source_file,
+            "operator_family": fallback_registry.family_for_operator(
+                candidate.operator
+            ),
+            "status": "GENERATED",
+            "status_history": ["PROPOSED", "ACCEPTED", "GENERATED"],
+            "rejection_reason": "",
+            "mutant_id": "",
+        })
+    candidates = [
+        replace(candidate, mutant_id=f"M{index:04d}")
+        for index, candidate in enumerate(candidates, start=1)
+    ]
+    id_by_proposal = {
+        candidate.proposal_id: candidate.mutant_id
+        for candidate in candidates
+    }
+    for lifecycle in proposal_lifecycle:
+        if lifecycle["status"] == "GENERATED":
+            lifecycle["mutant_id"] = id_by_proposal.get(
+                lifecycle["proposal_id"], ""
+            )
     logger.info(
         "Mutation campaign case=%s candidates=%d seed=%d max_total=%d",
         state.get("case_uid", "unknown"),
@@ -1090,9 +1439,71 @@ def run_mutation_campaign(
             "killed_mutants": 0,
             "survived_mutants": 0,
             "invalid_mutants": 0,
+            "timeout_mutants": 0,
+            "execution_error_mutants": 0,
             "mutation_score": None,
             "per_operator_breakdown": {},
+            "total_mutants": 0,
+            "killed": 0,
+            "survived": 0,
+            "invalid": 0,
+            "timeout": 0,
+            "execution_error": 0,
+            "operator_stats": {},
         }
+        empty_relevance = {
+            relation: {
+                "killed": 0,
+                "survived": 0,
+                "invalid": 0,
+                "timeout": 0,
+                "execution_error": 0,
+                "total": 0,
+                "included_in_raw_score": 0,
+                "included_in_relevant_score": 0,
+            }
+            for relation in ("RELEVANT", "OUT_OF_SCOPE", "UNCERTAIN")
+        }
+        case_uid = re.sub(
+            r"[^A-Za-z0-9_.-]+", "_",
+            str(state.get("case_uid", "case")),
+        )
+        report_dir = Path(
+            state.get("mutation_report_root")
+            or cleanup_root.parent / "results"
+        ) / case_uid
+        report_dir.mkdir(parents=True, exist_ok=True)
+        report_path = report_dir / report_filename
+        report_path.write_text(
+            json.dumps(
+                sanitize_export_payload({
+                    **empty_metrics,
+                    "requirement_relevance_breakdown": empty_relevance,
+                    "planning": {
+                        "status": planning_status,
+                        "proposals": proposals,
+                        "proposal_lifecycle": proposal_lifecycle,
+                        "candidate_sources": {},
+                        "detail": state.get(
+                            "mutation_planning_detail", ""
+                        ),
+                    },
+                    "baseline": {
+                        "execution_status": state.get("execution_status"),
+                        "command_run": state.get(
+                            "execution_command", ""
+                        ),
+                        "artifact_dir": state.get(
+                            "execution_artifact_dir", ""
+                        ),
+                    },
+                    "records": [],
+                }),
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
         return {
             "mutation_status": "NO_MUTANTS",
             **empty_metrics,
@@ -1111,74 +1522,41 @@ def run_mutation_campaign(
             "surviving_mutants": [],
             "killed_mutant_report": [],
             "mutation_records": [],
-            "mutation_report_path": "",
+            "mutation_proposal_lifecycle": proposal_lifecycle,
+            "mutation_candidate_sources": {},
+            "requirement_relevance_breakdown": empty_relevance,
+            "mutation_report_path": str(report_path),
             "mutation_detail": "No applicable general mutation candidates found.",
         }
 
+    from e2e_eval.dynamic.mutation_runner import run_single_mutant
+
     records: list[MutationRecord] = []
     for mutant in candidates:
-        prepared = create_workspace(
-            state,
-            f"{run_namespace}_mutant_{mutant.mutant_id}",
-            reference_dir=reference_dir,
-        )
+        prepared = None
         try:
-            apply_mutation(prepared.app_dir, mutant)
-            validation = validate_mutated_project(
-                prepared.app_dir,
-                mutant,
+            prepared = create_workspace(
+                state,
+                f"{run_namespace}_mutant_{mutant.mutant_id}",
+                reference_dir=reference_dir,
+            )
+            record = run_single_mutant(
+                state=state,
+                patch=mutant,
+                prepared=prepared,
+                test_code=test_code,
                 timeout_seconds=timeout,
                 project_validation_command=project_validation_command,
+                apply_patch=apply_mutation,
+                validate_project=validate_mutated_project,
+                write_test_project=write_test_project,
+                run_test=run_test,
             )
-            if not validation["valid"]:
-                records.append(MutationRecord(
-                    **asdict(mutant),
-                    execution_verdict="INVALID",
-                    execution_status=validation["status"],
-                    stdout_summary="",
-                    stderr_summary=validation["failure_reason"],
-                    command_run="; ".join(validation["commands"]),
-                    environment_metadata={},
-                    validation_result=validation,
-                    duration_seconds=0.0,
-                    artifact_dir=str(prepared.artifact_dir),
-                ))
-                logger.info(
-                    "Mutation case=%s mutant=%s verdict=INVALID status=%s",
-                    state.get("case_uid", "unknown"),
-                    mutant.mutant_id,
-                    validation["status"],
-                )
-                continue
-
-            write_test_project(
-                prepared,
-                str(state["excutable_test_test_case"]),
-                test_code,
-            )
-            execution = run_test(prepared, state, timeout)
-            execution_status = str(execution.get("execution_status", "HARNESS_ERROR"))
-            verdict = verdict_for_execution(execution_status)
-            records.append(MutationRecord(
-                **asdict(mutant),
-                execution_verdict=verdict,
-                execution_status=execution_status,
-                stdout_summary=str(execution.get("execution_stdout_tail", "")),
-                stderr_summary=str(execution.get("execution_stderr_tail", "")),
-                command_run=str(execution.get("execution_command", "")),
-                environment_metadata=dict(
-                    execution.get("execution_environment", {})
-                ),
-                validation_result=validation,
-                duration_seconds=float(
-                    execution.get("execution_duration_seconds", 0.0)
-                ),
-                artifact_dir=str(prepared.artifact_dir),
-            ))
+            records.append(MutationRecord(**record))
         except Exception as exc:
             records.append(MutationRecord(
                 **asdict(mutant),
-                execution_verdict="INVALID",
+                execution_verdict="EXECUTION_ERROR",
                 execution_status="MUTATION_HARNESS_ERROR",
                 stdout_summary="",
                 stderr_summary=repr(exc),
@@ -1190,10 +1568,12 @@ def run_mutation_campaign(
                     "failure_reason": repr(exc),
                 },
                 duration_seconds=0.0,
-                artifact_dir=str(getattr(prepared, "artifact_dir", "")),
+                artifact_dir=str(
+                    getattr(prepared, "artifact_dir", "")
+                ),
             ))
         finally:
-            if not keep_workspaces:
+            if not keep_workspaces and prepared is not None:
                 _safe_cleanup(prepared.workspace, cleanup_root)
         logger.info(
             "Mutation case=%s mutant=%s verdict=%s status=%s",
@@ -1202,6 +1582,24 @@ def run_mutation_campaign(
             records[-1].execution_verdict,
             records[-1].execution_status,
         )
+        lifecycle = next(
+            (
+                item for item in proposal_lifecycle
+                if item.get("proposal_id") == records[-1].proposal_id
+            ),
+            None,
+        )
+        if lifecycle is not None:
+            if records[-1].execution_verdict == "INVALID":
+                lifecycle["status"] = "SKIPPED"
+                lifecycle["status_history"].append("SKIPPED")
+                lifecycle["rejection_reason"] = (
+                    records[-1].validation_result.get("failure_reason")
+                    or records[-1].execution_status
+                )
+            else:
+                lifecycle["status"] = "EXECUTED"
+                lifecycle["status_history"].append("EXECUTED")
 
     test_scope = extract_test_scope(
         str(state.get("excutable_test_test_case", "")), test_code
@@ -1218,10 +1616,41 @@ def run_mutation_campaign(
         record.scope_relation = relevance["scope_relation"]
         record.scope_reason = relevance["scope_reason"]
         record.source_scope = relevance["source_scope"]
+        policy_exclusion = nonfunctional_exclusion_reason(
+            record, source_cache[record.source_file]
+        )
+        scoreable_verdict = record.execution_verdict in {
+            "KILLED", "SURVIVED"
+        }
+        record.included_in_raw_score = (
+            scoreable_verdict and not policy_exclusion
+        )
+        record.included_in_relevant_score = (
+            record.included_in_raw_score
+            and record.scope_relation == "RELEVANT"
+        )
+        if policy_exclusion:
+            record.exclusion_reason = policy_exclusion
+        elif not scoreable_verdict:
+            record.exclusion_reason = (
+                f"Verdict {record.execution_verdict} is excluded from scoring."
+            )
+        elif not record.included_in_relevant_score:
+            record.exclusion_reason = (
+                relevance.get("exclusion_reason")
+                or record.scope_reason
+            )
+        else:
+            record.exclusion_reason = ""
 
     metrics = calculate_mutation_metrics(records)
     scope_metrics = calculate_relevant_mutation_metrics(records)
     serialized = [asdict(record) for record in records]
+    candidate_sources: dict[str, int] = {}
+    for record in records:
+        candidate_sources[record.candidate_source] = (
+            candidate_sources.get(record.candidate_source, 0) + 1
+        )
     survivors = [
         record for record in serialized
         if record["execution_verdict"] == "SURVIVED"
@@ -1241,6 +1670,14 @@ def run_mutation_campaign(
             "exclude_patterns": exclude_patterns,
             "mutant_timeout_seconds": timeout,
             "project_validation_command": project_validation_command,
+            "planning_status": planning_status,
+        },
+        "planning": {
+            "status": planning_status,
+            "proposals": proposals,
+            "proposal_lifecycle": proposal_lifecycle,
+            "candidate_sources": candidate_sources,
+            "detail": state.get("mutation_planning_detail", ""),
         },
         "environment_metadata": {
             "python_version": sys.version,
@@ -1257,15 +1694,18 @@ def run_mutation_campaign(
         "test_scope": test_scope,
         "records": serialized,
         "surviving_mutant_report": survivors,
+        "requirement_relevant_survivors": [],
     }
     report_path.write_text(
-        json.dumps(report, ensure_ascii=False, indent=2),
+        json.dumps(
+            sanitize_export_payload(report),
+            ensure_ascii=False,
+            indent=2,
+        ),
         encoding="utf-8",
     )
 
-    timed_out = sum(
-        record.execution_status == "TIMEOUT" for record in records
-    )
+    timed_out = metrics["timeout_mutants"]
     killed_descriptions = [
         f"{item.mutant_id} {item.operator} {item.source_file}:{item.location['line']}"
         for item in records if item.execution_verdict == "KILLED"
@@ -1303,7 +1743,11 @@ def run_mutation_campaign(
         "mutants_killed": metrics["killed_mutants"],
         "mutants_survived": metrics["survived_mutants"],
         "mutants_timeout": timed_out,
-        "mutants_inconclusive": metrics["invalid_mutants"],
+        "mutants_inconclusive": (
+            metrics["invalid_mutants"]
+            + metrics["timeout_mutants"]
+            + metrics["execution_error_mutants"]
+        ),
         **scope_metrics,
         "relevant_mutants_timeout": timed_out,
         "test_scope": test_scope,
@@ -1314,9 +1758,13 @@ def run_mutation_campaign(
         "scope_out_of_scope_surviving_mutants": out_of_scope_survivor_descriptions,
         "scope_uncertain_surviving_mutants": uncertain_survivor_descriptions,
         "mutation_records": serialized,
+        "mutation_proposal_lifecycle": proposal_lifecycle,
+        "mutation_candidate_sources": candidate_sources,
         "surviving_mutant_report": survivors,
+        "requirement_relevant_survivors": [],
         "mutation_detail": (
-            "General source mutation score excludes INVALID mutants. "
+            "General source mutation score excludes INVALID, TIMEOUT, and "
+            "EXECUTION_ERROR mutants. "
             f"Raw score={metrics['killed_mutants']}/{metrics['valid_mutants']}*100; "
             f"scenario-relevant score={scope_metrics['relevant_mutation_score']}."
         ),

@@ -11,7 +11,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from e2e_eval.config import EvaluationConfig
-from e2e_eval.reporting import write_evaluation_reports
+from e2e_eval.reporting import (
+    json_cell,
+    summarize_proposal_lifecycle,
+    write_evaluation_reports,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -37,11 +41,15 @@ def run_local_dynamic_only(config: EvaluationConfig) -> None:
     import pandas as pd
 
     from agents import syntax_linter_agent
+    from coverage_agent import coverage_agent
     from dynamic_agents import (
         dynamic_coverage_agent,
         execution_agent,
+        mutation_analysis_agent,
         mutation_agent,
+        mutation_planning_agent,
     )
+    from e2e_eval.dynamic.branch_relevance import analyze_branch_relevance
 
     source = pd.read_csv(config.input_file)
     output_rows = []
@@ -54,12 +62,24 @@ def run_local_dynamic_only(config: EvaluationConfig) -> None:
         execution = execution_agent(state)
         state.update(execution)
         result.update(execution)
-        coverage = dynamic_coverage_agent(state)
-        state.update(coverage)
-        result.update(coverage)
+        bdd_coverage = dynamic_coverage_agent(state)
+        state.update(bdd_coverage)
+        result.update(bdd_coverage)
+        source_coverage = coverage_agent(state)
+        state.update(source_coverage)
+        result.update(source_coverage)
+        branch_analysis = analyze_branch_relevance(state, invoke_model=None)
+        state.update(branch_analysis)
+        result.update(branch_analysis)
+        planning = mutation_planning_agent(state)
+        state.update(planning)
+        result.update(planning)
         mutation = mutation_agent(state)
         state.update(mutation)
         result.update(mutation)
+        analysis = mutation_analysis_agent(state)
+        state.update(analysis)
+        result.update(analysis)
         output_rows.append({
             "source_origin": result.get("source_origin", ""),
             "input_source_project_dir": result.get(
@@ -84,8 +104,45 @@ def run_local_dynamic_only(config: EvaluationConfig) -> None:
             "dynamic_coverage_detail": result.get(
                 "dynamic_coverage_detail", ""
             ),
+            "coverage_adapter": result.get("coverage_adapter", ""),
+            "coverage_source_language": result.get(
+                "coverage_source_language", "unknown"
+            ),
+            "coverage_instrumentation_status": result.get(
+                "coverage_instrumentation_status", "NOT_ATTEMPTED"
+            ),
+            "coverage_failure_reason": result.get(
+                "coverage_failure_reason", ""
+            ),
+            "branch_coverage_percent": result.get(
+                "branch_coverage_percent"
+            ),
+            "branch_coverage_included_in_scoring": (
+                result.get("execution_status") == "PASSED"
+                and result.get("branch_coverage_score") is not None
+            ),
             "dynamic_mutation_status": result.get(
                 "mutation_status", "NOT_RUN"
+            ),
+            "dynamic_mutation_planning_status": result.get(
+                "mutation_planning_status", "NOT_RUN"
+            ),
+            "dynamic_mutation_candidate_sources": json_cell(
+                result.get("mutation_candidate_sources", {})
+            ),
+            "dynamic_mutation_proposals": json_cell(
+                result.get("mutation_proposals", [])
+            ),
+            "dynamic_mutation_proposal_lifecycle": json_cell(
+                result.get("mutation_proposal_lifecycle", [])
+            ),
+            "dynamic_mutation_proposal_lifecycle_summary": json_cell(
+                summarize_proposal_lifecycle(
+                    result.get("mutation_proposal_lifecycle", [])
+                )
+            ),
+            "dynamic_mutation_analysis_status": result.get(
+                "mutation_analysis_status", "NOT_RUN"
             ),
             "dynamic_mutation_score": result.get("mutation_score"),
             "dynamic_relevant_mutation_score": result.get(
@@ -97,12 +154,47 @@ def run_local_dynamic_only(config: EvaluationConfig) -> None:
             "dynamic_total_mutants_generated": result.get(
                 "total_mutants_generated", 0
             ),
+            "dynamic_mutants_total": result.get(
+                "mutants_total",
+                result.get("total_mutants_generated", 0),
+            ),
             "dynamic_valid_mutants": result.get("valid_mutants", 0),
             "dynamic_killed_mutants_count": result.get("killed_mutants", 0),
             "dynamic_survived_mutants_count": result.get(
                 "survived_mutants", 0
             ),
             "dynamic_invalid_mutants": result.get("invalid_mutants", 0),
+            "dynamic_timeout_mutants": result.get("timeout_mutants", 0),
+            "dynamic_execution_error_mutants": result.get(
+                "execution_error_mutants", 0
+            ),
+            "dynamic_operator_stats": json_cell(
+                result.get("operator_stats", {})
+            ),
+            "dynamic_per_operator_breakdown": json_cell(
+                result.get(
+                    "per_operator_breakdown",
+                    result.get("operator_stats", {}),
+                )
+            ),
+            "dynamic_requirement_relevance_breakdown": json_cell(
+                result.get("requirement_relevance_breakdown", {})
+            ),
+            "dynamic_requirement_relevant_survivors": json_cell(
+                result.get("requirement_relevant_survivors", [])
+            ),
+            "dynamic_scope_relevant_survivors": json_cell(
+                result.get("scope_relevant_surviving_mutants", [])
+            ),
+            "dynamic_scope_uncertain_survivors": json_cell(
+                result.get("scope_uncertain_surviving_mutants", [])
+            ),
+            "dynamic_scope_out_of_scope_survivors": json_cell(
+                result.get("scope_out_of_scope_surviving_mutants", [])
+            ),
+            "dynamic_mutation_records": json_cell(
+                result.get("mutation_records", [])
+            ),
             "dynamic_mutation_report_path": result.get(
                 "mutation_report_path", ""
             ),
@@ -125,6 +217,8 @@ def main() -> int:
         enable_dynamic=True,
         enable_coverage=args.coverage,
         enable_mutation=args.mutation,
+        enable_mutation_planning=not args.local_dynamic_only,
+        enable_mutation_analysis=not args.local_dynamic_only,
         max_mutants=args.max_mutants,
         reference_network_enabled=args.network,
     )

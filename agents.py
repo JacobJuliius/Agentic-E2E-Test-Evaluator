@@ -33,8 +33,9 @@ llm = ChatGoogleGenerativeAI(
 # ==========================================
 
 # One process-level guard. The pipeline is serial, so no lock is required.
-# With all optional LLM nodes enabled: Requirement + Assertion + Hallucination +
-# Maintainability + Dynamic Analyst + Critic + Refiner = 7 calls per valid case.
+# With all optional LLM nodes enabled: Requirement + Assertion + Hallucination
+# + Maintainability + Branch Relevance + Dynamic Analyst + Critic + Refiner
+# = at most 8 calls per valid case.
 # Conditional routing keeps typical batches well below quota; 470 leaves recovery margin below 500 RPD.
 LLM_RPD_SOFT_LIMIT = int(__import__("os").getenv("E2E_LLM_RPD_SOFT_LIMIT", "470"))
 _llm_successful_calls = 0
@@ -578,6 +579,28 @@ def _as_list(value) -> list:
     return value if isinstance(value, list) else []
 
 
+def branch_coverage_analysis_agent(state: dict) -> dict:
+    """LLM adapter over the validated branch-relevance interpreter."""
+    from e2e_eval.dynamic.branch_relevance import analyze_branch_relevance
+
+    def invoke_model(system_prompt: str, context: str) -> str:
+        response = invoke_with_retry(
+            [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=context),
+            ],
+            agent_name="Branch Coverage Agent",
+        )
+        return clean_json_output(response)
+
+    return analyze_branch_relevance(state, invoke_model)
+
+
+# ==========================================
+# Branch Coverage Agent (LLM relevance only; measurements stay deterministic)
+# ==========================================
+
+
 def _dynamic_analysis_skip(status: str, detail: str) -> dict:
     return {
         "dynamic_analysis_status": status,
@@ -881,6 +904,7 @@ def consensus_agent(state: dict) -> dict:
             "static_overall_score": 0.0,
             "overall_score": 0.0,
             "score_mode": "SYNTAX_FAILED",
+            "branch_coverage_included_in_scoring": False,
             "final_reasoning": "Fatal error: generated code does not parse.",
         }
 
@@ -908,12 +932,19 @@ def consensus_agent(state: dict) -> dict:
     raw_mutation = state.get("mutation_score")
     scope_status = str(state.get("mutation_scope_status", "NO_DYNAMIC_SCOPE_EVIDENCE"))
     relevant_mutation = _as_number(state.get("relevant_mutation_score"))
+    branch_score = _as_number(state.get("branch_coverage_score"))
 
     if execution_status == "PASSED":
         components: list[tuple[float, float, str]] = [
             (static_score, 0.60, "STATIC"),
             (100.0, 0.15, "EXECUTION"),
         ]
+        if branch_score is not None:
+            components.append((
+                max(0.0, min(100.0, branch_score)),
+                0.15,
+                "BRANCH_COVERAGE",
+            ))
         if scope_status in {"SCOPE_AWARE", "GENERAL_MUTATION_SET"} and relevant_mutation is not None:
             label = (
                 "SCOPE_AWARE_MUTATION"
@@ -940,6 +971,7 @@ def consensus_agent(state: dict) -> dict:
         f"(assertion={assertion_penalty}, hallucination={hallucination_penalty}, smells={smell_penalty}, "
         f"maintainability={maintainability_penalty}, no_assertion={no_assertion_penalty}). "
         f"Execution={execution_status}. BDD step-execution diagnostic={bdd_diagnostic} (not directly scored). "
+        f"Tool-derived branch coverage={branch_score}. "
         f"Raw mutation={raw_mutation} is retained for suite aggregation; scope-aware test mutation="
         f"{scope_status}:{relevant_mutation}. Mode={mode}. "
         f"Dynamic analyst={analyst_label}: {analyst_summary} Critic caveat={caveat}."
@@ -949,6 +981,9 @@ def consensus_agent(state: dict) -> dict:
         "static_overall_score": round(static_score, 2),
         "overall_score": round(max(0.0, min(100.0, overall)), 2),
         "score_mode": mode,
+        "branch_coverage_included_in_scoring": (
+            execution_status == "PASSED" and branch_score is not None
+        ),
         "final_reasoning": reasoning,
     }
 

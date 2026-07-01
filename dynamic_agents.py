@@ -32,6 +32,7 @@ from e2e_eval.runtime.utils import (
     safe_name as _safe_name,
     tail as _tail,
 )
+from e2e_eval.utils.paths import sanitize_export_payload
 from reference_resolver import resolve_project_source, resolve_reference_source
 
 DEFAULT_EXECUTION_TIMEOUT = int(os.getenv("E2E_EXECUTION_TIMEOUT_SECONDS", "90"))
@@ -271,9 +272,12 @@ def after_scenario(context, scenario):
 
 
 def _chrome_harness_shim() -> str:
-    """Minimal harness that preserves test actions/assertions while making them runnable."""
+    """Browser setup plus optional JavaScript coverage collection."""
     return r'''# --- E2E evaluator harness shim: browser setup only ---
+import json as _e2e_json
 import os as _e2e_os
+from pathlib import Path as _E2EPath
+from urllib.parse import urlsplit as _e2e_urlsplit
 from selenium import webdriver as _e2e_webdriver
 from selenium.webdriver.chrome.options import Options as _E2EChromeOptions
 
@@ -294,11 +298,45 @@ def _e2e_managed_chrome(*args, **kwargs):
 
     def _e2e_get(url, *get_args, **get_kwargs):
         _normalized = str(url).replace("\\", "/").strip()
-        if _normalized in {"file://index.html", "file:///index.html", "index.html"}:
+        _parsed = _e2e_urlsplit(_normalized)
+        _loopback_entry = (
+            _parsed.hostname in {"localhost", "127.0.0.1", "::1"}
+            and _parsed.path.rstrip("/") in {"", "/index.html"}
+        )
+        if (
+            _normalized in {"file://index.html", "file:///index.html", "index.html"}
+            or _loopback_entry
+        ):
             return _original_get(_e2e_os.environ["E2E_APP_INDEX_URI"], *get_args, **get_kwargs)
         return _original_get(url, *get_args, **get_kwargs)
 
     _driver.get = _e2e_get
+
+    _coverage_output = _e2e_os.getenv("E2E_JS_COVERAGE_PATH", "").strip()
+    if _coverage_output:
+        _original_quit = _driver.quit
+        _coverage_written = False
+
+        def _e2e_coverage_quit(*quit_args, **quit_kwargs):
+            nonlocal _coverage_written
+            if not _coverage_written:
+                try:
+                    _coverage = _driver.execute_script(
+                        "return window.__coverage__ || null"
+                    )
+                    if _coverage:
+                        _target = _E2EPath(_coverage_output)
+                        _target.parent.mkdir(parents=True, exist_ok=True)
+                        _target.write_text(
+                            _e2e_json.dumps(_coverage, ensure_ascii=False),
+                            encoding="utf-8",
+                        )
+                    _coverage_written = True
+                except Exception:
+                    pass
+            return _original_quit(*quit_args, **quit_kwargs)
+
+        _driver.quit = _e2e_coverage_quit
     return _driver
 
 _e2e_webdriver.Chrome = _e2e_managed_chrome
@@ -394,6 +432,9 @@ def _run_behave(prepared: PreparedWorkspace, state: dict[str, Any], timeout: int
         "E2E_APP_INDEX_URI": prepared.app_index.resolve().as_uri(),
         "E2E_HEADLESS": "true" if _as_bool(state.get("headless"), True) else "false",
     }
+    js_coverage_path = str(state.get("js_coverage_output_path") or "").strip()
+    if js_coverage_path:
+        env["E2E_JS_COVERAGE_PATH"] = js_coverage_path
     started = time.monotonic()
     try:
         proc = subprocess.run(
@@ -412,6 +453,8 @@ def _run_behave(prepared: PreparedWorkspace, state: dict[str, Any], timeout: int
             "execution_status": _classify_result(proc.returncode, proc.stdout, proc.stderr),
             "execution_return_code": int(proc.returncode),
             "execution_duration_seconds": duration,
+            "execution_stdout": proc.stdout,
+            "execution_stderr": proc.stderr,
             "execution_stdout_tail": _tail(proc.stdout),
             "execution_stderr_tail": _tail(proc.stderr),
             "behave_report_path": str(report_path) if report_path.exists() else "",
@@ -430,6 +473,8 @@ def _run_behave(prepared: PreparedWorkspace, state: dict[str, Any], timeout: int
             "execution_status": "TIMEOUT",
             "execution_return_code": -1,
             "execution_duration_seconds": round(time.monotonic() - started, 3),
+            "execution_stdout": exc.stdout or "",
+            "execution_stderr": exc.stderr or "",
             "execution_stdout_tail": _tail(exc.stdout),
             "execution_stderr_tail": _tail(exc.stderr) + f"\nTimed out after {timeout}s.",
             "behave_report_path": str(report_path) if report_path.exists() else "",
@@ -1348,7 +1393,13 @@ def _mutation_skip(status: str, detail: str) -> dict[str, Any]:
         "killed_mutants": 0,
         "survived_mutants": 0,
         "invalid_mutants": 0,
+        "timeout_mutants": 0,
+        "execution_error_mutants": 0,
         "per_operator_breakdown": {},
+        "operator_stats": {},
+        "requirement_relevance_breakdown": {},
+        "mutation_proposal_lifecycle": [],
+        "requirement_relevant_survivors": [],
         "surviving_mutant_report": [],
         "mutants_total": 0,
         "mutants_killed": 0,
@@ -1379,8 +1430,11 @@ def _mutation_skip(status: str, detail: str) -> dict[str, Any]:
             "killed_mutants": 0,
             "survived_mutants": 0,
             "invalid_mutants": 0,
+            "timeout_mutants": 0,
+            "execution_error_mutants": 0,
             "mutation_score": None,
             "per_operator_breakdown": {},
+            "operator_stats": {},
         },
         "mutation_records": [],
         "mutation_detail": detail,
@@ -1502,7 +1556,14 @@ def _run_mutation_evaluation(
         "mutants_inconclusive": inconclusive,
         "records": records,
     }
-    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    report_path.write_text(
+        json.dumps(
+            sanitize_export_payload(report),
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
 
     def render(record: dict[str, Any]) -> str:
         return (
@@ -1629,6 +1690,83 @@ def _run_general_mutation_evaluation(
     }
 
 
+def _mutation_model_invoker(agent_name: str):
+    """Return the shared serial LLM invoker only when credentials exist."""
+    if not (
+        os.getenv("GOOGLE_API_KEY")
+        or os.getenv("GEMINI_API_KEY")
+        or os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    ):
+        return None
+
+    def invoke(system_prompt: str, context: str) -> str:
+        from langchain_core.messages import HumanMessage, SystemMessage
+        from agents import clean_json_output, invoke_with_retry
+
+        response = invoke_with_retry(
+            [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=context),
+            ],
+            agent_name=agent_name,
+        )
+        return clean_json_output(response)
+
+    return invoke
+
+
+def mutation_planning_agent(state: dict[str, Any]) -> dict[str, Any]:
+    """Plan source targets without granting the LLM mutation/write authority."""
+    if not _as_bool(state.get("enable_mutation"), False):
+        return {
+            "mutation_planning_status": "SKIPPED_DISABLED",
+            "mutation_proposals": [],
+            "mutation_planning_detail": "Mutation testing is disabled.",
+        }
+    if state.get("execution_status") != "PASSED":
+        return {
+            "mutation_planning_status": "SKIPPED_BASELINE_NOT_PASS",
+            "mutation_proposals": [],
+            "mutation_planning_detail": "Executable baseline validation did not pass.",
+        }
+    if not _as_bool(state.get("enable_mutation_planning"), True):
+        return {
+            "mutation_planning_status": "SKIPPED_DISABLED",
+            "mutation_proposals": [],
+            "mutation_planning_detail": (
+                "LLM planning is disabled; deterministic seeded discovery will run."
+            ),
+        }
+    try:
+        from e2e_eval.dynamic.mutation_planner import plan_mutations
+
+        source_dir, metadata = _resolve_state_source(state)
+        result = plan_mutations(
+            requirements=str(state.get("fine_grained_reqs", "")),
+            generated_test=str(state.get("executable_test_code", "")),
+            source_dir=source_dir,
+            source_metadata=metadata,
+            invoke_model=_mutation_model_invoker("Mutation Planner"),
+            max_proposals=max(0, int(state.get("max_mutants", 5))),
+        )
+        return {
+            **result,
+            "reference_resolution": metadata,
+            "resolved_source_project_dir": metadata.get(
+                "resolved_source_project_dir", str(source_dir)
+            ),
+        }
+    except Exception as exc:
+        return {
+            "mutation_planning_status": "ANALYSIS_UNAVAILABLE",
+            "mutation_proposals": [],
+            "mutation_planning_detail": (
+                "Planning unavailable; deterministic seeded discovery remains "
+                f"available. {exc}"
+            ),
+        }
+
+
 def mutation_agent(state: dict[str, Any]) -> dict[str, Any]:
     """Run bounded app-source mutation testing only after a passing baseline test."""
     if not _as_bool(state.get("enable_mutation"), False):
@@ -1644,6 +1782,66 @@ def mutation_agent(state: dict[str, Any]) -> dict[str, Any]:
         )
     except Exception as exc:
         return _mutation_skip("MUTATION_HARNESS_ERROR", repr(exc))
+
+
+def mutation_analysis_agent(state: dict[str, Any]) -> dict[str, Any]:
+    """Explain only survived mutants; never modify deterministic verdicts."""
+    if not _as_bool(state.get("enable_mutation"), False):
+        return {
+            "mutation_analysis_status": "SKIPPED_DISABLED",
+            "mutation_survivor_analyses": [],
+            "requirement_relevant_survivors": [],
+            "mutation_analysis_detail": "Mutation testing is disabled.",
+        }
+    if not _as_bool(state.get("enable_mutation_analysis"), True):
+        return {
+            "mutation_analysis_status": "SKIPPED_DISABLED",
+            "mutation_survivor_analyses": [],
+            "requirement_relevant_survivors": [],
+            "mutation_analysis_detail": (
+                "Survivor interpretation is disabled; deterministic mutation "
+                "verdicts and scores are retained."
+            ),
+        }
+    invoker = _mutation_model_invoker("Mutation Survivor Analyst")
+    from e2e_eval.dynamic.mutation_analysis import analyze_survived_mutants
+
+    result = analyze_survived_mutants(
+        requirements=str(state.get("fine_grained_reqs", "")),
+        test_code=str(state.get("executable_test_code", "")),
+        records=list(state.get("mutation_records") or []),
+        invoke_model=invoker,
+    )
+    report_text = str(state.get("mutation_report_path", "")).strip()
+    if report_text:
+        try:
+            report_path = Path(report_text).resolve()
+            report_path.relative_to(ARTIFACT_ROOT.resolve())
+            payload = json.loads(report_path.read_text(encoding="utf-8"))
+            payload["survivor_analysis"] = {
+                "status": result["mutation_analysis_status"],
+                "analyses": result["mutation_survivor_analyses"],
+                "requirement_relevant_survivors": result[
+                    "requirement_relevant_survivors"
+                ],
+                "detail": result["mutation_analysis_detail"],
+            }
+            payload["requirement_relevant_survivors"] = result[
+                "requirement_relevant_survivors"
+            ]
+            report_path.write_text(
+                json.dumps(
+                    sanitize_export_payload(payload),
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+        except Exception as exc:
+            result["mutation_analysis_detail"] += (
+                f" Report annotation failed safely: {exc}"
+            )
+    return result
 
 
 # ---------------------------------------------------------------------------

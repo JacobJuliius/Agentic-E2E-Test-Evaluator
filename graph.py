@@ -1,7 +1,8 @@
 """LangGraph orchestration for V5.1 scope-aware hybrid E2E test evaluation.
 
 LLM nodes are serial and conditionally routed. Local execution, BDD-step diagnostics,
-Python source coverage, mutation testing, and validation do not consume model/API calls.
+source coverage collection, mutation testing, and validation do not consume model/API
+calls; branch relevance is a separate constrained semantic node.
 """
 from __future__ import annotations
 
@@ -14,6 +15,7 @@ from e2e_eval.schemas import EvaluationStateBase, standardized_agent
 from coverage_agent import coverage_agent
 from agents import (
     assertion_quality_agent,
+    branch_coverage_analysis_agent,
     consensus_agent,
     critic_agent,
     critic_skip_agent,
@@ -32,7 +34,9 @@ from agents import (
 from dynamic_agents import (
     dynamic_coverage_agent,
     execution_agent,
+    mutation_analysis_agent,
     mutation_agent,
+    mutation_planning_agent,
     repair_comparison_agent,
     repair_safety_gate_agent,
     validation_coverage_agent,
@@ -60,6 +64,8 @@ class E2EEvalState(EvaluationStateBase, total=False):
     benchmark_id: str
     enable_dynamic: bool
     enable_mutation: bool
+    enable_mutation_planning: bool
+    enable_mutation_analysis: bool
     enable_dynamic_analyst: bool
     enable_critic: bool
     enable_refiner: bool
@@ -77,6 +83,7 @@ class E2EEvalState(EvaluationStateBase, total=False):
     relevant_mutation_refine_threshold: float
     headless: bool
     enable_coverage: bool
+    enable_branch_coverage_analysis: bool
     coverage_timeout_seconds: int
     coverage_source_dir: str
     coverage_include_patterns: List[str]
@@ -148,6 +155,9 @@ class E2EEvalState(EvaluationStateBase, total=False):
 
     # Deterministic Python source coverage (separate from BDD step diagnostics)
     coverage_status: str
+    coverage_adapter: str
+    coverage_source_language: str
+    coverage_instrumentation_status: str
     coverage_execution_status: str
     total_line_coverage: float | None
     total_branch_coverage: float | None
@@ -159,10 +169,24 @@ class E2EEvalState(EvaluationStateBase, total=False):
     coverage_command_run: str
     coverage_stdout_summary: str
     coverage_stderr_summary: str
+    coverage_return_code: int | None
+    coverage_timed_out: bool
     coverage_failure_reason: str
     coverage_report_path: str
+    coverage_data_path: str
     coverage_artifact_dir: str
+    coverage_workspace_dir: str
     coverage_result: dict[str, Any]
+    branch_coverage_result: dict[str, Any]
+    branch_coverage_analysis_status: str
+    branch_coverage_percent: float | None
+    branch_covered_count: int
+    branch_total_count: int
+    uncovered_branches: List[dict[str, Any]]
+    requirement_relevant_uncovered_branches: List[dict[str, Any]]
+    branch_coverage_score: float | None
+    branch_coverage_included_in_scoring: bool
+    branch_coverage_rationale: str
     reference_resolution: dict[str, Any]
     source_origin: str
     input_source_project_dir: str
@@ -170,7 +194,16 @@ class E2EEvalState(EvaluationStateBase, total=False):
     resolved_entrypoint: str
     local_override_diagnostic: str
 
+    mutation_planning_status: str
+    mutation_proposals: List[dict[str, Any]]
+    mutation_proposal_lifecycle: List[dict[str, Any]]
+    mutation_candidate_sources: dict[str, int]
+    mutation_planning_detail: str
     mutation_status: str
+    mutation_analysis_status: str
+    mutation_survivor_analyses: List[dict[str, Any]]
+    requirement_relevant_survivors: List[dict[str, Any]]
+    mutation_analysis_detail: str
     mutation_score: float | None  # raw score: suite aggregation only
     mutants_total: int
     mutants_killed: int
@@ -197,7 +230,11 @@ class E2EEvalState(EvaluationStateBase, total=False):
     valid_mutants: int
     survived_mutants: int
     invalid_mutants: int
+    timeout_mutants: int
+    execution_error_mutants: int
     per_operator_breakdown: dict[str, Any]
+    operator_stats: dict[str, Any]
+    requirement_relevance_breakdown: dict[str, Any]
     surviving_mutant_report: List[dict[str, Any]]
     mutation_metrics: dict[str, Any]
     scope_relevant_surviving_mutants: List[str]
@@ -289,10 +326,9 @@ def route_after_syntax(state: E2EEvalState) -> str:
 
 
 def route_after_execution(state: E2EEvalState) -> str:
-    # Preserve Behave diagnostics for genuine test failures; harness states bypass tools.
-    if state.get("execution_status") in {"PASSED", "TEST_FAILED"}:
-        return "dynamic_coverage_node"
-    return route_after_dynamic_tools(state)
+    # Every outcome flows through local tools so failed validation produces an
+    # explicit unavailable result instead of absent coverage fields.
+    return "dynamic_coverage_node"
 
 
 def route_after_dynamic_tools(state: E2EEvalState) -> str:
@@ -357,12 +393,28 @@ dynamic_coverage_agent = standardized_agent(
     score_key="dynamic_coverage_score",
 )
 coverage_agent = standardized_agent(
-    "python_coverage", coverage_agent, status_key="coverage_status",
+    "branch_coverage_tool", coverage_agent, status_key="coverage_status",
     score_key="total_branch_coverage", rationale_key="coverage_failure_reason",
+)
+branch_coverage_analysis_agent = standardized_agent(
+    "branch_coverage", branch_coverage_analysis_agent,
+    status_key="branch_coverage_analysis_status",
+    score_key="branch_coverage_score",
+    rationale_key="branch_coverage_rationale",
+)
+mutation_planning_agent = standardized_agent(
+    "mutation_planning", mutation_planning_agent,
+    status_key="mutation_planning_status",
+    rationale_key="mutation_planning_detail",
 )
 mutation_agent = standardized_agent(
     "mutation", mutation_agent, status_key="mutation_status",
     score_key="mutation_score", rationale_key="mutation_detail",
+)
+mutation_analysis_agent = standardized_agent(
+    "mutation_analysis", mutation_analysis_agent,
+    status_key="mutation_analysis_status",
+    rationale_key="mutation_analysis_detail",
 )
 dynamic_evidence_analyst_agent = standardized_agent(
     "dynamic_evidence_analyst", dynamic_evidence_analyst_agent,
@@ -427,7 +479,12 @@ workflow.add_node("maintainability_node", maintainability_agent)
 workflow.add_node("execution_node", execution_agent)
 workflow.add_node("dynamic_coverage_node", dynamic_coverage_agent)
 workflow.add_node("coverage_node", coverage_agent)
+workflow.add_node(
+    "branch_coverage_analysis_node", branch_coverage_analysis_agent
+)
+workflow.add_node("mutation_planning_node", mutation_planning_agent)
 workflow.add_node("mutation_node", mutation_agent)
+workflow.add_node("mutation_analysis_node", mutation_analysis_agent)
 
 # Conditional LLM readers/reconcilers
 workflow.add_node("dynamic_analyst_node", dynamic_evidence_analyst_agent)
@@ -466,9 +523,12 @@ workflow.add_conditional_edges(
     },
 )
 workflow.add_edge("dynamic_coverage_node", "coverage_node")
-workflow.add_edge("coverage_node", "mutation_node")
+workflow.add_edge("coverage_node", "branch_coverage_analysis_node")
+workflow.add_edge("branch_coverage_analysis_node", "mutation_planning_node")
+workflow.add_edge("mutation_planning_node", "mutation_node")
+workflow.add_edge("mutation_node", "mutation_analysis_node")
 workflow.add_conditional_edges(
-    "mutation_node",
+    "mutation_analysis_node",
     route_after_dynamic_tools,
     {
         "dynamic_analyst_node": "dynamic_analyst_node",

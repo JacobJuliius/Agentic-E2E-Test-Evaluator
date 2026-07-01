@@ -8,7 +8,8 @@ from pathlib import Path
 
 ROOT_FILES = {
     "agents.py", "coverage_agent.py", "dynamic_agents.py", "graph.py",
-    "main.py", "mutation_testing.py", "reference_resolver.py",
+    "main.py", "mutation_runner.py", "mutation_testing.py",
+    "reference_resolver.py",
 }
 TIMEOUT_CALL = re.compile(r"subprocess\.run\s*\(")
 

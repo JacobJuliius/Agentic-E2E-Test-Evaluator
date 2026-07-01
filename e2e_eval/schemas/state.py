@@ -25,7 +25,10 @@ class EvaluationInputs(TypedDict, total=False):
     benchmark_id: str
     enable_dynamic: bool
     enable_coverage: bool
+    enable_branch_coverage_analysis: bool
     enable_mutation: bool
+    enable_mutation_planning: bool
+    enable_mutation_analysis: bool
     reference_expected_patterns: List[str]
 
 

@@ -8,6 +8,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
+from e2e_eval.utils.paths import sanitize_export_payload
+
 
 def env_bool(name: str, default: bool = False) -> bool:
     value = os.getenv(name)
@@ -45,7 +47,10 @@ class EvaluationConfig:
 
     enable_dynamic: bool = False
     enable_coverage: bool = False
+    enable_branch_coverage_analysis: bool = True
     enable_mutation: bool = False
+    enable_mutation_planning: bool = True
+    enable_mutation_analysis: bool = True
     enable_dynamic_analyst: bool = False
     enable_critic: bool = True
     enable_refiner: bool = True
@@ -92,7 +97,16 @@ class EvaluationConfig:
             ),
             enable_dynamic=dynamic,
             enable_coverage=env_bool("E2E_ENABLE_COVERAGE", False),
+            enable_branch_coverage_analysis=env_bool(
+                "E2E_ENABLE_BRANCH_COVERAGE_ANALYSIS", True
+            ),
             enable_mutation=env_bool("E2E_ENABLE_MUTATION", False),
+            enable_mutation_planning=env_bool(
+                "E2E_ENABLE_MUTATION_PLANNING", True
+            ),
+            enable_mutation_analysis=env_bool(
+                "E2E_ENABLE_MUTATION_ANALYSIS", True
+            ),
             enable_dynamic_analyst=env_bool(
                 "E2E_ENABLE_DYNAMIC_ANALYST", dynamic
             ),
@@ -205,7 +219,11 @@ class EvaluationConfig:
         target = Path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(
-            json.dumps(self.as_dict(), ensure_ascii=False, indent=2),
+            json.dumps(
+                sanitize_export_payload(self.as_dict()),
+                ensure_ascii=False,
+                indent=2,
+            ),
             encoding="utf-8",
         )
         return target

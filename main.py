@@ -18,6 +18,7 @@ from e2e_eval.config import EvaluationConfig
 from e2e_eval.reporting import (
     json_cell as _json_cell,
     join_cell as _join,
+    summarize_proposal_lifecycle,
     write_evaluation_reports,
 )
 from graph import app
@@ -64,7 +65,10 @@ def run_batch_evaluation(
         f"critic={config.enable_critic}; refiner={config.enable_refiner}; "
         f"refinement_validation={config.enable_refinement_validation}"
     )
-    print("Deterministic tool order: execution -> BDD diagnostics -> Python coverage -> mutation")
+    print(
+        "Dynamic order: execution -> BDD diagnostics -> branch coverage tool "
+        "-> branch relevance analysis -> mutation"
+    )
     print(
         "Pipeline: Syntax+AST → Static LLM Jury → Execution → BDD Step Diagnostics → Mutation "
         "→ [conditional Dynamic Analyst/Critic] → Consensus → [conditional Refiner] "
@@ -161,6 +165,13 @@ def run_batch_evaluation(
 
             # coverage.py evidence (Python source only; distinct from BDD diagnostics)
             "coverage_status": result.get("coverage_status", "skipped"),
+            "coverage_adapter": result.get("coverage_adapter", ""),
+            "coverage_source_language": result.get(
+                "coverage_source_language", "unknown"
+            ),
+            "coverage_instrumentation_status": result.get(
+                "coverage_instrumentation_status", "NOT_ATTEMPTED"
+            ),
             "coverage_execution_status": result.get(
                 "coverage_execution_status", "not_run"
             ),
@@ -188,12 +199,50 @@ def run_batch_evaluation(
             "coverage_stderr_summary": result.get(
                 "coverage_stderr_summary", ""
             ),
+            "coverage_return_code": result.get("coverage_return_code"),
+            "coverage_timed_out": result.get(
+                "coverage_timed_out", False
+            ),
             "coverage_failure_reason": result.get(
                 "coverage_failure_reason", ""
             ),
             "coverage_report_path": result.get("coverage_report_path", ""),
+            "coverage_data_path": result.get("coverage_data_path", ""),
             "coverage_artifact_dir": result.get("coverage_artifact_dir", ""),
+            "coverage_workspace_dir": result.get(
+                "coverage_workspace_dir", ""
+            ),
             "coverage_result": _json_cell(result.get("coverage_result", {})),
+            "branch_coverage_analysis_status": result.get(
+                "branch_coverage_analysis_status", "NOT_RUN"
+            ),
+            "branch_coverage_percent": result.get(
+                "branch_coverage_percent"
+            ),
+            "branch_covered_count": result.get(
+                "branch_covered_count", 0
+            ),
+            "branch_total_count": result.get("branch_total_count", 0),
+            "branch_uncovered": _json_cell(
+                result.get("uncovered_branches", [])
+            ),
+            "branch_requirement_relevant_uncovered": _json_cell(
+                result.get(
+                    "requirement_relevant_uncovered_branches", []
+                )
+            ),
+            "branch_coverage_score": result.get(
+                "branch_coverage_score"
+            ),
+            "branch_coverage_included_in_scoring": result.get(
+                "branch_coverage_included_in_scoring", False
+            ),
+            "branch_coverage_rationale": result.get(
+                "branch_coverage_rationale", ""
+            ),
+            "branch_coverage_result": _json_cell(
+                result.get("branch_coverage_result", {})
+            ),
             "reference_resolution": _json_cell(
                 result.get("reference_resolution", {})
             ),
@@ -212,13 +261,54 @@ def run_batch_evaluation(
 
             # Mutation tool evidence
             "dynamic_mutation_status": result.get("mutation_status", "NOT_RUN"),
+            "dynamic_mutation_planning_status": result.get(
+                "mutation_planning_status", "NOT_RUN"
+            ),
+            "dynamic_mutation_planning_detail": result.get(
+                "mutation_planning_detail", ""
+            ),
+            "dynamic_mutation_proposals": _json_cell(
+                result.get("mutation_proposals", [])
+            ),
+            "dynamic_mutation_proposal_lifecycle": _json_cell(
+                result.get("mutation_proposal_lifecycle", [])
+            ),
+            "dynamic_mutation_proposal_lifecycle_summary": _json_cell(
+                summarize_proposal_lifecycle(
+                    result.get("mutation_proposal_lifecycle", [])
+                )
+            ),
+            "dynamic_mutation_candidate_sources": _json_cell(
+                result.get("mutation_candidate_sources", {})
+            ),
+            "dynamic_mutation_analysis_status": result.get(
+                "mutation_analysis_status", "NOT_RUN"
+            ),
+            "dynamic_mutation_survivor_analyses": _json_cell(
+                result.get("mutation_survivor_analyses", [])
+            ),
+            "dynamic_requirement_relevant_survivors": _json_cell(
+                result.get("requirement_relevant_survivors", [])
+            ),
             "dynamic_mutation_score": result.get("mutation_score"),
             "dynamic_total_mutants_generated": result.get(
                 "total_mutants_generated", result.get("mutants_total", 0)
             ),
             "dynamic_valid_mutants": result.get("valid_mutants", 0),
+            "dynamic_killed_mutants": result.get("killed_mutants", 0),
+            "dynamic_survived_mutants": result.get("survived_mutants", 0),
             "dynamic_invalid_mutants": result.get(
                 "invalid_mutants", result.get("mutants_inconclusive", 0)
+            ),
+            "dynamic_timeout_mutants": result.get("timeout_mutants", 0),
+            "dynamic_execution_error_mutants": result.get(
+                "execution_error_mutants", 0
+            ),
+            "dynamic_operator_stats": _json_cell(
+                result.get("operator_stats", {})
+            ),
+            "dynamic_requirement_relevance_breakdown": _json_cell(
+                result.get("requirement_relevance_breakdown", {})
             ),
             "dynamic_per_operator_breakdown": _json_cell(
                 result.get("per_operator_breakdown", {})
